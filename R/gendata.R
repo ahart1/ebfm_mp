@@ -1,5 +1,6 @@
 #############generate additional data
-
+## generate biomass and catch data from the operating model 
+#############
 gendata <- function(Nsp=24,yr1=1,yr2=1,BioCV=rep(0,24),CatCV=rep(0,24),Bio=NULL,Cat=NULL)
 {
   BioObs <- matrix(NA,nrow=(yr2-yr1+1),ncol=Nsp+1)

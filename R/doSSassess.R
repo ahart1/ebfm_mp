@@ -1,6 +1,9 @@
 
 ### do the single species assessments and get the results
-
+##
+## this makes a call to the ADMB program 'single_schaef' for each of the species
+## and then read in the results from those assessments
+###########
 doSSassess <- function(Nsp,workdir,plotdiag=FALSE)
 {
   setwd(workdir)

@@ -1,6 +1,7 @@
 
 ### MSPROD equation with system cap
-
+## Solves the multsipecies operating model dynamics for a single time step given parameters, a set of harvest rates, and the current biomass
+## Given a maximum catch on the system
 dNbydt_max <- function(t,N=1,parms=list(r=rep(0.4,length(N)),KGuild=rep(1,1),Ktot=10,alpha=matrix(0,nrow=1,ncol=1),Guildmembership=1,BetweenGuildComp=matrix(0,nrow=1,ncol=1),WithinGuildComp=matrix(0,nrow=1,ncol=1),hrate=0,maxcat=0))
 {
   testcat <- sum(hrate*N,na.rm=TRUE)

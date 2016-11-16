@@ -1,31 +1,33 @@
 ########  MS-PROD MSE Wrapper
 ########  Gavin Fay
 ########  Initially authored: July 2013
-########  Last updated: October 30 2016
+########  Last updated: November 16, 2016
 
 #source all functions if not using in 'package' mode
 setwd("~/research/ebfm_mp/R/")
+#source all the *.R files in the '/R' directory
 lapply(list.files(pattern = "[.]R$", recursive = TRUE), source)
 
 setwd("~/research/ebfm_mp/")
-#SSr <- r
-#SSk <- k
-#umsy <- SSr/2
-#infile <- "C:/MS_PROD/odecode/georges.dat"
-#infile <- "/Volumes/MyPassport/NEFSC/MS_PROD/odecode/georges.dat"
-datfile <- "~/research/ebfm_mp/data/georges.dat"
-#infile <- "H:/nefsc/MS_PROD/odecode/georges.dat"
-#infile <- "F:/nefsc/MS_PROD/odecode/georges.dat"
-#infile <- "/media/My\ Passport/NEFSC/MS_PROD/odecode/Georges.dat"
 
+#read in the base biological parameter values
+datfile <- "~/research/ebfm_mp/data/georges.dat"
+
+#Number of species
 Nsp <- scan(datfile,n=1,skip=3)
+#guilds / functional groups
 Guildmembership <- scan(datfile,n=Nsp,skip=9)
 NGuild = length(unique(Guildmembership))
+#Initial values
 Initvals <- scan(datfile,n=Nsp,skip=13)
+#carrying capacity for each guild
 KGuild <- scan(datfile,n=NGuild,skip=17)
 Ktot <- sum(KGuild)
+
 hrate <- scan(datfile,n=Nsp,skip=15)
+#growth rates
 r <- scan(datfile,n=Nsp,skip=11)
+#interactions
 BetweenGuildComp <- matrix(scan(datfile,n=NGuild^2,skip=19),byrow=TRUE,nrow=NGuild)
 WithinGuildComp <- matrix(scan(datfile,n=Nsp^2,skip=(20+NGuild)),byrow=TRUE,nrow=Nsp)
 alpha <- matrix(scan(datfile,n=Nsp^2,skip=(21+NGuild+Nsp)),byrow=TRUE,nrow=Nsp)
@@ -36,6 +38,8 @@ hrate <- rep(0,Nsp)
 #parms=list(r,KGuild,Ktot,Guildmembership,BetweenGuildComp,WithinGuildComp,alpha,hrate)
 
 
+#set values for BMSY
+
 #BMSY <- read.csv("H:/NEFSC/MS_PROD/TheData/Bmsy.csv",header=TRUE)
 #BMSY <- read.csv("J:/NEFSC/MS_PROD/TheData/Bmsy.csv",header=TRUE)
 #BMSY <- read.csv("/Volumes/MyPassport/NEFSC/MS_PROD/TheData/Bmsy.csv",header=TRUE)
@@ -44,7 +48,7 @@ hrate <- rep(0,Nsp)
 #BMSY <- BMSY[c(4,5,21,22,14,23,24,6,3,7),]
 BMSY[,2] <- KGuild/2
 
-
+#initial biomass for each species
 N <- Initvals
 
 #datfile <- "H:/NEFSC/MS_PROD/admb/georges.dat"
@@ -52,7 +56,7 @@ N <- Initvals
 #datfile <- "J:/NEFSC/MS_PROD/admb/georges.dat"
 #NI <- matrix(N,ncol=10,nrow=10,byrow=TRUE)
 
-### get historical time series
+### get historical time series of biomass and catch
 NI <- read.table(datfile,skip=69,nrow=33,header=FALSE)
 NI <- NI[,-1]
 
@@ -64,12 +68,16 @@ NI <- NI[,-1]
 #CI <- CI*err
 CI <- read.table(datfile,skip=103,nrow=33,header=FALSE)
 
+#redefine functional groups
 theguilds <- c(1,1,2,2,1,3,3,1,1,1)
 
 ############################################
 # RUN MSE WITH SINGLE SPECIES ASSESSMENT
 ############################################
+#set up a storage object to contain results for each simulation
 ALL.results <- NULL
+#do a bunch of simulations
+#isim <- 1
 for (isim in 1:10000000)
 {
   ### calculate values for ecological indicators at start of projection
@@ -80,7 +88,7 @@ for (isim in 1:10000000)
   ei.hist <- as.numeric(ei[nrow(ei),])
   names(ei.hist) = colnames(ei)
   
-  ### work out F multiplier 
+  ### work out F multiplier using the indicator harvest control rule
   fmult <- indicator.hcr(xx$refvals,xx$limvals,use.defaults=FALSE,get.fmults=TRUE,indvals=ei.hist)
   
   #ALL.results[[isim]] <- NULL
@@ -92,7 +100,7 @@ for (isim in 1:10000000)
   Nyr=30
   #targ.u <- sample(seq(0.05,0.65,by=0.05),10,replace=TRUE)
   targ.u <- r/2
-  # determine which indicators to use in this simulation
+  # determine which of the ecosystem indicators to use in the control rule for  this simulation
   inds.use <- which.refs(specifyN=FALSE,Nval=8,Nchoose=8)
   # get the indicator-based reference points based on the chosen indicators
   xx <- indicator.hcr(refvals,limvals,use.defaults=FALSE,get.fmults=FALSE,indvals=ei.hist)
