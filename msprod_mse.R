@@ -45,7 +45,8 @@ hrate <- rep(0,Nsp)
 #BMSY <- read.csv("/Volumes/MyPassport/NEFSC/MS_PROD/TheData/Bmsy.csv",header=TRUE)
 #BMSY <- read.csv("/media/My\ Passport/NEFSC/MS_PROD/TheData/Bmsy.csv",header=TRUE)
 #BMSY <- read.csv("F:/NEFSC/MS_PROD/TheData/Bmsy.csv",header=TRUE)
-#BMSY <- BMSY[c(4,5,21,22,14,23,24,6,3,7),]
+BMSY <- read.csv("data/Bmsy.csv",header=TRUE)
+BMSY <- BMSY[c(4,5,21,22,14,23,24,6,3,7),]
 BMSY[,2] <- KGuild/2
 
 #initial biomass for each species
@@ -88,8 +89,9 @@ for (isim in 1:10000000)
   ei.hist <- as.numeric(ei[nrow(ei),])
   names(ei.hist) = colnames(ei)
   
+
   ### work out F multiplier using the indicator harvest control rule
-  fmult <- indicator.hcr(xx$refvals,xx$limvals,use.defaults=FALSE,get.fmults=TRUE,indvals=ei.hist)
+  #fmult <- indicator.hcr(xx$refvals,xx$limvals,use.defaults=FALSE,get.fmults=TRUE,indvals=ei.hist)
   
   #ALL.results[[isim]] <- NULL
   SS.results <- NULL
