@@ -3,6 +3,10 @@
 ########  Initially authored: July 2013
 ########  Last updated: November 16, 2016
 
+#### dependencies
+#install.packages('deSolve')
+library(deSolve)
+
 #source all functions if not using in 'package' mode
 setwd("~/research/ebfm_mp/R/")
 #source all the *.R files in the '/R' directory
@@ -11,7 +15,7 @@ lapply(list.files(pattern = "[.]R$", recursive = TRUE), source)
 setwd("~/research/ebfm_mp/")
 
 #read in the base biological parameter values
-datfile <- "~/research/ebfm_mp/data/georges.dat"
+datfile <- "~/research/ebfm_mp/data/Georges.dat"
 
 #Number of species
 Nsp <- scan(datfile,n=1,skip=3)
@@ -121,7 +125,7 @@ for (isim in 1:10000000)
   for (iyr in 2:Nyr)
   {    
     #write single species assessment data files based on current data set.    
-    writeSSdatfiles(Nsp,BioObs=cbind(1:nrow(NI.obs),NI.obs),CatObs=cbind(1:nrow(CI.obs),CI.obs),workdir="C:/ms_prod/mse/")
+    writeSSdatfiles(Nsp,BioObs=cbind(1:nrow(NI.obs),NI.obs),CatObs=cbind(1:nrow(CI.obs),CI.obs),workdir=getwd())
     # do single-species assessments
     # read in estimated fmsy and status
     SSresults <- doSSassess(Nsp,getwd(),plotdiag=FALSE)

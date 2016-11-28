@@ -20,9 +20,16 @@ doSSassess <- function(Nsp,workdir,plotdiag=FALSE)
   
   for (isp in 1:Nsp)
   {
-    command <- paste(navigate," & single_schaef -ind ",isp,".dat -nohess",sep="")
     # command <- paste(navigate," & single_schaef -ind ",isp,".dat ",sep="")
-    shell(command,wait=TRUE,invisible=TRUE)
+    if (Sys.info()[['sysname']]=="Windows") {
+      command <- paste(navigate," & single_schaef -ind ",isp,".dat -nohess",sep="")
+      shell(command,wait=TRUE,invisible=TRUE)
+    }
+    if (Sys.info()[['sysname']]!="Windows") {
+      command <- paste(navigate," & ./single_schaef -ind ",isp,".dat -nohess",sep="")
+      system(command,wait=TRUE)
+    }
+    
     file.copy("single_schaef.rep",paste(isp,".rep",sep=""),overwrite=TRUE)
     file.copy("single_schaef.par",paste(isp,".par",sep=""),overwrite=TRUE)
     #file.copy("single_schaef.std",paste(isp,".std",sep=""),overwrite=TRUE)
