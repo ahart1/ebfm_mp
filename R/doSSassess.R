@@ -20,15 +20,29 @@ doSSassess <- function(Nsp,workdir,plotdiag=FALSE)
   
   for (isp in 1:Nsp)
   {
+    switch(Sys.info()[['sysname']],
+           Windows= {
+             command <- paste(navigate," & single_schaef -ind ",isp,".dat -nohess",sep="");
+             shell(command,wait=TRUE,invisible=TRUE)
+             },
+           Linux  = {
+             command <- paste(navigate," & ./single_schaef_linux -ind ",isp,".dat -nohess",sep="");
+             system(command,wait=TRUE)
+             },
+           Darwin = {
+             command <- paste(navigate," & ./single_schaef_mac -ind ",isp,".dat -nohess",sep="");
+             system(command,wait=TRUE)
+             })
+    
     # command <- paste(navigate," & single_schaef -ind ",isp,".dat ",sep="")
-    if (Sys.info()[['sysname']]=="Windows") {
-      command <- paste(navigate," & single_schaef -ind ",isp,".dat -nohess",sep="")
-      shell(command,wait=TRUE,invisible=TRUE)
-    }
-    if (Sys.info()[['sysname']]!="Windows") {
-      command <- paste(navigate," & ./single_schaef -ind ",isp,".dat -nohess",sep="")
-      system(command,wait=TRUE)
-    }
+    #if (Sys.info()[['sysname']]=="Windows") {
+    #  command <- paste(navigate," & single_schaef -ind ",isp,".dat -nohess",sep="")
+    #  shell(command,wait=TRUE,invisible=TRUE)
+    #}
+    #if (Sys.info()[['sysname']]!="Windows") {
+    #  command <- paste(navigate," & ./single_schaef -ind ",isp,".dat -nohess",sep="")
+    #  system(command,wait=TRUE)
+    #}
     
     file.copy("single_schaef.rep",paste(isp,".rep",sep=""),overwrite=TRUE)
     file.copy("single_schaef.par",paste(isp,".par",sep=""),overwrite=TRUE)
