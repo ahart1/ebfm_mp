@@ -1,3 +1,9 @@
+##########This script defines the function indicator.hcr###########################
+
+
+
+
+
 # 
 # 
 # 1. get initial catch advice from historical data / indicators / whatever
@@ -32,9 +38,12 @@
 # variability in species richness of catch over time
 #' 
 
-
+#Function (unamed argument without default, unamed argument without default, named argument with default, named argument with default, unamed argument without default)
+#preferably group unamed arguments without defaults together when writing code
+#if no refvals or limvals data is being passed to this function NULL should be written for those arguments
 indicator.hcr <- function(refvals,limvals,use.defaults=TRUE,get.fmults=TRUE,indvals)
 {
+  #?????????????????????????????????????????I DONT HAVE THIS FILE!!!!????????????????????
   reffile <- "indicator_refvals.csv"
   ind.hcr <- read.csv(reffile,header=TRUE)
   if (use.defaults==TRUE)

@@ -1,3 +1,6 @@
+############This script defines the function: doSSassess ############
+#doSSassess runs single species assessments for species 1:Nsp (number of species)
+#In the resulting file (SSresults) data on carrying capacity(k), growth rate(r), biomass estimates(BioEsts), harvest estimates(hEsts), and z, sigma, theta are provided
 
 ### do the single species assessments and get the results
 ##
