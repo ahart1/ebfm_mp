@@ -3,6 +3,10 @@
 ########  Initially authored: July 2013
 ########  Last updated: November 16, 2016
 
+#### dependencies
+#install.packages('deSolve')
+library(deSolve)
+
 #source all functions if not using in 'package' mode
 setwd("~/research/ebfm_mp/R/")
 #source all the *.R files in the '/R' directory
@@ -11,7 +15,7 @@ lapply(list.files(pattern = "[.]R$", recursive = TRUE), source)
 setwd("~/research/ebfm_mp/")
 
 #read in the base biological parameter values
-datfile <- "~/research/ebfm_mp/data/georges.dat"
+datfile <- "~/research/ebfm_mp/data/Georges.dat"
 
 #Number of species
 Nsp <- scan(datfile,n=1,skip=3)
@@ -45,7 +49,8 @@ hrate <- rep(0,Nsp)
 #BMSY <- read.csv("/Volumes/MyPassport/NEFSC/MS_PROD/TheData/Bmsy.csv",header=TRUE)
 #BMSY <- read.csv("/media/My\ Passport/NEFSC/MS_PROD/TheData/Bmsy.csv",header=TRUE)
 #BMSY <- read.csv("F:/NEFSC/MS_PROD/TheData/Bmsy.csv",header=TRUE)
-#BMSY <- BMSY[c(4,5,21,22,14,23,24,6,3,7),]
+BMSY <- read.csv("data/Bmsy.csv",header=TRUE)
+BMSY <- BMSY[c(4,5,21,22,14,23,24,6,3,7),]
 BMSY[,2] <- KGuild/2
 
 #initial biomass for each species
@@ -88,8 +93,9 @@ for (isim in 1:10000000)
   ei.hist <- as.numeric(ei[nrow(ei),])
   names(ei.hist) = colnames(ei)
   
+
   ### work out F multiplier using the indicator harvest control rule
-  fmult <- indicator.hcr(xx$refvals,xx$limvals,use.defaults=FALSE,get.fmults=TRUE,indvals=ei.hist)
+  #fmult <- indicator.hcr(xx$refvals,xx$limvals,use.defaults=FALSE,get.fmults=TRUE,indvals=ei.hist)
   
   #ALL.results[[isim]] <- NULL
   SS.results <- NULL
@@ -119,7 +125,7 @@ for (isim in 1:10000000)
   for (iyr in 2:Nyr)
   {    
     #write single species assessment data files based on current data set.    
-    writeSSdatfiles(Nsp,BioObs=cbind(1:nrow(NI.obs),NI.obs),CatObs=cbind(1:nrow(CI.obs),CI.obs),workdir="C:/ms_prod/mse/")
+    writeSSdatfiles(Nsp,BioObs=cbind(1:nrow(NI.obs),NI.obs),CatObs=cbind(1:nrow(CI.obs),CI.obs),workdir=getwd())
     # do single-species assessments
     # read in estimated fmsy and status
     SSresults <- doSSassess(Nsp,getwd(),plotdiag=FALSE)

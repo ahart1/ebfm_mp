@@ -4,7 +4,7 @@
 writeSSdatfiles <- function(Nsp=24,BioObs=NULL,CatObs=NULL,workdir="C:/temp/")
 {
   setwd(workdir)
-  Inits <- read.csv("C:/MS_PROD/admb/single_schaef/inits.csv",header=TRUE)
+  Inits <- read.csv("data/inits.csv",header=TRUE)
   #Inits <- read.csv("G:/NEFSC/MS_PROD/admb/single_schaef/inits.csv",header=TRUE)
   fyear <- as.integer(CatObs[1,1])
   lyear <- as.integer(CatObs[nrow(CatObs),1])
