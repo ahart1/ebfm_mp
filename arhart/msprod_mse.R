@@ -22,8 +22,13 @@
 
 #Set working directory to R folder so .R files(scripts) can be sourced in next line
 setwd("/Users/arhart/Research/ebfm_modeltesting/R/")
-#source all the *.R files in the '/R' directory, this defines all functions included in these files but does not run them(they are not called)
+#source all the *.R files in the main ebfm '/R' directory, this defines all functions included in these files but does not run them(they are not called)
 lapply(list.files(pattern = "[.]R$", recursive = TRUE), source)
+
+#Set working directory to allow sourcing of R scripts contained in arhart
+setwd("/Users/arhart/Research/ebfm_modeltesting/arhart/")
+#This sources the file contining R scripts that will be regularly used when running msprod_mse.R contained in arhart
+source("UtilityFunctions.R")
 
 #Set working directory so R scripts previously loaded and all data files are in directory
 setwd("/Users/arhart/Research/ebfm_modeltesting")
