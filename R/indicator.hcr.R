@@ -41,11 +41,12 @@
 #Function (unamed argument without default, unamed argument without default, named argument with default, named argument with default, unamed argument without default)
 #preferably group unamed arguments without defaults together when writing code
 #if no refvals or limvals data is being passed to this function NULL should be written for those arguments
-indicator.hcr <- function(refvals,limvals,use.defaults=TRUE,get.fmults=TRUE,indvals)
+#??????try recreating
+indicator.hcr <- function(refvals,limvals,use.defaults=TRUE,get.fmults=TRUE,indvals, RefFile=NULL)
 {
-  #?????????????????????????????????????????I DONT HAVE THIS FILE!!!!????????????????????
-  reffile <- "indicator_refvals.csv"
-  ind.hcr <- read.csv(reffile,header=TRUE)
+  reffile <- RefFile
+  ind.hcr <- reffile
+  #ind.hcr <- read.csv(reffile,header=TRUE)
   if (use.defaults==TRUE)
   {
     refvals <- ind.hcr[,3]
