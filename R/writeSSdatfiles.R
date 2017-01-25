@@ -1,10 +1,13 @@
-#
+#This function formats file to be used in Single Species assessment calculations
+#For single species assessments a temporary working directory (workdir="C:/temp/") must be provided to run the associated functions, this may need to be reset when switching between computers
 
 
-writeSSdatfiles <- function(Nsp=24,BioObs=NULL,CatObs=NULL,workdir="C:/temp/")
+writeSSdatfiles <- function(Nsp=24,BioObs=NULL,CatObs=NULL,workdir="C:/temp/", inits=NULL)
 {
+  curdir <- getwd()
   setwd(workdir)
-  Inits <- read.csv("data/inits.csv",header=TRUE)
+  Inits <- inits
+  #Inits <- read.csv("/Users/arhart/Research/ebfm_modeltesting/data/inits.csv",header=TRUE)
   #Inits <- read.csv("G:/NEFSC/MS_PROD/admb/single_schaef/inits.csv",header=TRUE)
   fyear <- as.integer(CatObs[1,1])
   lyear <- as.integer(CatObs[nrow(CatObs),1])
@@ -43,5 +46,6 @@ writeSSdatfiles <- function(Nsp=24,BioObs=NULL,CatObs=NULL,workdir="C:/temp/")
     write("# obs cv",outfile,append=TRUE)
     write.table(cbind(round(BioObs[,1],digits=0),rep(0.25,nrow(BioObs))),outfile,append=TRUE,row.names=FALSE,col.names=FALSE)
   }
+  setwd(curdir)
 }  
 
