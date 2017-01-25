@@ -261,3 +261,30 @@ for(maxcat in seq(50000,200000, by=25000))
   write(prettify(ALL.OUTPUT), file = filename)
 
 }
+
+list(Nsp=Nsp, Guildmembership=Guildmembership, NGuild=NGuild, Initvals=Initvals, KGuild=KGuild, Ktot=Ktot, hrate=dat$hrate, r=dat$r, BetweenGuildComp=BetweenGuildComp, WithinGuildComp=WithinGuildComp, alpha=alpha, spatial.overlap=spatial.overlap, NI=dat$NI, CI=dat$CI, theguilds=theguilds)
+
+BMSYData <- read.csv("/Users/arhart/Research/ebfm_modeltesting/data/Bmsy.csv", header=TRUE)
+InitsData <- read.csv("/Users/arhart/Research/ebfm_modeltesting/data/inits.csv", header=TRUE)
+IndicatorRefVals <- read.csv("/Users/arhart/Research/ebfm_modeltesting/data/indicator_refvals.csv", header=TRUE)
+# datfile variable contains the file name, reads from json file
+datfilename <- "/Users/arhart/Research/ebfm_modeltesting/data/Georges.dat.json"
+dat <- fromJSON(datfilename)
+
+
+
+
+
+
+# Define BMSY and pick the species to include in the model
+BMSY <- BMSYData
+BMSY <- BMSY[c(4,5,21,22,14,23,24,6,3,7),]
+# Set values for BMSY
+BMSY[,2] <- KGuild/2
+
+
+
+
+
+
+
