@@ -8,14 +8,14 @@
 library(deSolve)
 
 #source all functions if not using in 'package' mode
-setwd("~/research/ebfm_mp/R/")
+setwd("/Users/arhart/Research/ebfm_modeltesting/R/")
 #source all the *.R files in the '/R' directory
 lapply(list.files(pattern = "[.]R$", recursive = TRUE), source)
 
-setwd("~/research/ebfm_mp/")
+setwd("/Users/arhart/Research/ebfm_modeltesting/")
 
 #read in the base biological parameter values
-datfile <- "~/research/ebfm_mp/data/Georges.dat"
+datfile <- "/Users/arhart/Research/ebfm_modeltesting/data/Georges.dat"
 
 #Number of species
 Nsp <- scan(datfile,n=1,skip=3)
@@ -83,7 +83,9 @@ theguilds <- c(1,1,2,2,1,3,3,1,1,1)
 ALL.results <- NULL
 #do a bunch of simulations
 #isim <- 1
-for (isim in 1:10000000)
+#I changed to fewer simulations to work with/test
+for (isim in 1:1)
+#for (isim in 1:10000000)
 {
   ### calculate values for ecological indicators at start of projection
   ei <- get.Indicators(Biomass=NI,Catch=CI,BMSY=KGuild,trophic.level=BMSY[,3],is.predator=which(colSums(alpha)>0),is.pelagic=which(theguilds==2)) 
