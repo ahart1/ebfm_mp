@@ -1,10 +1,11 @@
 #This function converts a list of varialbes with associated values into a JSON file type, organizes the JSON file nicely, and saves it
 #The variables and the name of the file (in this case Georges.datJSON) should be updated when using this script to convert other files
+#Check to make sure jsonlite package installed before using this script
 
-WriteDataToJSON <- function(Nsp=NULL, Guildmembership=NULL, Initvals=NULL, KGuild=NULL, hrate=NULL, r=NULL, BetweenGuildComp=NULL, WithinGuildComp=NULL, alpha=NULL, spatial.overlap=NULL, NI=NULL, CI=NULL, datfile=NULL)
+WriteDataToJSON <- function(Nsp=NULL, Guildmembership=NULL, Initvals=NULL, KGuild=NULL, hrate=NULL, r=NULL, BetweenGuildComp=NULL, WithinGuildComp=NULL, alpha=NULL, spatial.overlap=NULL, NI=NULL, CI=NULL, DIAG=NULL, FirstYear=NULL, LastYear=NULL, datfile=NULL)
 {
   #including =same variable name tells it to print the variable name
-  data <- list(Nsp=Nsp, Guildmembership=Guildmembership, Initvals=Initvals, KGuild=KGuild, hrate=hrate, r=r, BetweenGuildComp=BetweenGuildComp, WithinGuildComp=WithinGuildComp, alpha=alpha, spatial.overlap=spatial.overlap, NI=NI, CI=CI)
+  data <- list(Nsp=Nsp, Guildmembership=Guildmembership, Initvals=Initvals, KGuild=KGuild, hrate=hrate, r=r, BetweenGuildComp=BetweenGuildComp, WithinGuildComp=WithinGuildComp, alpha=alpha, spatial.overlap=spatial.overlap, NI=NI, CI=CI, DIAG=DIAG, FirstYear=FirstYear, LastYear=LastYear)
   #pass list int toJSON() function
   Georges.datJSON <- toJSON(data)
   #This creates a file name that includes datfile (which has info on the location of the original file) so the new file will be saved to the same location when file=filename in write() funciton below
@@ -19,6 +20,12 @@ WriteDataToJSON <- function(Nsp=NULL, Guildmembership=NULL, Initvals=NULL, KGuil
 #Read in data file, this location must be changed when running on a new device, values from data file assigned to parameters below
 #datfile variable contains the file name
 datfile <- "/Users/arhart/Research/ebfm_modeltesting/data/Georges.dat"
+
+DIAG<- scan(datfile, n=1, skip=1)
+#Is there a way to copy over files (so all data/info available) if the comment in the original file is commented out?
+#NAMES <- scan(datfile, n=12, skip=8)
+FirstYear <- scan(datfile, n=1, skip=63)
+LastYear <- scan(datfile, n=1, skip=65)
 
 #Read number of species from datfile
 Nsp <- scan(datfile,n=1,skip=3)
@@ -41,13 +48,15 @@ alpha <- matrix(scan(datfile,n=Nsp^2,skip=(21+NGuild+Nsp)),byrow=TRUE,nrow=Nsp)
 spatial.overlap <- matrix(scan(datfile,n=Nsp^2,skip=(22+NGuild+2*Nsp)),byrow=TRUE,nrow=Nsp)
 
 #Historical abundance
-NI <- read.table(datfile, skip=69, nrow=35, header=FALSE)
+NI <- read.table(datfile, skip=69, nrow=33, header=FALSE)
 #Historical catch
-CI <- read.table(datfile,skip=104,nrow=35,header=FALSE)
+CI <- read.table(datfile,skip=103,nrow=33,header=FALSE)
 
 
 #########Call function to convert file#############
-WriteDataToJSON(Nsp=Nsp, Guildmembership=Guildmembership, Initvals=Initvals, KGuild=KGuild, hrate=hrate, r=r, BetweenGuildComp=BetweenGuildComp, WithinGuildComp=WithinGuildComp, alpha=alpha, spatial.overlap=spatial.overlap, NI=NI, CI=CI, datfile=datfile)
+WriteDataToJSON(Nsp=Nsp, Guildmembership=Guildmembership, Initvals=Initvals, KGuild=KGuild, hrate=hrate, r=r, BetweenGuildComp=BetweenGuildComp, WithinGuildComp=WithinGuildComp, alpha=alpha, spatial.overlap=spatial.overlap, NI=NI, CI=CI, DIAG=DIAG, FirstYear=FirstYear, LastYear=LastYear, datfile=datfile)
+
+#Note: there is phase data in the original file (Georges.dat) which was not covnerted, but may be converted later if desired, by defining new variables below and passing in new variables as arguments to the function
 
 
 
@@ -55,35 +64,19 @@ WriteDataToJSON(Nsp=Nsp, Guildmembership=Guildmembership, Initvals=Initvals, KGu
 
 
 
+#Here is a different example (commented out) which may help convert data from a url to a json file
+#library(jsonlite)
+
+# url with some information about project in Andalussia
+#url <- 'http://www.juntadeandalucia.es/export/drupaljda/ayudas.json'
+
+# read url and convert to data.frame
+#document <- fromJSON(txt=url)
 
 
 
 
 
 
-#***********************These are the lines of code that manipulate variables that have already been defined, but do not read in from the data file, they should not be processed by JSON so they were commented out**************
-#NGuild = length(unique(Guildmembership))
 
-#Total carrying capacity is sum of guild carrying capacity
-#Ktot <- sum(KGuild)
-
-#????????????????????????????why redefine alpha and WithinGuildComp??????????????????????????????????
-#redefine parameter alpha and WithinGuildComp as products of matrices listed above
-#alpha <- alpha*spatial.overlap
-#WithinGuildComp <- WithinGuildComp*spatial.overlap
-#redefine harvest rate as list of zeros
-#hrate <- rep(0,Nsp)
-#parms=list(r,KGuild,Ktot,Guildmembership,BetweenGuildComp,WithinGuildComp,alpha,hrate)
-
-#Create BMSY matrix since this was not previously defined
-#????????????????????????????????????????ei uses BMSY[,3] as the trophic level, but this column is just NA it never gets filled in, also what is column 1 supposed to be??????????????????????/
-#BMSY <- matrix(rep(NA,3),10,3)
-
-#set values for BMSY
-#BMSY[,2] <- KGuild/2
-
-#initial biomass for each species
-#N <- Initvals
-
-#NI <- NI[,-1]
 
