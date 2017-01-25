@@ -9,9 +9,13 @@
 ###########
 doSSassess <- function(Nsp,workdir,plotdiag=FALSE)
 {
+  #workdir needs to be a full path (full name of file location)
+  curdir <- getwd()
   setwd(workdir)
-  navigate <- paste("C: & cd ",workdir,sep="")
-  #navigate <- paste("G: & cd ",workdir,sep="")
+  navigate <- paste("cd ",workdir,sep="")
+  #The line below says work on G, move into directory then pastes other instructions on WINDOWS (G: does not work as a drive label in Mac and Linux)
+ #paste navigate below into the switch to define differently for different computer types
+   #navigate <- paste("G: & cd ",workdir,sep="")
   SSresults <- NULL
   SSresults$k <- NULL
   SSresults$r <- NULL
@@ -37,6 +41,8 @@ doSSassess <- function(Nsp,workdir,plotdiag=FALSE)
            Darwin = {
              exename <- "single_schaef_mac";
              command <- paste(navigate," & ./single_schaef_mac -ind ",isp,".dat -nohess",sep="");
+             print(getwd());
+             print(command);
              system(command,wait=TRUE)
              })
     
@@ -77,6 +83,8 @@ doSSassess <- function(Nsp,workdir,plotdiag=FALSE)
     SSresults$theta <- c(SSresults$theta,scan(paste0(exename,".rep"),n=1,skip=3))
     SSresults$sigma <- c(SSresults$sigma,scan(paste0(exename,".rep"),n=1,skip=5))
   }
+  
+  setwd(curdir)
   
   return(SSresults)
   
