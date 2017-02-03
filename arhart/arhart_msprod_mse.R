@@ -34,18 +34,18 @@ library(deSolve)
 library(jsonlite)
 
 # Set working directory to R folder so .R files(scripts) can be sourced in next line
-setwd("/Users/arhart/Research/ebfm_modeltesting/R/")
+setwd("/Users/ahart2/Research/ebfm_mp/R")
 # Source all the *.R files in the main ebfm '/R' directory, this defines all functions included in these files but does not run them(they are not called)
 lapply(list.files(pattern = "[.]R$", recursive = TRUE), source)
 
 # Set working directory to allow sourcing of R scripts contained in arhart
-setwd("/Users/arhart/Research/ebfm_modeltesting/arhart/")
+setwd("/Users/ahart2/Research/ebfm_mp/arhart/")
 # This sources the file contining R scripts that will be regularly used when running arhart_msprod_mse.R contained in arhart folder
 source("UtilityFunctions.R")
 source("calc.indicators.R")
 
 # Set working directory so R scripts previously loaded and all data files are in directory
-setwd("/Users/arhart/Research/ebfm_modeltesting")
+setwd("/Users/ahart2/Research/ebfm_mp")
 
 
 ###########################This is the start of a function (for debugging purposes) that actually runs all parts of model#########################################
@@ -53,15 +53,15 @@ Run <- function()
   {
 # Read in data files, this location must be changed when running on a new device, values from data file assigned to parameters below
 # Read in BMSY and inits data
-BMSYData <- read.csv("/Users/arhart/Research/ebfm_modeltesting/data/Bmsy.csv", header=TRUE)
-InitsData <- read.csv("/Users/arhart/Research/ebfm_modeltesting/data/inits.csv", header=TRUE)
-IndicatorRefVals <- read.csv("/Users/arhart/Research/ebfm_modeltesting/data/indicator_refvals.csv", header=TRUE)
+BMSYData <- read.csv("/Users/ahart2/Research/ebfm_mp/data/Bmsy.csv", header=TRUE)
+InitsData <- read.csv("/Users/ahart2/Research/ebfm_mp/data/inits.csv", header=TRUE)
+IndicatorRefVals <- read.csv("/Users/ahart2/Research/ebfm_mp/data/indicator_refvals.csv", header=TRUE)
 # datfile variable contains the file name, reads from json file
-datfilename <- "/Users/arhart/Research/ebfm_modeltesting/data/Georges.dat.json"
+datfilename <- "/Users/ahart2/Research/ebfm_mp/data/Georges.dat.json"
 dat <- fromJSON(datfilename)
 
 #Set number of simulations
-Nsim <- 1
+Nsim <- 100
 ##############################################################################
 # Define parameters for use in the model
 ##############################################################################
@@ -184,7 +184,8 @@ for(maxcat in seq(50000,200000, by=25000))
     # This starts projection in year 2 through Nyr=30(defined in initial values for operating model), initial values for year 1 are defined in previous section of script
     for (iyr in 2:Nyr)
     {    
-      SShrate.output <- SShrate.calc(Nsp,BioObs=cbind(1:nrow(NI.obs),NI.obs),CatObs=cbind(1:nrow(CI.obs),CI.obs),workdir=tempdir, inits=InitsData, fmult=fmult, inds.use=inds.use, Nabund=Nabund)
+      # Changed workdir=tempdir to workdir=getwd()
+      SShrate.output <- SShrate.calc(Nsp,BioObs=cbind(1:nrow(NI.obs),NI.obs),CatObs=cbind(1:nrow(CI.obs),CI.obs),workdir=getwd(), inits=InitsData, fmult=fmult, inds.use=inds.use, Nabund=Nabund)
       hrate <- SShrate.output$hrate
       SSresults <- SShrate.output$SSresults
       estu <- SShrate.output$estu
