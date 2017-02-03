@@ -2,6 +2,7 @@
 # Each boxplot is a plot of mean values over the last n years for each simulation (eg: each point is a mean of values over the last 5 model years)
 # If this function returns an Error: subscript out of bounds then the input file likely has fewer simulation runs than indicated by End= 
 # eg. only has 1 simulation stored but this script tries to run for simulation Start=1 to End=5 (in which case 4 simulations do not exist)
+# REMEMBER TO RESET FILE NAME IF SWITCHING BETWEEN COMPUTERS
 
 # To refer to certain values in a list of lists (from a json file)
 # name of Object you want [number of simulation(location in the list of values for Object)][[stored automatically in 1st thing in list of Object]][row,column]
@@ -17,7 +18,7 @@
 
 # Pass in FileName (location of data), variablename of variable you want to plot, Start=start reading at this simulation, End=stop reading at this simulation(in case you don't want all simulations plotted)
 # Pass in number of rows at the end of the data set you want to averate (n=) (eg: if we want to average over last five years n=5)
-BoxPlotResults <- function(ResultsFileName=NULL, variablename=NULL, Start=NULL, End=NULL, n=NULL, numSpecies=NULL)
+BoxPlotResults <- function(ResultsFileName=NULL, variablename=NULL, Start=NULL, End=NULL, n=NULL, numSpecies=NULL, TITLE=NULL)
 {
   library(jsonlite)
   # datfile variable contains the file name, reads from json file
@@ -35,8 +36,8 @@ BoxPlotResults <- function(ResultsFileName=NULL, variablename=NULL, Start=NULL, 
     MeanVals <- colMeans(LastRows)
     MeanValsMatrix[isim,] <- MeanVals
   }
-  boxplot(MeanValsMatrix, use.cols=TRUE, ylab=paste("Mean", variablename, sep=" "), xlab="Species")
+  boxplot(MeanValsMatrix, use.cols=TRUE, ylab=paste("Mean", variablename, sep=" "), xlab="Species", main=TITLE)
 }
 
-BoxPlotResults(ResultsFileName="/Users/arhart/Research/ebfm_modeltesting/arhart/results100000.json", variablename="Nobs", Start=1, End=1, n=5, numSpecies=10)
-
+#BoxPlotResults(ResultsFileName="/Users/ahart2/Research/ebfm_mp/arhart/results100000.json", variablename="Nobs", Start=1, End=100, n=5, numSpecies=10, TITLE= "Nobs for Max Catch 100000")
+BoxPlotResults(ResultsFileName="/Users/ahart2/Research/ebfm_mp/arhart/results100000.json", variablename="estu", Start=1, End=100, n=5, numSpecies=10, TITLE= "estu for Max Catch 100000")
