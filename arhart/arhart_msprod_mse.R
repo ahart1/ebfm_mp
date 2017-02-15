@@ -218,7 +218,7 @@ for(maxcat in seq(50000,200000, by=25000))
       # Trying to append something to a matrix/list and one item is longer than the other 
       
       # Store results in SS.results (predicted values of abundance and catch) for this time step
-      SS.results <- rbind(SSresults,c(x[1,2:(Nsp+1)],x[2,(Nsp+2):ncol(x)]))
+      SS.results <- rbind(SS.results,c(x[1,2:(Nsp+1)],x[2,(Nsp+2):ncol(x)]))
       if (iyr==Nyr) SS.results <- rbind(SS.results,c(x[3,2:(Nsp+1)],x[4,(Nsp+2):ncol(x)]))
       # Add abundance estimate to end of abundance time series
       NI.nu <- rbind(NI.nu,Nabund)
