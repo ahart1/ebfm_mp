@@ -151,7 +151,6 @@ for(maxcat in seq(50000,200000, by=25000))
     CI.nu <- CI
     NI.obs <- NI
     CI.obs <- CI
-    SS.results <- NULL
     BiomassResult <- NULL
     CatchResult <- NULL
     PredlossResult <- NULL
@@ -198,6 +197,10 @@ for(maxcat in seq(50000,200000, by=25000))
       SSresults <- SShrate.output$SSresults
       estu <- SShrate.output$estu
       u.use <- SShrate.output$u.use
+      
+      # Append exploitation rate (new estu and u.use values) to exprate.est and exprate.use ????????not from ode() from SShrate.output
+      exprate.est <- rbind(exprate.est,estu)  
+      exprate.use <- rbind(exprate.use,u.use)  
       
       ###########################################This is where the multispecies operating model comes into play######################
      
@@ -265,10 +268,6 @@ for(maxcat in seq(50000,200000, by=25000))
       
       # Work out status relative to refernce points given new indicators(ei.now)
       fmult <- calc.indicator.hcr(xx$refvals,xx$limvals,use.defaults=FALSE, indvals=ei.now, RefFile=IndicatorRefVals)
-      
-      # Append exploitation rate (new estu and u.use values) to exprate.est and exprate.use ????????not from ode() from SShrate.output
-      exprate.est <- rbind(exprate.est,estu)  
-      exprate.use <- rbind(exprate.use,u.use)  
     }
     # This is where projection 2:Nyr ends
     # Save results for this simulation, [isim] adds the most recent results to the list
