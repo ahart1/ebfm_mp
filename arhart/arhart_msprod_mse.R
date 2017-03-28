@@ -29,6 +29,12 @@ tempdir <- paste(getwd(), "arhart/temp", sep="/")
 # Actually create temporary directory with above name
 dir.create(tempdir, showWarnings=FALSE)
 
+<<<<<<< HEAD
+=======
+# Create directory to store output files
+OUTPUTdir <- "OutputDirectory" 
+
+>>>>>>> b0c89e0460aba63b205b218e8b483f831f2dea7f
 # Install packages used by scripts
 library(deSolve)
 library(jsonlite)
