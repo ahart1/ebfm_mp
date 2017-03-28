@@ -54,6 +54,10 @@ SShrate.calc <- function(Nsp, BioObs=NULL, CatObs=NULL, workdir=NULL, inits=NULL
   # Estimated exploitation rate(estu) caclculated by dividing growth rate (r) from SS assement by 2 and multiplying by fmult.use function output based on control rules
   estu <- (SSresults$r/2)*fmult.use(fmult,inds.use,median)
 
+  # Update estimated catch (estCat) and exploitation rate (estu) without indicator-based control rule information
+  estCat = cat.fmsy
+  estu <- (SSresults$r/2)
+  
   # Calculate exploitation rate for next year of the model (u.use) and set hrate equal to u.use(effectively updating value used for hrate in next year)
   # This will be used to update operating model parameters below
   # This sets exploitation rate as u.use which is equal to estimated catch/actual abundance, for each of 10 species if this value is greater than 0.99, then it is fixed to 0.99 (can't actually catch more fish than the actual abundance available to fish)
