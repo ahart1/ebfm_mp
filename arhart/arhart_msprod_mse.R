@@ -29,6 +29,9 @@ tempdir <- paste(getwd(), "arhart/temp", sep="/")
 # Actually create temporary directory with above name
 dir.create(tempdir, showWarnings=FALSE)
 
+# Create directory to store output files
+OUTPUTdir <- "OutputDirectory"
+
 # Install packages used by scripts
 library(deSolve)
 library(jsonlite)
@@ -255,9 +258,10 @@ for(maxcat in seq(50000,200000, by=25000))
   ##################################################################################
   ALL.OUTPUT <- toJSON(ALL.results)
   # This creates a file name that includes datfile (which has info on the location of the original file) so the new file will be saved to the same location when file=filename in write() funciton below
-  location <- getwd()
+  location <- paste(getwd(),"arhart",OUTPUTdir, sep="/")
+  dir.create(location,showWarnings = TRUE) # makes sure that OUTPUTdir exists (actually makes directory)
   # sprintf() replaces the %d with an integer maxcat, this is called a c-style string formating function
-  filename <- paste(location, "arhart", sprintf("results%d.json", maxcat), sep="/")
+  filename <- paste(location, sprintf("results%d.json", maxcat), sep="/")
   write(prettify(ALL.OUTPUT), file = filename)
 }
 
@@ -265,7 +269,7 @@ for(maxcat in seq(50000,200000, by=25000))
 TempList <- list(datfilename=datfilename, Nsp=Nsp, Guildmembership=Guildmembership, NGuild=NGuild, Initvals=Initvals, KGuild=KGuild, Ktot=Ktot, hrate=dat$hrate, r=dat$r, BetweenGuildComp=BetweenGuildComp, WithinGuildComp=WithinGuildComp, alpha=alpha, spatial.overlap=spatial.overlap, NI=dat$NI, CI=dat$CI, theguilds=theguilds, BMSYData=BMSYData, InitsData=InitsData, IndicatorRefVals=IndicatorRefVals)
 TempListValues <- toJSON(TempList)
 location <- getwd()
-filename <- paste(location, "arhart/InitialConditions", sep="/")
+filename <- paste(location, "InitialConditions", sep="/")
 write(prettify(TempListValues), file=filename)
 }
 
