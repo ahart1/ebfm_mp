@@ -82,6 +82,7 @@ doSSassess <- function(Nsp,workdir,plotdiag=FALSE)
     SSresults$z <- c(SSresults$z,scan(paste0(exename,".rep"),n=1,skip=2))
     SSresults$theta <- c(SSresults$theta,scan(paste0(exename,".rep"),n=1,skip=3))
     SSresults$sigma <- c(SSresults$sigma,scan(paste0(exename,".rep"),n=1,skip=5))
+    typeof(SSresults)
   }
   
   setwd(curdir)
