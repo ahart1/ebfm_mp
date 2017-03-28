@@ -1,7 +1,7 @@
 ############# get Indicators##########
 #This script calculated indicator values based on historical data
 
-get.Indicators <- function(Biomass,Catch,size=NULL,trophic.level=NULL,BMSY=NULL,lifespan=NULL,is.predator=NULL,is.pelagic=NULL)
+get.Indicators <- function(Biomass=NULL,Catch=NULL,size=NULL,trophic.level=NULL,BMSY=NULL,lifespan=NULL,is.predator=NULL,is.pelagic=NULL)
 #??????????????should Biomass and Catch also =NULL so that the values being fed in are used -can do this
   {
   # Total system biomass summed over all species
