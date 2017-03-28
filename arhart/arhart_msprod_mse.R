@@ -30,7 +30,7 @@ tempdir <- paste(getwd(), "arhart/temp", sep="/")
 dir.create(tempdir, showWarnings=FALSE)
 
 # Create directory to store output files
-OUTPUTdir <- "OutputDirectory"
+OUTPUTdir <- "OutputDirectory" 
 
 # Install packages used by scripts
 library(deSolve)
