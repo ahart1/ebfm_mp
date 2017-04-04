@@ -249,9 +249,9 @@ Run <- function()
         # Store results in SS.results (predicted values of abundance and catch) for this time step
         # why first row for biomass, second row for everything else
         SS.results <- rbind(SS.results,c(OdeResult[1,2:(Nsp+1)],OdeResult[2,(Nsp+2):ncol(OdeResult)]))
-        if (iyr==Nyr) SS.results <- rbind(SS.results,c(OdeResult[3,2:(Nsp+1)],OdeResult[4,(Nsp+2):ncol(OdeResult)]))
+        #if (iyr==Nyr) SS.results <- rbind(SS.results,c(OdeResult[3,2:(Nsp+1)],OdeResult[4,(Nsp+2):ncol(OdeResult)]))
         #print(SS.results)
-        stopifnot(!iyr==4)
+        #stopifnot(!iyr==4)
         
         # Add abundance estimate to end of abundance time series
         NI.nu <- rbind(NI.nu,Nabund)
