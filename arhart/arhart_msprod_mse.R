@@ -64,7 +64,7 @@ datfilename <- "/Users/ahart2/Research/ebfm_mp/data/Georges.dat.json"
 dat <- fromJSON(datfilename)
 
 #Set number of simulations
-Nsim <- 100
+Nsim <- 5
 ##############################################################################
 # Define parameters for use in the model
 ##############################################################################
@@ -108,12 +108,12 @@ BMSY[,2] <- KGuild/2
 Nabund <- Initvals
 
 ############## get historical time series of biomass and catch, 33 year of data####################
-# Define NI for 33 years of data
+# Define NI(abundandce index) for 33 years of data
 NI <- dat$NI
 # Remove the first column which represents year not initial abundance for a species
 NI <- NI[,-1]
 
-# Define CI for 33 years of data
+# Define CI(catch index) for 33 years of data
 CI <- dat$CI
 
 # Redefine functional groups
@@ -241,21 +241,21 @@ for(maxcat in seq(50000,200000, by=25000))
       Nabund <- OdeResult[3,2:(Nsp+1)]
       Nabund[Nabund<=0] <- 0.01 # N values less than or equal to 0 replaced with 0.01 (Abundance can't be less than or equal to 0)
       # Update catch estimate for use in next simulation year calculations
-      Cat <- 1.e-07+OdeResult[2,(Nsp+2):(2*Nsp+1)]
+      Cat <- 1.e-07+OdeResult[2,(Nsp+2):(Nsp+11)]
       Cat[Cat<=0] <- 0.01 # Catch values less than or equal to 0 replaced with 0.01 (Catch can't be less than or equal to 0)
       # Rem is loss due to competition/predation interactions (stored each year as PredlossResult, WithinlossResult, BetweenlossResult)
-      Rem <- OdeResult[2,(2*Nsp+2):ncol(x)]
+      Rem <- OdeResult[2,(Nsp+12):ncol(x)]
       
       # Add true abundance estimate to end of abundance time series
-      NI.nu <- rbind(NI.nu,Nabund)
+      NI.nu <- rbind(NI.nu,Nabund) # same as BiomassResult
       # Add catch estimate to end of catch time series
-      CI.nu <- rbind(CI.nu,Cat)
+      CI.nu <- rbind(CI.nu,Cat) # same as CatchResult
       
       # Generate observed data for this timestep and append to observed dataset
-      Nobs <- Nabund*exp(rnorm(10,0,0.2)-0.5*0.2*0.2)
+      Nobs <- OdeResult[2,2:(Nsp+1)]*exp(rnorm(10,0,0.2)-0.5*0.2*0.2)
       Cobs <- Cat*exp(rnorm(10,0,0.2)-0.5*0.2*0.2)
-      NI.obs <- rbind(NI.obs,Nobs)
-      CI.obs <- rbind(CI.obs,Cobs)
+      NI.obs <- rbind(NI.obs,Nobs) 
+      CI.obs <- rbind(CI.obs,Cobs) 
       
       ############# Update indicators and status
       
