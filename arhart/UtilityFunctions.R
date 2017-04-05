@@ -1,6 +1,5 @@
 # This script defines several functions used by the arhart_msprod_mse.R script to simplify code appearance
 
-
 # This function processes data based on indicators randomly chosen for the model run and returns a data frame containing values for the chosen indicators
 # The get.Indicators function is utilized within the eco.indicators function below, as get.Indicators is responsible for calculating values for indicators
 # As a result, the main reason for having eco.indicators function is to format the output of get.Indicators to be used more easily in other calculations
@@ -53,13 +52,13 @@ SShrate.calc <- function(Nsp, BioObs=NULL, CatObs=NULL, workdir=NULL, inits=NULL
 
   # Update estimated catch (estCat) and exploitation rate (estu) with indicator-based control rule information
   # Estimated catch caluclated(estCat) by multiplying catch fmsy (cat.fmsy) from SS assessment times output of fmult.use function
- # estCat = cat.fmsy*fmult.use(fmult,inds.use,median) # Use to calculate exploitation rate for next year (u.use)
+  estCat = cat.fmsy*fmult.use(fmult,inds.use,median) # Use to calculate exploitation rate for next year (u.use)
   # Estimated exploitation rate(estu) caclculated by dividing growth rate (r) from SS assement by 2 and multiplying by fmult.use function output based on control rules
-#  estu <- (SSresults$r/2)*fmult.use(fmult,inds.use,median)
+  estu <- (SSresults$r/2)*fmult.use(fmult,inds.use,median)
 
   # Update estimated catch (estCat) and exploitation rate (estu) without indicator-based control rule information
-  estCat <- cat.fmsy # Use to calculate exploitation rate for next year (u.use)
-  estu <- (SSresults$r/2)
+  #estCat <- cat.fmsy # Use to calculate exploitation rate for next year (u.use)
+  #estu <- (SSresults$r/2)
   
   # Calculate exploitation rate for next year of the model (u.use) and set hrate equal to u.use(effectively updating value used for hrate in next year)
   # This will be used to update operating model parameters below
