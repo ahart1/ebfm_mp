@@ -17,7 +17,7 @@
 
 # Working directory and datfile source location for "Georges.dat", and "BMSYData", "InitsData", and "IndicatorRefVals" must be changed before running code on new device, these commands rely on directory location of files 
 # For single species assessments a temporary working directory must be provided to run the associated functions, this may need to be reset when switching between computers
-# Ensure that jsonlite package is insalled as this is required to run the WriteDataToJSON function
+# Ensure that jsonlite package is insalled as this is required to run the WriteDataToJSON function which stores the initial data as a JSON file
 
 # dNbydt is called in the ode() operating model section of code and may be replaced with dNbydt_max to run different maximum catch senarios if a maxcat parameter is added to the params list 
 # Currently the first for loop provides values of maxcat
