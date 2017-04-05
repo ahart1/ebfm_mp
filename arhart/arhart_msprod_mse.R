@@ -7,7 +7,7 @@
 ########  Modifications by Amanda Hart
 ########  Updated: March 28, 2017
 
-# For each time you run the model: change name for OUTPUTdir, and Nsim and pick how indicators should be defined (see line 129)
+# For each time you run the model: change name for OUTPUTdir (line36), and Nsim (line70) and pick how indicators should be defined (see line 129)
 
 
 #N changed to Nabund so easier to search in code, possible that N used in equations may not be changed so it breaks
@@ -17,7 +17,7 @@
 
 # Working directory and datfile source location for "Georges.dat", and "BMSYData", "InitsData", and "IndicatorRefVals" must be changed before running code on new device, these commands rely on directory location of files 
 # For single species assessments a temporary working directory must be provided to run the associated functions, this may need to be reset when switching between computers
-# Ensure that jsonlite package is insalled as this is required to run the WriteDataToJSON function which stores the initial data as a JSON file
+# Ensure that jsonlite package is insalled as this is required to run the WriteDataToJSON function
 
 # dNbydt is called in the ode() operating model section of code and may be replaced with dNbydt_max to run different maximum catch senarios if a maxcat parameter is added to the params list 
 # Currently the first for loop provides values of maxcat
@@ -33,7 +33,7 @@ tempdir <- paste(getwd(), "arhart/temp", sep="/")
 dir.create(tempdir, showWarnings=FALSE)
 
 # Create directory to store output files
-OUTPUTdir <- "OutputDirectory" 
+OUTPUTdir <- "BioStats_Sim1000_AllInds" 
 
 # Install packages used by scripts
 library(deSolve)
@@ -67,7 +67,7 @@ datfilename <- "/Users/ahart2/Research/ebfm_mp/data/Georges.dat.json"
 dat <- fromJSON(datfilename)
 
 #Set number of simulations
-Nsim <- 2
+Nsim <- 1000
 ##############################################################################
 # Define parameters for use in the model
 ##############################################################################
@@ -127,10 +127,16 @@ theguilds <- c(1,1,2,2,1,3,3,1,1,1)
 # RUN MSE WITH SINGLE SPECIES ASSESSMENT
 ##############################################################################
 # Make a list of indicator chosices to be used in the simulations (same order of control rules used for each maxcat value)
+# The following 4 lines will pick between 1 and 8 reference points to use/calculate for each simulation and makes a list of these choices that is equal to Nsim
+#inds.use.list <- NULL
+#for(isim in 1:Nsim){
+#  inds.use.list[[isim]] <- which.refs(specifyN=FALSE,Nval=8,Nchoose=8)
+#}
+
+# The following indicates that all indicators will be applied to all model simulations
 inds.use.list <- NULL
-for(isim in 1:Nsim)
-{
-inds.use.list[[isim]] <- which.refs(specifyN=FALSE,Nval=8,Nchoose=8)
+for(isim in 1:Nsim){
+  inds.use.list[[isim]] <- which.refs(specifyN = TRUE, Nval=8, Nchoose=8)
 }
 
 
