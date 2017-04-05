@@ -7,6 +7,9 @@
 ########  Modifications by Amanda Hart
 ########  Updated: March 28, 2017
 
+# For each time you run the model: change name for OUTPUTdir, and Nsim and pick how indicators should be defined (see line 129)
+
+
 #N changed to Nabund so easier to search in code, possible that N used in equations may not be changed so it breaks
 
 #Everything is within the Run function (after set working directory and sourcing of functions) which is called in the last line of this script and has no arguments passed in
@@ -64,7 +67,7 @@ datfilename <- "/Users/ahart2/Research/ebfm_mp/data/Georges.dat.json"
 dat <- fromJSON(datfilename)
 
 #Set number of simulations
-Nsim <- 5
+Nsim <- 2
 ##############################################################################
 # Define parameters for use in the model
 ##############################################################################
@@ -147,8 +150,6 @@ for(maxcat in seq(50000,200000, by=25000))
     Nyr=30
     
     # Make some storage arrays
-    NI.nu <- NI
-    CI.nu <- CI
     NI.obs <- NI
     CI.obs <- CI
     BiomassResult <- NULL
@@ -244,12 +245,7 @@ for(maxcat in seq(50000,200000, by=25000))
       Cat <- 1.e-07+OdeResult[2,(Nsp+2):(Nsp+11)]
       Cat[Cat<=0] <- 0.01 # Catch values less than or equal to 0 replaced with 0.01 (Catch can't be less than or equal to 0)
       # Rem is loss due to competition/predation interactions (stored each year as PredlossResult, WithinlossResult, BetweenlossResult)
-      Rem <- OdeResult[2,(Nsp+12):ncol(x)]
-      
-      # Add true abundance estimate to end of abundance time series
-      NI.nu <- rbind(NI.nu,Nabund) # same as BiomassResult
-      # Add catch estimate to end of catch time series
-      CI.nu <- rbind(CI.nu,Cat) # same as CatchResult
+      Rem <- OdeResult[2,(Nsp+12):ncol(OdeResult)]
       
       # Generate observed data for this timestep and append to observed dataset
       Nobs <- OdeResult[2,2:(Nsp+1)]*exp(rnorm(10,0,0.2)-0.5*0.2*0.2)
