@@ -10,10 +10,9 @@ which.refs <- function(specifyN=FALSE,Nvals=8,Nchoose=8)
 {
   if (specifyN==FALSE)
     #Nchoose is equal to sample(list from 1 to Nvals, # of samples taken(in this case 1), with no replacement(=FALSE))
-    #if specifyN=FALSE this line picks a random number between 1 and Nvals(8(may include 1 and/or 8))
+    #if specifyN=FALSE this line randomly picks 1  number between 1 and Nvals (this determines the number of indicators what will be used in the simulation)
     Nchoose = sample(1:Nvals,1,replace=FALSE)
-  # sample(list from 1 to Nvals, choose number of samples based on Nchoose previous line, with no replacement)
-  #This line picks Nchoose number of things (in this case between 1 and 8 things) without replacement
+  #This line picks Nchoose number of things (in this case between 1 and 8 things) without replacement ( this determines which specific indicators will be used in the simulation given the condition that only Nchoose number of indicators will be used)
   refs.use <- sample(1:Nvals,Nchoose,replace=FALSE)
   #This sorts refs.use to be smallest to biggest
   refs.use = sort(refs.use)
