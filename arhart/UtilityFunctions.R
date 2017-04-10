@@ -1,6 +1,5 @@
 # This script defines several functions used by the arhart_msprod_mse.R script to simplify code appearance
 
-
 # This function processes data based on indicators randomly chosen for the model run and returns a data frame containing values for the chosen indicators
 # The get.Indicators function is utilized within the eco.indicators function below, as get.Indicators is responsible for calculating values for indicators
 # As a result, the main reason for having eco.indicators function is to format the output of get.Indicators to be used more easily in other calculations
@@ -21,6 +20,7 @@ eco.indicators <- function(Biomass=NULL,Catch=NULL,BMSY=NULL,trophic.level=NULL,
   names(ei.last) = colnames(ei)
   return(list(indicators=ei,ei.last=ei.last))
 }
+
 
 
 
@@ -46,17 +46,19 @@ SShrate.calc <- function(Nsp, BioObs=NULL, CatObs=NULL, workdir=NULL, inits=NULL
   cat.fmsy <- rep(NA,Nsp)
   # Fill in cat.fmsy list from single species assessments (SSresults) for all ten species (Nsp=number of species)
   # For loop deals with a list of lists
-  for (isp in 1:Nsp) cat.fmsy[isp] <- SSresults$BioEsts[[isp]][nrow(SSresults$BioEsts[[isp]]),2]*SSresults$r[isp]/2
+  for (isp in 1:Nsp) {
+    cat.fmsy[isp] <- SSresults$BioEsts[[isp]][nrow(SSresults$BioEsts[[isp]]),2]*SSresults$r[isp]/2
+  }
 
   # Update estimated catch (estCat) and exploitation rate (estu) with indicator-based control rule information
   # Estimated catch caluclated(estCat) by multiplying catch fmsy (cat.fmsy) from SS assessment times output of fmult.use function
-  estCat = cat.fmsy*fmult.use(fmult,inds.use,median) 
+  estCat = cat.fmsy*fmult.use(fmult,inds.use,median) # Use to calculate exploitation rate for next year (u.use)
   # Estimated exploitation rate(estu) caclculated by dividing growth rate (r) from SS assement by 2 and multiplying by fmult.use function output based on control rules
   estu <- (SSresults$r/2)*fmult.use(fmult,inds.use,median)
 
   # Update estimated catch (estCat) and exploitation rate (estu) without indicator-based control rule information
-  estCat = cat.fmsy
-  estu <- (SSresults$r/2)
+  #estCat <- cat.fmsy # Use to calculate exploitation rate for next year (u.use)
+  #estu <- (SSresults$r/2)
   
   # Calculate exploitation rate for next year of the model (u.use) and set hrate equal to u.use(effectively updating value used for hrate in next year)
   # This will be used to update operating model parameters below
