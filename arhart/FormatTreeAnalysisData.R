@@ -105,13 +105,6 @@ FormatTreeAnalysisData <- function(FileName=NULL, Nsim=NULL, CeilingValue=NULL, 
 
 ####################### This next section is me using the function defined above to process my results
 
-# Turn into function
-# run for all ceiling files
-# Save output matrix
-# put all matricies in a list
-# do.call(rbind,MatrixList)  OR   rbind(Matrix1,Matrix2, Matrix3...)
-
-
 setwd("/Users/arhart/Research/ebfm_modeltesting/arhart")
 
 # BMSY data used in model(consistent across all simulations and values for catch ceilings)
