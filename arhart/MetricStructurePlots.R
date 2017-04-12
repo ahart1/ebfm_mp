@@ -11,10 +11,8 @@ MetricStructurePlots <- function(DataFile=NULL, NPerformMetrics=NULL, PlotMatrix
   
   # Need to read in OptimalTree Results, list of trees NPerformMetrics long
   
-  # For Performance Metric of interest assign the OptimalTree output to TreeInfo
-  TreeInfo <- OptimalTree[VarInterest]
-  
-  TreeLocation <- TreeInfo$where # Each data point is assigned to a branch, this data is stored as TreeLocation
+  # Each data point is assigned to a branch, this information for the variable of interest is stored as TreeLocation
+  TreeLocation <- OptimalTreeResults[[VarInterest]]$where 
   
   # Determine layout for plots, this is passed to the function as PlotMatrix
   layout(PlotMatrix)
