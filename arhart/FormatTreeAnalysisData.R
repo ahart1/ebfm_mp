@@ -61,20 +61,20 @@ FormatTreeAnalysisData <- function(FileName=NULL, Nsim=NULL, CeilingValue=NULL, 
     ############
     
     ##  Total System Biomass in last model year
-    AnnualTotSystemBio <- rowSums(Biomass[nrow(Biomass),])
+    AnnualTotSystemBio <- sum(Biomass[nrow(Biomass),])
     Results[i,"TotalSystemBiomass"] <- AnnualTotSystemBio
     ############
     
     ## Total System Catch Removal in last model year
-    AnnualTotSystemCat <- rowSums(Catch[nrow(Catch),])
+    AnnualTotSystemCat <- sum(Catch[nrow(Catch),])
     Results[i,"TotalSystemCatch"] <- AnnualTotSystemCat
     ############
     
     ## Calculate Total Aggregate Catch for last model year 
-    PiscivoresCat <- rowSums(Catch[nrow(Catch),c(1,5)])
-    BenthivoresCat <- rowSums(Catch[nrow(Catch),c(2,8,9)])
-    PlanktivoresCat <- rowSums(Catch[nrow(Catch),c(3,4)])
-    ElasmobranchsCat <- rowSums(Catch[nrow(Catch),c(6,7)])
+    PiscivoresCat <- sum(Catch[nrow(Catch),c(1,5)])
+    BenthivoresCat <- sum(Catch[nrow(Catch),c(2,8,9)])
+    PlanktivoresCat <- sum(Catch[nrow(Catch),c(3,4)])
+    ElasmobranchsCat <- sum(Catch[nrow(Catch),c(6,7)])
     
     Results[i,"AvgPiscivoreCatch"] <- PiscivoresCat
     Results[i,"AvgBenthivoreCatch"] <- BenthivoresCat
