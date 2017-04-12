@@ -76,10 +76,10 @@ FormatTreeAnalysisData <- function(FileName=NULL, Nsim=NULL, CeilingValue=NULL, 
     PlanktivoresCat <- sum(Catch[nrow(Catch),c(3,4)])
     ElasmobranchsCat <- sum(Catch[nrow(Catch),c(6,7)])
     
-    Results[i,"AvgPiscivoreCatch"] <- PiscivoresCat
-    Results[i,"AvgBenthivoreCatch"] <- BenthivoresCat
-    Results[i,"AvgPlanktivoreCatch"] <- PlanktivoresCat
-    Results[i,"AvgElasmobranchCatch"] <- ElasmobranchsCat
+    Results[i,"PiscivoreCatch"] <- PiscivoresCat
+    Results[i,"BenthivoreCatch"] <- BenthivoresCat
+    Results[i,"PlanktivoreCatch"] <- PlanktivoresCat
+    Results[i,"ElasmobranchCatch"] <- ElasmobranchsCat
     #############
     
     ## Biomass diversity in last model year
