@@ -52,35 +52,34 @@ FormatTreeAnalysisData <- function(FileName=NULL, Nsim=NULL, CeilingValue=NULL, 
     
     AggregateBios <- list(PiscivoresBio,BenthivoresBio,PlanktivoresBio,ElasmobranchsBio)
     
-    ## Frequency of aggregate group collapse (below 100mt)
+    ## Frequency of aggregate group collapse (below 100mt) in last model year
     Results[i, "FreqAggregateCollapse"] <- length(which((AggregateBios < 100)==TRUE))
     ###########
     
-    ## Calculate frequency of total system biomass collapse (below 100 metric tons)
+    ## Calculate frequency of total system biomass collapse (below 100 metric tons) in last model year
     Results[i, "SystemCollapse"] <- sum(Biomass[nrow(Biomass),]) < 100
     ############
     
-    ## Average Total System Biomass 
-    AnnualTotSystemBio <- rowSums(Biomass)
-    Results[i,"TotalSystemBiomass"] <- mean(AnnualTotSystemBio)
+    ##  Total System Biomass in last model year
+    AnnualTotSystemBio <- rowSums(Biomass[nrow(Biomass),])
+    Results[i,"TotalSystemBiomass"] <- AnnualTotSystemBio
     ############
     
-    ## Average Total System Catch Removal
-    AnnualTotSystemCat <- rowSums(Catch)
-    Results[i,"TotalSystemCatch"] <- mean(AnnualTotSystemCat)
+    ## Total System Catch Removal in last model year
+    AnnualTotSystemCat <- rowSums(Catch[nrow(Catch),])
+    Results[i,"TotalSystemCatch"] <- AnnualTotSystemCat
     ############
     
-    ## Average catch for aggregate groups
-    # Calculate average catch for aggregate groups 
-    PiscivoresCat <- rowSums(Catch[,c(1,5)])
-    BenthivoresCat <- rowSums(Catch[,c(2,8,9)])
-    PlanktivoresCat <- rowSums(Catch[,c(3,4)])
-    ElasmobranchsCat <- rowSums(Catch[,c(6,7)])
+    ## Calculate Total Aggregate Catch for last model year 
+    PiscivoresCat <- rowSums(Catch[nrow(Catch),c(1,5)])
+    BenthivoresCat <- rowSums(Catch[nrow(Catch),c(2,8,9)])
+    PlanktivoresCat <- rowSums(Catch[nrow(Catch),c(3,4)])
+    ElasmobranchsCat <- rowSums(Catch[nrow(Catch),c(6,7)])
     
-    Results[i,"AvgPiscivoreCatch"] <- mean(PiscivoresCat)
-    Results[i,"AvgBenthivoreCatch"] <- mean(BenthivoresCat)
-    Results[i,"AvgPlanktivoreCatch"] <- mean(PlanktivoresCat)
-    Results[i,"AvgElasmobranchCatch"] <- mean(ElasmobranchsCat)
+    Results[i,"AvgPiscivoreCatch"] <- PiscivoresCat
+    Results[i,"AvgBenthivoreCatch"] <- BenthivoresCat
+    Results[i,"AvgPlanktivoreCatch"] <- PlanktivoresCat
+    Results[i,"AvgElasmobranchCatch"] <- ElasmobranchsCat
     #############
     
     ## Biomass diversity in last model year
