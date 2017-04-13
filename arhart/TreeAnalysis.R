@@ -76,7 +76,7 @@ TreeAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL){
       #OptimalTree
       # Produce tree graphic
       par(xpd = NA, mar = c(2.5, 5, 2.5, 5))
-      plot(OptimalTree, main=paste(PerformMet[i],sep=""))
+      plot(OptimalTree, main=paste("Optimal", PerformMet[i],sep=""))
       text(OptimalTree, cex = 1.5, use.n = T)
       par(xpd = F, mar = c(4.5, 4.5, 0.5, 0.5))
       
