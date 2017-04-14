@@ -7,7 +7,7 @@
 # NPerformMetrics is the number of performance metrics (number of columns containing response variable data)
 # AsFactor is a list of True/False values that determine if response variable is treated as a factor (categorical)
 
-TreeAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL, AsFactor=NULL){
+TreeAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL, AsFactor=NULL, SeedNumber=1){
   ##### Run regression tree #####
   # Read in Formatted Data
   Data <- read.table(DataFile)
@@ -19,7 +19,7 @@ TreeAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL, AsFactor=NULL){
   OptimalSplits <- list()
   OptimalCP <- list()
   OptimalTreeResults <- list()
-  
+  OptimalTreeVar <- list()
   
   # Define list of Performance Metrics
   PerformMet <- colnames(Data[1:NPerformMetrics])
@@ -27,9 +27,10 @@ TreeAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL, AsFactor=NULL){
   for(i in 1:NPerformMetrics){
     tryCatch({
       
-    
+    set.seed(SeedNumber) # plots same tree every time, may change SeedNumber argument to vary results
+      
       ####################### Produce Initial Tree ###########################################################################
-      if(AsFactor==TRUE){
+      if(AsFactor[[i]]==TRUE){
         Tree <- rpart(as.factor(Data[,i]) ~ as.factor(CatchCeiling) + # response is treated as.factor when data is true/false, or categorical rather than continuous
                         RefVal1 + RefVal2 + RefVal3 + RefVal4 + 
                         RefVal5 + RefVal6 + RefVal7 + RefVal8 +
@@ -73,7 +74,7 @@ TreeAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL, AsFactor=NULL){
 
       ############# Update to produce Optimal Tree (optimal complexity)############################
       # Add minsplit to rpart() to force optimal number of splits
-      if(AsFactor==TRUE){
+      if(AsFactor[[i]]==TRUE){
         OptimalTree <- rpart(as.factor(Data[,i]) ~ as.factor(CatchCeiling) + 
                                RefVal1 + RefVal2 + RefVal3 + RefVal4 + 
                                RefVal5 + RefVal6 + RefVal7 + RefVal8 + 
@@ -96,6 +97,11 @@ TreeAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL, AsFactor=NULL){
       # cp=complexity parameter, splits that don't decrease lack of fit by 0.001 not attempted
       # minslplit set to optimal value determined using TreeAnalysis
       
+      # Store variables used
+      FrameVars <- OptimalTree$frame[,"var"]
+      Leaves <- FrameVars=="<leaf>"
+      OptimalTreeVar[[i]] <- unique(FrameVars[!Leaves])
+      
       # Store optimal tree
       OptimalTreeResults [[i]] <- OptimalTree
       
@@ -110,12 +116,13 @@ TreeAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL, AsFactor=NULL){
       print("fit is not a tree, just a root") # e is a conditional object created by the code to store the error
     })
   }
-  #return(TreeResults)
+  
   capture.output(print(TreeResults), file="TreeResults")
   capture.output(print(CPResult), file="TreeCPResults")
   capture.output(print(OptimalTreeResults), file="OptimalTreeResults")
   capture.output(print(OptimalSplits), file="OptimalTreeSplits")
   capture.output(print(OptimalCP), file="OptimalTreeCP")
+  capture.output(print(OptimalTreeVar), file="OptimalTreeVariables")
 }
 
 
@@ -125,9 +132,8 @@ setwd("/Users/ahart2/Research/ebfm_mp/arhart/BioStats_Sim1000_AllInds")
 
 AsFactorBioStats <- c(FALSE, FALSE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE)
 
-TreeAnalysis(DataFile="FormattedTreeData_BioStats_Sim1000_AllInds", NPerformMetrics=11, AsFactor = AsFactorBioStats)
+TreeAnalysis(DataFile="FormattedTreeData_BioStats_Sim1000_AllInds", NPerformMetrics=11, AsFactor = AsFactorBioStats, SeedNumber = 1)
 
 
 
-  
 
