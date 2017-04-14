@@ -20,6 +20,7 @@ TreeAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL, AsFactor=NULL, Seed
   OptimalCP <- list()
   OptimalTreeResults <- list()
   OptimalTreeVar <- list()
+  OptimalTreeVarImport <- list()
   
   # Define list of Performance Metrics
   PerformMet <- colnames(Data[1:NPerformMetrics])
@@ -102,6 +103,9 @@ TreeAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL, AsFactor=NULL, Seed
       Leaves <- FrameVars=="<leaf>"
       OptimalTreeVar[[i]] <- unique(FrameVars[!Leaves])
       
+      # Store variable importance
+      OptimalTreeVarImport[[i]] <- OptimalTree$variable.importance
+      
       # Store optimal tree
       OptimalTreeResults [[i]] <- OptimalTree
       
@@ -117,12 +121,13 @@ TreeAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL, AsFactor=NULL, Seed
     })
   }
   
-  capture.output(print(TreeResults), file="TreeResults")
-  capture.output(print(CPResult), file="TreeCPResults")
-  capture.output(print(OptimalTreeResults), file="OptimalTreeResults")
-  capture.output(print(OptimalSplits), file="OptimalTreeSplits")
-  capture.output(print(OptimalCP), file="OptimalTreeCP")
-  capture.output(print(OptimalTreeVar), file="OptimalTreeVariables")
+  capture.output(print(TreeResults), file="TreeResults2")
+  capture.output(print(CPResult), file="TreeCPResults2")
+  capture.output(print(OptimalTreeResults), file="OptimalTreeResults2")
+  capture.output(print(OptimalSplits), file="OptimalTreeSplits2")
+  capture.output(print(OptimalCP), file="OptimalTreeCP2")
+  capture.output(print(OptimalTreeVar), file="OptimalTreeVariables2")
+  capture.output(print(OptimalTreeVarImport), file="OptimalTreeVariableImportance")
 }
 
 
