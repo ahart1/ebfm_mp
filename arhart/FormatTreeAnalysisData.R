@@ -15,7 +15,7 @@ FormatTreeAnalysisData <- function(FileName=NULL, Nsim=NULL, CeilingValue=NULL, 
   ######## Set up storage 
   Results <- data.frame()
   # Set up storage for each Performance metric
-  FreqSSCollapse <- NULL
+  FreqSSOverfished <- NULL
   TotSystemBio <- NULL
   TotSystemCat <- NULL
   CatchDiversity <- NULL
@@ -40,7 +40,7 @@ FormatTreeAnalysisData <- function(FileName=NULL, Nsim=NULL, CeilingValue=NULL, 
     #### Calculate performance metrics (Response Variables) for simulation i
     
     # Calculate frequency of any single species collapse (below 0.5 BMSY) in the last model year
-    Results[i,"FreqSSCollapse"] <- length(which((Biomass[nrow(Biomass),] < BMSY*0.5)==TRUE))
+    Results[i,"FrequencySSOverfished"] <- length(which((Biomass[nrow(Biomass),] < BMSY*0.5)==TRUE))
     ###########
     
     ## Calculate frequency of aggregate group collapse (below 100 metric tons) in the last model year
@@ -53,22 +53,8 @@ FormatTreeAnalysisData <- function(FileName=NULL, Nsim=NULL, CeilingValue=NULL, 
     AggregateBios <- list(PiscivoresBio,BenthivoresBio,PlanktivoresBio,ElasmobranchsBio)
     
     ## Frequency of aggregate group collapse (below 100mt) in last model year
-    Results[i, "FreqAggregateCollapse"] <- length(which((AggregateBios < 100)==TRUE))
+    Results[i, "FrequencyAggregateCollapse"] <- length(which((AggregateBios < 100)==TRUE))
     ###########
-    
-    ## Calculate frequency of total system biomass collapse (below 100 metric tons) in last model year
-    Results[i, "SystemCollapse"] <- sum(Biomass[nrow(Biomass),]) < 100
-    ############
-    
-    ##  Total System Biomass in last model year
-    AnnualTotSystemBio <- sum(Biomass[nrow(Biomass),])
-    Results[i,"TotalSystemBiomass"] <- AnnualTotSystemBio
-    ############
-    
-    ## Total System Catch Removal in last model year
-    AnnualTotSystemCat <- sum(Catch[nrow(Catch),])
-    Results[i,"TotalSystemCatch"] <- AnnualTotSystemCat
-    ############
     
     ## Calculate Total Aggregate Catch for last model year 
     PiscivoresCat <- sum(Catch[nrow(Catch),c(1,5)])
@@ -81,6 +67,20 @@ FormatTreeAnalysisData <- function(FileName=NULL, Nsim=NULL, CeilingValue=NULL, 
     Results[i,"PlanktivoreCatch"] <- PlanktivoresCat
     Results[i,"ElasmobranchCatch"] <- ElasmobranchsCat
     #############
+    
+    ## Calculate frequency of total system biomass collapse (below 100 metric tons) in last model year
+    Results[i, "SystemCollapse"] <- sum(Biomass[nrow(Biomass),]) < 100
+    ############
+    
+    ##  Total System Biomass in last model year
+    AnnualTotSystemBio <- sum(Biomass[nrow(Biomass),])
+    Results[i,"SystemBiomass"] <- AnnualTotSystemBio
+    ############
+    
+    ## Total System Catch Removal in last model year
+    AnnualTotSystemCat <- sum(Catch[nrow(Catch),])
+    Results[i,"SystemCatch"] <- AnnualTotSystemCat
+    ############
     
     ## Biomass diversity in last model year
     BiomassDiversity <- diversity(Biomass[nrow(Biomass),], index="shannon")
