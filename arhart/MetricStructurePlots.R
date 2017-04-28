@@ -94,12 +94,12 @@ OptimalTreeResults  <- OptimalTree
   # Produce the plot of VarInterest against all variables in the list of performance metrics that is NPerformMetrics long
   for(i in 1:NPerformMetrics){
     plot(Data[,VarInterest]~Data[,i], 
-         xlab=colnames(Data[VarInterest]),
-         ylab=colnames(Data[i]),
+         ylab=colnames(Data[VarInterest]),
+         xlab=colnames(Data[i]),
          col=TreeLocation, 
          pch=16)
   }
-  legend(colnames(Data[i])col=TreeLocation,pch=16)
+  #legend(colnames(Data[i])col=TreeLocation,pch=16)
 }    
   
 
@@ -111,3 +111,13 @@ setwd("/Users/ahart2/Research/ebfm_mp/arhart/BioStats_Sim1000_AllInds")
 MetricStructurePlots(DataFile="FormattedTreeData_BioStats_Sim1000_AllInds", NPerformMetrics=11, PlotMatrix=matrix(c(1,2,3,4,5,6,7,8,9,10,11,12),3,4, byrow=TRUE), VarInterest=10)
 
 
+#### Tried plotting something else
+# plot(Data[,"TotalSystemBiomass"], main="System Collapse Data", ylab="System Collapse (0 = False)")
+# layout(matrix(1,1))
+# 
+# 
+# TrueData <- which(Data[,"SystemCollapse"]==TRUE)
+# FalseData <- which(Data[,"SystemCollapse"]==FALSE)
+# 
+# Data[TrueData, "SystemCollapse"] <- 1
+# Data[FalseData, "SystemCollapse"] <- 0
