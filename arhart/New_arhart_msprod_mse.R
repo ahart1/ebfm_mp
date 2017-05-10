@@ -61,7 +61,7 @@ Run <- function()
   # Read in BMSY and inits data
   BMSYData <- read.csv("/Users/ahart2/Research/ebfm_mp/data/Bmsy.csv", header=TRUE) # column1 is species name, column2 is Bmsy, column3 is mean trophic level
   InitsData <- read.csv("/Users/ahart2/Research/ebfm_mp/data/inits.csv", header=TRUE)
-  IndicatorRefVals <- read.csv("/Users/ahart2/Research/ebfm_mp/data/indicator_refvals.csv", header=TRUE)
+  IndicatorRefVals <- read.csv("/Users/ahart2/Research/ebfm_mp/data/indicator_refvals.csv", header=TRUE) # Must contain the following columns: Indicator, IndC, Threshold, Limit, T.L, column for each species
   # datfile variable contains the file name, reads from json file
   datfilename <- "/Users/ahart2/Research/ebfm_mp/data/Georges.dat.json"
   dat <- fromJSON(datfilename)
@@ -108,7 +108,8 @@ Run <- function()
   
   # Identify columns containing predator species
   Predators <- which(colSums(alpha)>0)
-  
+  # ???? I need the line above to be replaced with the line below
+  # ??? Predators <- c("Predator1", "Predator2", "Predator3"...)
   
   #initial biomass for each species
   Nabund <- Initvals
@@ -127,6 +128,8 @@ Run <- function()
   
   # Identify columns containing pelagic species
   Pelagics <- which(theguilds==2)
+  # ???? I need the line above to be replaced with the line below
+  # ??? Pelagics <- c("Pelagic1", "Pelagic2", "Pelagic3"...)
   
   ##############################################################################
   # RUN MSE WITH SINGLE SPECIES ASSESSMENT
@@ -135,7 +138,7 @@ Run <- function()
   # The following creates a list of indicators to be used in each simulation
   ChosenIndicatorList <- NULL
   for(isim in 1: Nsim){
-    ChosenIndicatorList[[isim]] <- PickIndicators(PickOption=1, NInds=8)
+    ChosenIndicatorList[[isim]] <- PickIndicators(PickOption=1, PotentialInds=IndicatorRefVals[,"Indicator"])
   }
   
   # First for loop runs each simulations through values of maxcatch from 50,000 to 200,000 in steps of 25,000 and allows each of these to be saved to a different file name
@@ -148,7 +151,7 @@ Run <- function()
     for(isim in 1:Nsim)
     {
       #########determine which of the ecosystem indicators to use in the control rule for  this simulation#########
-      #the which.refs code chooses 8 of the possible controle rules for use in each simulation and labels them as inds.use in each simulation run
+      # PickIndicators() indicates which control rules will be used for use in each simulation and stores them as ChosenIndicators in each simulation run
       ChosenIndicators <- ChosenIndicatorList[[isim]]
 
       # Make some storage arrays
@@ -179,7 +182,7 @@ Run <- function()
       
       ############## calculate values for ecological indicators at start of projection#####################
       # ????????????????? why not BMSY=KGuild/2=BMSY as defined earlier, what does NCV stand for in eco.indicators script?
-      eco.results <- eco.indicators(Historic=TRUE, Biomass=NI,Catch=CI,BMSY=KGuild,trophic.level=MeanTrophicLevel,is.predator=Predators,is.pelagic=Pelagics)
+      eco.results <- eco.indicators(UseInds=ChosenIndicatorList[[isim]],Historic=TRUE, Biomass=NI,Catch=CI,BMSY=KGuild,trophic.level=MeanTrophicLevel,is.predator=Predators,is.pelagic=Pelagics)
       indicators <- eco.results$indicators
       ei.hist <- eco.results$ei.last
       ######################## set initial values for operating model biomass##################################
@@ -190,11 +193,12 @@ Run <- function()
       # Target exploitation rate(u)= Target FMSY =Growth rate divided in half
       targ.u <- r/2
       
-      # Get the indicator-based reference points based on the chosen indicators using indicator.hcr function, save reference points in xx
-      xx <- get.refpts(refvals,limvals,use.defaults=FALSE, indvals=ei.hist, RefFile=IndicatorRefVals)
+      # For each indicator get.refpts() calculates reference and limit values used in indicator-based harvest control rules and stores as Refpts
+      # The same refvals and limvals are used for the duration of each simulation
+      Refpts <- get.refpts(refvals,limvals,use.defaults=FALSE, RefFile=IndicatorRefVals, IndicatorValues=ei.hist)
       # Calculate the F multipliers based on the status of ecological indicators compared to reference points
       # The indicator.hcr function does this calculations when get.fmults=TRUE
-      fmult <- calc.indicator.hcr(xx$refvals, xx$limvals, use.defaults=FALSE, indvals=ei.hist, RefFile=IndicatorRefVals)
+      fmult <- calc.indicator.hcr(refvals=Refpts$refvals, limvals=Refpts$limvals, use.defaults=FALSE, RefFile=IndicatorRefVals, IndicatorValues=ei.hist, Nsp=10)
       
       
       ###################################################################################################
@@ -267,21 +271,21 @@ Run <- function()
         ############# Update indicators and status
         
         # Calculate ecological indicators based on new data at this time step
-        eco.results <- eco.indicators(Historic=FALSE, Biomass=NI.obs, Catch=CI.obs,BMSY=KGuild,trophic.level=MeanTrophicLevel,is.predator=Predators,is.pelagic=Pelagics)
+        eco.results <- eco.indicators(UseInds=ChosenIndicators,Historic=FALSE, Biomass=NI.obs, Catch=CI.obs,BMSY=KGuild,trophic.level=MeanTrophicLevel,is.predator=Predators,is.pelagic=Pelagics)
         # ????????does update of indicators just rerun calculation after new data is added (doesn't just use the last year of data)
         ei.now <- eco.results$ei.last
         indicators <- rbind(indicators,eco.results$indicators) # Append new indicator values to indicators dataframe
         #why bother with indicators if only ei.now is referenced and ei.now=indicators???????????????
         
         # Work out status relative to refernce points given new indicators(ei.now)
-        fmult <- calc.indicator.hcr(xx$refvals,xx$limvals,use.defaults=FALSE, indvals=ei.now, RefFile=IndicatorRefVals)
+        fmult <- calc.indicator.hcr(refvals=Refpts$refvals,limvals=Refpts$limvals,use.defaults=FALSE, RefFile=IndicatorRefVals, IndicatorValues=ei.now, Nsp=10)
       }
       # This is where projection 2:Nyr ends
       # Save results for this simulation, [isim] adds the most recent results to the list
       ALL.results[[isim]] <- list(targ.u=targ.u,
                                   inds.use=ChosenIndicators,
-                                  refvals=xx$refvals,
-                                  limvals=xx$limvals,
+                                  refvals=Refpts$refvals,
+                                  limvals=Refpts$limvals,
                                   estu=exprate.est,
                                   u.use=exprate.use,
                                   Nabundobs=NI.obs,
