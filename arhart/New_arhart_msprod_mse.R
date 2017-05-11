@@ -114,6 +114,9 @@ Run <- function()
   #initial biomass for each species
   Nabund <- Initvals
   
+  
+  StatusMeasures <- NULL # This is a vector of performance metrics and/or indicators which may be used to evaluate ecosystem status
+  
   ############## get historical time series of biomass and catch, 33 year of data####################
   # Define NI(abundandce index) for 33 years of data
   NI <- dat$NI
@@ -136,9 +139,9 @@ Run <- function()
   ##############################################################################
 
   # The following creates a list of indicators to be used in each simulation
-  ChosenIndicatorList <- NULL
+  ChosenStatusMeasureList <- NULL
   for(isim in 1: Nsim){
-    ChosenIndicatorList[[isim]] <- PickIndicators(PickOption=1, PotentialInds=IndicatorRefVals[,"Indicator"])
+    ChosenStatusMeasureList[[isim]] <- PickStatusMeasures(PickOption=1, PotentialStatusMeasures=StatusMeasures)
   }
   
   # First for loop runs each simulations through values of maxcatch from 50,000 to 200,000 in steps of 25,000 and allows each of these to be saved to a different file name
@@ -151,8 +154,8 @@ Run <- function()
     for(isim in 1:Nsim)
     {
       #########determine which of the ecosystem indicators to use in the control rule for  this simulation#########
-      # PickIndicators() indicates which control rules will be used for use in each simulation and stores them as ChosenIndicators in each simulation run
-      ChosenIndicators <- ChosenIndicatorList[[isim]]
+      # PickStatusMeasures() indicates which control rules will be used for use in each simulation and stores them as ChosenStatusMeasures in each simulation run
+      ChosenStatusMeasures <- ChosenStatusMeasureList[[isim]]
 
       # Make some storage arrays
       NI.obs <- NI
@@ -182,7 +185,7 @@ Run <- function()
       
       ############## calculate values for ecological indicators at start of projection#####################
       # ????????????????? why not BMSY=KGuild/2=BMSY as defined earlier, what does NCV stand for in eco.indicators script?
-      eco.results <- eco.indicators(UseInds=ChosenIndicatorList[[isim]],Historic=TRUE, Biomass=NI,Catch=CI,BMSY=KGuild,trophic.level=MeanTrophicLevel,is.predator=Predators,is.pelagic=Pelagics)
+      eco.results <- eco.indicators(UseStatusMeasures=ChosenStatusMeasures,Historic=TRUE, Biomass=NI,Catch=CI,BMSY=KGuild,trophic.level=MeanTrophicLevel,is.predator=Predators,is.pelagic=Pelagics)
       indicators <- eco.results$indicators
       ei.hist <- eco.results$ei.last
       ######################## set initial values for operating model biomass##################################
@@ -193,12 +196,12 @@ Run <- function()
       # Target exploitation rate(u)= Target FMSY =Growth rate divided in half
       targ.u <- r/2
       
-      # For each indicator get.refpts() calculates reference and limit values used in indicator-based harvest control rules and stores as Refpts
-      # The same refvals and limvals are used for the duration of each simulation
-      Refpts <- get.refpts(refvals,limvals,use.defaults=FALSE, RefFile=IndicatorRefVals, IndicatorValues=ei.hist)
+      # For each indicator get.refpts() calculates reference and limit values used in indicator-based harvest control rules and stores as RefptsVals
+      # The same refvals and limvals are used for the duration of each simulation, refvals and limvals are calculated for all possible indicators although only a subset may be used in each simulation
+      RefptsVals <- get.refpts(use.defaults=FALSE, RefFile=IndicatorRefVals, IndicatorValues=ei.hist)
       # Calculate the F multipliers based on the status of ecological indicators compared to reference points
       # The indicator.hcr function does this calculations when get.fmults=TRUE
-      fmult <- calc.indicator.hcr(refvals=Refpts$refvals, limvals=Refpts$limvals, use.defaults=FALSE, RefFile=IndicatorRefVals, IndicatorValues=ei.hist, Nsp=10)
+      fmult <- calc.indicator.hcr(refvals=RefptsVals$refvals, limvals=RefptsVals$limvals, RefFile=IndicatorRefVals, IndicatorValues=ei.hist, Nsp=10)
       
       
       ###################################################################################################
@@ -208,7 +211,7 @@ Run <- function()
       for (iyr in 2:Nyr)
       {    
         # Changed workdir=tempdir to workdir=getwd()
-        SShrate.output <- SShrate.calc(Nsp,BioObs=cbind(1:nrow(NI.obs),NI.obs),CatObs=cbind(1:nrow(CI.obs),CI.obs),workdir=getwd(), inits=InitsData, fmult=fmult, inds.use=ChosenIndicators, Nabund=Nabund)
+        SShrate.output <- SShrate.calc(Nsp,BioObs=cbind(1:nrow(NI.obs),NI.obs),CatObs=cbind(1:nrow(CI.obs),CI.obs),workdir=getwd(), inits=InitsData, fmult=fmult, inds.use=ChosenStatusMeasures, Nabund=Nabund)
         hrate <- SShrate.output$hrate
         SSresults <- SShrate.output$SSresults
         estu <- SShrate.output$estu
@@ -271,21 +274,21 @@ Run <- function()
         ############# Update indicators and status
         
         # Calculate ecological indicators based on new data at this time step
-        eco.results <- eco.indicators(UseInds=ChosenIndicators,Historic=FALSE, Biomass=NI.obs, Catch=CI.obs,BMSY=KGuild,trophic.level=MeanTrophicLevel,is.predator=Predators,is.pelagic=Pelagics)
+        eco.results <- eco.indicators(UseStatusMeasures=ChosenStatusMeasures,Historic=FALSE, Biomass=NI.obs, Catch=CI.obs,BMSY=KGuild,trophic.level=MeanTrophicLevel,is.predator=Predators,is.pelagic=Pelagics)
         # ????????does update of indicators just rerun calculation after new data is added (doesn't just use the last year of data)
         ei.now <- eco.results$ei.last
         indicators <- rbind(indicators,eco.results$indicators) # Append new indicator values to indicators dataframe
         #why bother with indicators if only ei.now is referenced and ei.now=indicators???????????????
         
         # Work out status relative to refernce points given new indicators(ei.now)
-        fmult <- calc.indicator.hcr(refvals=Refpts$refvals,limvals=Refpts$limvals,use.defaults=FALSE, RefFile=IndicatorRefVals, IndicatorValues=ei.now, Nsp=10)
+        fmult <- calc.indicator.hcr(refvals=RefptsVals$refvals,limvals=RefptsVals$limvals, RefFile=IndicatorRefVals, IndicatorValues=ei.now, Nsp=10)
       }
       # This is where projection 2:Nyr ends
       # Save results for this simulation, [isim] adds the most recent results to the list
       ALL.results[[isim]] <- list(targ.u=targ.u,
-                                  inds.use=ChosenIndicators,
-                                  refvals=Refpts$refvals,
-                                  limvals=Refpts$limvals,
+                                  inds.use=ChosenStatusMeasures,
+                                  refvals=RefptsVals$refvals,
+                                  limvals=RefptsVals$limvals,
                                   estu=exprate.est,
                                   u.use=exprate.use,
                                   Nabundobs=NI.obs,
