@@ -1,0 +1,41 @@
+# Initial conditions/data for the model
+
+# ultimately this information should be output as a single file that can be passed to the ms-prod model
+
+# The following must be included:
+  # Nsim      = Number of simulations to run for each catch ceiling # single value
+  # OUTPUTdir = Name of the output directory to store results # name in ""
+  # WORKINGdir = Name of working directory # name in ""
+  # Ceilings = Ceilings to use ???? not yet formatted
+  # Nyr = Number of years to project forward # single value
+  # InitialIndicators = Initial values for reference and limit values used as part of indicator control rules # data.frame with "Indicator", "Threshold", "Limit", "SpeciesName1-SpeciesNameNsp" columns, Bound1, Bound2
+      # Indicator must include the name of all possible indicator being considered
+      # 
+  # SpeciesNames = Vector of species names to be used in this analysis
+  # StatusMeasures = Vector of performance metrics and indicators used in control rules to pick from
+  # ChosenStatusMeasures = List of performance metrics to be used in each simulation, chosen from possible StatusMeasures using PickStatusMeasures, indicator control rules may be turned off by only using performance metrics
+  # IndicatorRefPtsValues = A data.frame that must contain the following columns: Indicator, IndC, Threshold, Limit, T.L, column for each species, Bound1, Bound2
+      # Indicator mus include all possible indicators
+  # Also want start year for historic time series/length so we can label rows in final data output with years&check that all years have data
+
+
+#################### Actual Functions #############################
+
+########## PickIndicators ##########
+
+# This function makes a list of indicators to be used in the simulations
+# PickOption indicates which option should be used (this will allow custom indicator combinations to be specified by creating a new option)
+# PotentialStatusMeasures = indicators to be considered/picked from, this information comes from the initial information passed to the model
+# This will return a list of indicators by name to be used in the model simulation, order of indicator names does not matter   ?????THIS WORKS I TESTED IT
+
+PickStatusMeasures <- function(PickOption="Option1", PotentialStatusMeasures=NULL){
+  if(PickOption=="Option1"){
+    IndicatorPicks <- sample(PotentialStatusMeasures, length(PotentialStatusMeasures), replace=FALSE) #This creates a list of all indicators being considered (samples each possible indicator)
+  }
+  if(PickOption=="Option2"){
+    Nchoose <- sample(1:length(PotentialStatusMeasures), 1, replace=FALSE) # Pick a random number between 1 and length of PotentialStatusMeasures to determine the number of indicators that will be used in the simulation
+    StatusMeasurePicks <- sample(PotentialStatusMeasures, Nchoose, replace=False) # This creates a list containing Nchoose indicators randomly picked from NInds number of possible indicators
+  }
+  return(StatusMeasurePicks)
+}
+
