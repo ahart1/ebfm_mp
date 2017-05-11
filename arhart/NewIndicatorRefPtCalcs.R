@@ -20,65 +20,48 @@ calc.indicator.hcr <- function(refvals=NULL,limvals=NULL,use.defaults=TRUE, RefF
     limvals <- RefFile[,"Limit"]
     names(refvals) = RefFile[,"Indicator"]
     names(limvals) = RefFile[,"Indicator"]
-  }
+  } else{
   
   # This section compares indicators in this time step to reference and limit values to calculate the F-multiplier used in harvest control rules
   # The calculated F-multiplier is applied to all species
-  
   fmult <- matrix(NA, nrow=length(refvals), ncol=Nsp)
   rownames(fmult) <- RefFile[,"Indicator"]
+  temp <- rep(NA, length(refvals))
   
-  # Indicators with refvals greater than limvals
+  #### Indicators with refvals greater than limvals ####
   RefvalsLarger <- names(which(refvals>=limvals)) # This is fine since refvals and limvals labeled in the same way #?????? check that this is true
   UseRefvalsLarger <- Refvalslarger[RefvalsLarger!="NAMEOFROWNUMBER5"] # ??????? NAMEOFROWNUMBER5 needs to be replaced with whatever this indicator is since it is treated differently
-  for(i in length(RefvalsLarger)){
-    # for loop doesn't work well since number true in each different, need a way of filtering list throuth the 3 if statements
-    # assign a temp value to to each when it is TRUE and then use those temp values to calculate and assign to fmult that was labeled based on all possible Indicators, only calculated values will be put in chart
-  } 
-  if(IndicatorValues[UseRefvalsLarger]>=refvals[UseRefvalsLarger]){
-    temp=1
-  }
-  if(IndicatorValues[UseRefvalsLarger]<limvals[UseRefvalsLarger]){
-    temp=0
-  }
-  if(IndicatorValues[UseRefvalsLarger]<refvals[UseRefvalsLarger] && IndicatorValues[UseRefvalsLarger]>=limvals[UseRefvalsLarger]){
-    temp = (IndicatorValues[UseRefvalsLarger]-limvals[UseRefvalsLarger])/(refvals[UseRefvalsLarger]-limvals[UseRefvalsLarger])
-  }
+
+  temp[IndicatorValues[UseRefvalsLarger]>=refvals[UseRefvalsLarger]] <- 1 # This assigns the value 1 to indicators that meet the condition (return TRUE, indicator greater than or equal to refvals)
   
-  fmult[UseRefvalsLarger,] <- -1*temp*as.numeric(ind.hcr[yy,6:15]) # ??? where is ind.hcr coming from?
+  temp[IndicatorValues[UseRefvalsLarger]<limvals[UseRefvalsLarger]] <- 0 # This assigns 0 to indicators whose value is less than limvals
+
+  temp[IndicatorValues[UseRefvalsLarger]<refvals[UseRefvalsLarger] && IndicatorValues[UseRefvalsLarger]>=limvals[UseRefvalsLarger]] <- (IndicatorValues[UseRefvalsLarger]-limvals[UseRefvalsLarger])/(refvals[UseRefvalsLarger]-limvals[UseRefvalsLarger]) # for indicator values between refvals and limvals
   
-  # Indicators with limvals greater than refvals
+  fmult[UseRefvalsLarger,] <- -1*temp*as.numeric(ind.hcr[UseRefvalsLarger,6:15]) # ??? where is ind.hcr coming from?  ???Test that the multiplication is ocurring across the correct rows of ind.hcr 
+  
+  #### Indicators with limvals greater than refvals ####
   LimvalsLarger <- names(which(refvals<limvals))
   UseLimvalsLarger <- c(LimvalsLarger, "NAMEOFROWNUMBER5") # ??????? NAMEOFROWNUMBER5 needs to be replaced with whatever this indicator is since it is treated differently
   
-  fmult <- matrix(NA,nrow=length(refvals),ncol=10) # ??? NO NO NO NO I think this is just a storage matrix but it is not general, make data.frame but first need to understand what is in it
-  for (yy in 1:length(refvals)){  # for each row in the matrix
-    name = names(refvals[yy])  # picks the name of refvals
-    i <- which(names(IndicatorValues)== name) # i is the location of indicator names that match the refvals names, ??? why is this necessary?? Can I specify how each is handled based on which indicator
-    #print(c(i,yy,refvals[yy],limvals[yy]))
-    if (refvals[yy]>=limvals[yy] & yy !=5){ # if refval is greater than limval and isn't the 5th item (5th indicator) ??? assumes specific order
-      if (IndicatorValues[i]>=refvals[yy]){temp = 1} # if indicator value is above refval, assign temp=1
-      if (IndicatorValues[i]<limvals[yy]){ temp = 0}  # if indicator value is below refval, assign temp=0
-      if (IndicatorValues[i]<refvals[yy] && IndicatorValues[i]>=limvals[yy]){ # if indicator value is below refval and above indicator then assign temp
-        temp = (IndicatorValues[i]-limvals[yy])/(refvals[yy]-limvals[yy])
-      }
-      fmult[yy,] = -1*temp*as.numeric(ind.hcr[yy,6:15]) # ??? where is ind.hcr coming from?
-    }
-    
-    if (refvals[yy]<limvals[yy] | yy== 5){ # if refval is less than less than limval or it is the 5th item
-      if (IndicatorValues[i]<=refvals[yy]) temp = 1
-      if (IndicatorValues[i]>limvals[yy]) temp = 0
-      if (IndicatorValues[i]>refvals[yy] && IndicatorValues[i]<=limvals[yy]){
-        temp = (IndicatorValues[i]-limvals[yy])/(refvals[yy]-limvals[yy])
-      }
-      fmult[yy,] = -1*temp*as.numeric(ind.hcr[yy,6:15]) # I may have renamed ind.hcr?????????
-    }
-    
+  temp[IndicatorValues[UseLimvalsLarger]<=refvals[UseLimvalsLarger]] <- 1 # Assigns 1 to indicators with values less than or equal to refvals
+  
+  temp[IndicatorValues[UseLimvalsLarger]>limvals[UseLimvalsLarger]] <- 0 # Assigns 0 to indicators with values greater than limvals
+  
+  temp[IndicatorValues[UseLimvalsLarger]>refvals[UseLimvalsLarger] && IndicatorValues[UseLimvalsLarger]<=limvals[UseLimvalsLarger]] <- (IndicatorValues[UseLimvalsLarger]-limvals[UseLimvalsLarger])/(refvals[UseLimvalsLarger]-limvals[UseLimvalsLarger]) # indicator less than/=limval or greater than refval
+  
+  fmult[UseLimvalsLarger,] <- -1*temp*as.numeric(ind.hcr[UseLimvalsLarger,6:15]) # I may have renamed ind.hcr?????????
   }
-  fmult[which(is.na(fmult)==TRUE)] = 1
+  
+  fmult[which(is.na(fmult)==TRUE)] <- 1 # Assign missing (NA) values 1, no change in F
   return(fmult)
 }
-
+ 
+  
+  
+  
+  
+ 
 
 ## ???????????????? I probably want the below to pick values from a vector as in PickIndicators rather than running a for() loop
 
@@ -99,9 +82,10 @@ get.refpts <- function(use.defaults=TRUE, RefFile=NULL, IndicatorValues=NULL){
   # ?????? NO NO NO NO NO NO NO
   bounds <- matrix(c(6,3,6,3,1,0,0,1,0,1,0,1,0,1,20,0),ncol=2,byrow=TRUE) # ?????? NO, this information should be passed in to initial model conditions it could easily be included in IndicatorRefVals file!!!!
   rownames(bounds) = RefFile[,"Indicator"]
+  # ????? NO NO NO NO NO NO NO
   refvals <- rep(NA,nrow(RefFile[,"Indicator"]))
   limvals <- rep(NA,nrow(RefFile[,"Indicator"]))
-  # ????? NO NO NO NO NO NO NO
+ 
   
   # Run the following to ask questions below: ???
   bounds <- matrix(c(6,3,6,3,1,0,0,1,0,1,0,1,0,1,20,0),ncol=2,byrow=TRUE)
@@ -147,7 +131,7 @@ get.refpts <- function(use.defaults=TRUE, RefFile=NULL, IndicatorValues=NULL){
       if (flag==1) limvals[i] <- runif(1,refvals[i],bounds[i,hi])
     }
   }
-  names(refvals) = RefFile[,"Indicator"] #these names should be asigned as they go not at the end to make sure that name corresponds to correlation
+  names(refvals) = RefFile[,"Indicator"] #these names should be asigned as they go not at the end to make sure that name corresponds to calculation
   names(limvals) = RefFile[,"Indicator"]
   refpts <- NULL
   refpts$refvals <- refvals
