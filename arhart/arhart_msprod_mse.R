@@ -33,7 +33,7 @@ tempdir <- paste(getwd(), "arhart/temp", sep="/")
 dir.create(tempdir, showWarnings=FALSE)
 
 # Create directory to store output files
-OUTPUTdir <- "BioStats_Sim1000_AllInds" 
+OUTPUTdir <- "OutputDirectory" 
 
 # Install packages used by scripts
 library(deSolve)
