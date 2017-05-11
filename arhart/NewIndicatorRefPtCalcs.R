@@ -38,7 +38,7 @@ calc.indicator.hcr <- function(refvals=NULL,limvals=NULL,use.defaults=TRUE, RefF
 
   temp[IndicatorValues[UseRefvalsLarger]<refvals[UseRefvalsLarger] && IndicatorValues[UseRefvalsLarger]>=limvals[UseRefvalsLarger]] <- (IndicatorValues[UseRefvalsLarger]-limvals[UseRefvalsLarger])/(refvals[UseRefvalsLarger]-limvals[UseRefvalsLarger]) # for indicator values between refvals and limvals
   
-  fmult[UseRefvalsLarger,] <- -1*temp*as.numeric(ind.hcr[UseRefvalsLarger,6:15]) # ??? where is ind.hcr coming from?  ???Test that the multiplication is ocurring across the correct rows of ind.hcr 
+  fmult[UseRefvalsLarger,] <- -1*temp*as.numeric(RefFile[UseRefvalsLarger,6:15]) # ??? where is ind.hcr coming from?  ???Test that the multiplication is ocurring across the correct rows of ind.hcr 
   
   #### Indicators with limvals greater than refvals ####
   LimvalsLarger <- names(which(refvals<limvals))
@@ -50,7 +50,7 @@ calc.indicator.hcr <- function(refvals=NULL,limvals=NULL,use.defaults=TRUE, RefF
   
   temp[IndicatorValues[UseLimvalsLarger]>refvals[UseLimvalsLarger] && IndicatorValues[UseLimvalsLarger]<=limvals[UseLimvalsLarger]] <- (IndicatorValues[UseLimvalsLarger]-limvals[UseLimvalsLarger])/(refvals[UseLimvalsLarger]-limvals[UseLimvalsLarger]) # indicator less than/=limval or greater than refval
   
-  fmult[UseLimvalsLarger,] <- -1*temp*as.numeric(ind.hcr[UseLimvalsLarger,6:15]) # I may have renamed ind.hcr?????????
+  fmult[UseLimvalsLarger,] <- -1*temp*as.numeric(RefFile[UseLimvalsLarger,6:15]) # I may have renamed ind.hcr?????????
   }
   
   fmult[which(is.na(fmult)==TRUE)] <- 1 # Assign missing (NA) values 1, no change in F
