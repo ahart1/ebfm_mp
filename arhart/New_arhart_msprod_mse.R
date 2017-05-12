@@ -61,7 +61,7 @@ Run <- function()
   # Read in BMSY and inits data
   BMSYData <- read.csv("/Users/ahart2/Research/ebfm_mp/data/Bmsy.csv", header=TRUE) # column1 is species name, column2 is Bmsy, column3 is mean trophic level
   InitsData <- read.csv("/Users/ahart2/Research/ebfm_mp/data/inits.csv", header=TRUE)
-  IndicatorRefVals <- read.csv("/Users/ahart2/Research/ebfm_mp/data/indicator_refvals.csv", header=TRUE) # Must contain the following columns: Indicator, IndC, Threshold, Limit, T.L, column for each species
+  IndicatorRefVals <- read.csv("/Users/arhart/Research/ebfm_modeltesting/data/indicator_refvals.csv", header=TRUE) # Must contain the following columns: Indicator, IndC, Threshold, Limit, T.L, column for each species
   # datfile variable contains the file name, reads from json file
   datfilename <- "/Users/ahart2/Research/ebfm_mp/data/Georges.dat.json"
   dat <- fromJSON(datfilename)
@@ -115,7 +115,6 @@ Run <- function()
   Nabund <- Initvals
   
   
-  StatusMeasures <- NULL # This is a vector of performance metrics and/or indicators which may be used to evaluate ecosystem status
   
   ############## get historical time series of biomass and catch, 33 year of data####################
   # Define NI(abundandce index) for 33 years of data
@@ -149,6 +148,14 @@ Run <- function()
   {
     # Set up a storage object to contain results for each simulation
     ALL.results <- NULL
+    
+    # These are the possible indicators which may be chosen as StatusMeasures in the model simulations
+    ModelIndicators <- c("TL.survey", "TL.landings", "High.prop.pel", "Low.prop.pelagic", "High.prop.predators", "Low.prop.prdators", "prop.overfished", "div.cv.bio")
+    # These are the possible performance metrics which may be chosen as StatusMeasures in the model simulations
+    ModelPerformanceMetrics <- c("tot.bio", "tot.cat", "exprate", "pd.ratio")
+    # This is the list of all StatusMeasures available to evaluate ecosystem status for this model
+    ModelStatusMeasures <- c(ModelIndicators, ModelPerformanceMetrics)
+    
     
     # Do a bunch of simulations
     for(isim in 1:Nsim)
@@ -198,7 +205,7 @@ Run <- function()
       
       # For each indicator get.refpts() calculates reference and limit values used in indicator-based harvest control rules and stores as RefptsVals
       # The same refvals and limvals are used for the duration of each simulation, refvals and limvals are calculated for all possible indicators although only a subset may be used in each simulation
-      RefptsVals <- get.refpts(use.defaults=FALSE, RefFile=IndicatorRefVals, IndicatorValues=ei.hist)
+      RefptsVals <- get.refpts(use.defaults=FALSE, RefFile=IndicatorRefVals, ModelIndicators=ModelIndicators)
       # Calculate the F multipliers based on the status of ecological indicators compared to reference points
       # The indicator.hcr function does this calculations when get.fmults=TRUE
       fmult <- calc.indicator.hcr(refvals=RefptsVals$refvals, limvals=RefptsVals$limvals, RefFile=IndicatorRefVals, IndicatorValues=ei.hist, Nsp=10)
