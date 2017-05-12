@@ -30,11 +30,11 @@
 
 PickStatusMeasures <- function(PickOption="Option1", PotentialStatusMeasures=NULL){
   if(PickOption=="Option1"){
-    IndicatorPicks <- sample(PotentialStatusMeasures, length(PotentialStatusMeasures), replace=FALSE) #This creates a list of all indicators being considered (samples each possible indicator)
+    StatusMeasurePicks <- sample(PotentialStatusMeasures, length(PotentialStatusMeasures), replace=FALSE) #This creates a list of all indicators being considered (samples each possible indicator)
   }
   if(PickOption=="Option2"){
     Nchoose <- sample(1:length(PotentialStatusMeasures), 1, replace=FALSE) # Pick a random number between 1 and length of PotentialStatusMeasures to determine the number of indicators that will be used in the simulation
-    StatusMeasurePicks <- sample(PotentialStatusMeasures, Nchoose, replace=False) # This creates a list containing Nchoose indicators randomly picked from NInds number of possible indicators
+    StatusMeasurePicks <- sample(PotentialStatusMeasures, Nchoose, replace=FALSE) # This creates a list containing Nchoose indicators randomly picked from NInds number of possible indicators
   }
   return(StatusMeasurePicks)
 }
