@@ -61,7 +61,7 @@ Run <- function()
   # Read in BMSY and inits data
   BMSYData <- read.csv("/Users/ahart2/Research/ebfm_mp/data/Bmsy.csv", header=TRUE) # column1 is species name, column2 is Bmsy, column3 is mean trophic level
   InitsData <- read.csv("/Users/ahart2/Research/ebfm_mp/data/inits.csv", header=TRUE)
-  IndicatorRefVals <- read.csv("/Users/arhart/Research/ebfm_modeltesting/data/indicator_refvals.csv", header=TRUE) # Must contain the following columns: Indicator, IndC, Threshold, Limit, T.L, column for each species
+  IndicatorRefVals <- read.csv("/Users/ahart2/Research/ebfm_mp/data/indicator_refvals.csv", header=TRUE) # Must contain the following columns: Indicator, IndC, Threshold, Limit, T.L, column for each species
   # datfile variable contains the file name, reads from json file
   datfilename <- "/Users/ahart2/Research/ebfm_mp/data/Georges.dat.json"
   dat <- fromJSON(datfilename)
@@ -102,7 +102,7 @@ Run <- function()
   hrate <- rep(0,Nsp)
   
   # Define BMSY and pick the species to include in the model
-  ModelSpecies <- BMSYData[c(4,5,21,22,14,23,24,6,3,7),1] # pick species names
+  SpeciesNames <- as.character(BMSYData[c(4,5,21,22,14,23,24,6,3,7),1]) # pick species names
   MeanTrophicLevel <- BMSYData[c(4,5,21,22,14,23,24,6,3,7),3] # ID mean trophic level for chosen species
   BMSY <- KGuild/2 # Set values for BMSY
   
@@ -150,7 +150,7 @@ Run <- function()
     ALL.results <- NULL
     
     # These are the possible indicators which may be chosen as StatusMeasures in the model simulations
-    ModelIndicators <- c("TL.survey", "TL.landings", "High.prop.pel", "Low.prop.pelagic", "High.prop.predators", "Low.prop.prdators", "prop.overfished", "div.cv.bio")
+    ModelIndicators <- c("TL.survey", "TL.landings", "High.prop.pelagic", "Low.prop.pelagic", "High.prop.predators", "Low.prop.predators", "prop.overfished", "div.cv.bio")
     # These are the possible performance metrics which may be chosen as StatusMeasures in the model simulations
     ModelPerformanceMetrics <- c("tot.bio", "tot.cat", "exprate", "pd.ratio")
     # This is the list of all StatusMeasures available to evaluate ecosystem status for this model
@@ -178,37 +178,79 @@ Run <- function()
       exprate.use <- NULL
       
       
+      
+      
+      
+      
+      
+      
       ###################################################################################################
-      #Year 1 of model-initial values
+      # Study-specifics
       ###################################################################################################
       
       
-      # ??????????????????? I would like all arguments for eco.indicators to be specified as part of the model's initial conditions,
+      
+      
+      
+      ###################################################################################################
+      # Historic calculations
+      ###################################################################################################
+      ########## Status Measures ##########
+      # CalcAnnualStatusMeasures calculates values for status measures (performance metrics and indicators used in indicator-based harvest control rules) for historic timeseries 
+      StatusMeasuredVals <- CalcAnnualStatusMeasures(UseStatusMeasures=ChosenStatusMeasures,Historic=TRUE, Biomass=NI,Catch=CI,BMSY=KGuild,trophic.level=MeanTrophicLevel,is.predator=Predators,is.pelagic=Pelagics)
+      PerformMetricTimeSeries <- StatusMeasuredVals$PerformMetric
+      IndicatorTimeSeries <- StatusMeasuredVals$Indicators
+      
+      ########## Biomass ##########
+      NI # ????? this is where the value from the input file can be defined
+      
+     
+      
+      
+      ###################################################################################################
+      # First model year: starting conditions for model projections
+      ###################################################################################################
+      ########## Status Measures ##########
+      StartingIndicatorVals <- tail(IndicatorTimeSeries, 1)
+      
+      # ??????????????????? I would like all arguments for CalcAnnualStatusMeasures to be specified as part of the model's initial conditions,
       # ??????????????????? I think that initial conditions should be formatted separately and passed to this model in a specific format
       # ??????????????????? is.predator and is.pelagic should not be calculated here, they should be calculated above
       
+      # CalcRefvalLimval calculates reference (refvals) and limit (limvals) values used in indicator-based harvest control rules for all indicators included in ModelIndicators
+              # The same refvals and limvals are used for the duration of each simulation
+              # Although refvals and limvals are calculated for all ModelIndicators, specification of ChosenStatusMeasures allows only a subset of the associated harvest control rules to be implemented
+      RefptsVals <- CalcRefvalLimval(use.defaults=FALSE, RefFile=IndicatorRefVals, ModelIndicators=ModelIndicators)
+      # Calculate the F multipliers based on the status of indicators compared to reference points (refvals and limvals)
+      fmult <- IndStatusAdjustFMultiplier(refvals=RefptsVals$refvals, limvals=RefptsVals$limvals, RefFile=IndicatorRefVals, IndicatorValues=StartingIndicatorVals, Nsp=10)
       
       
       
-      ############## calculate values for ecological indicators at start of projection#####################
-      # ????????????????? why not BMSY=KGuild/2=BMSY as defined earlier, what does NCV stand for in eco.indicators script?
-      eco.results <- eco.indicators(UseStatusMeasures=ChosenStatusMeasures,Historic=TRUE, Biomass=NI,Catch=CI,BMSY=KGuild,trophic.level=MeanTrophicLevel,is.predator=Predators,is.pelagic=Pelagics)
-      indicators <- eco.results$indicators
-      ei.hist <- eco.results$ei.last
+      ########## Biomass ##########
+      Nabund <- as.numeric(NI[nrow(NI),])*exp(rnorm(10,0,0.2)-0.5*0.2*0.2) # Error added to biomass at end of historic time series
+      
+    
+ 
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
       ######################## set initial values for operating model biomass##################################
       # Defines conditions for year one of the operating model, from which a forward projection will be carried out
       
-      # This just adds error to abundance estimates for the first year????????
-      Nabund <- as.numeric(NI[nrow(NI),])*exp(rnorm(10,0,0.2)-0.5*0.2*0.2)
+      
+
       # Target exploitation rate(u)= Target FMSY =Growth rate divided in half
       targ.u <- r/2
       
-      # For each indicator get.refpts() calculates reference and limit values used in indicator-based harvest control rules and stores as RefptsVals
-      # The same refvals and limvals are used for the duration of each simulation, refvals and limvals are calculated for all possible indicators although only a subset may be used in each simulation
-      RefptsVals <- get.refpts(use.defaults=FALSE, RefFile=IndicatorRefVals, ModelIndicators=ModelIndicators)
-      # Calculate the F multipliers based on the status of ecological indicators compared to reference points
-      # The indicator.hcr function does this calculations when get.fmults=TRUE
-      fmult <- calc.indicator.hcr(refvals=RefptsVals$refvals, limvals=RefptsVals$limvals, RefFile=IndicatorRefVals, IndicatorValues=ei.hist, Nsp=10)
       
       
       ###################################################################################################
@@ -218,7 +260,7 @@ Run <- function()
       for (iyr in 2:Nyr)
       {    
         # Changed workdir=tempdir to workdir=getwd()
-        SShrate.output <- SShrate.calc(Nsp,BioObs=cbind(1:nrow(NI.obs),NI.obs),CatObs=cbind(1:nrow(CI.obs),CI.obs),workdir=getwd(), inits=InitsData, fmult=fmult, inds.use=ChosenStatusMeasures, Nabund=Nabund)
+        SShrate.output <- SShrate.calc(Nsp,BioObs=cbind(1:nrow(NI.obs),NI.obs),CatObs=cbind(1:nrow(CI.obs),CI.obs),workdir=getwd(), inits=InitsData, FMultiplier=fmult, inds.use=ChosenStatusMeasures, Nabund=Nabund)
         hrate <- SShrate.output$hrate
         SSresults <- SShrate.output$SSresults
         estu <- SShrate.output$estu
@@ -281,14 +323,17 @@ Run <- function()
         ############# Update indicators and status
         
         # Calculate ecological indicators based on new data at this time step
-        eco.results <- eco.indicators(UseStatusMeasures=ChosenStatusMeasures,Historic=FALSE, Biomass=NI.obs, Catch=CI.obs,BMSY=KGuild,trophic.level=MeanTrophicLevel,is.predator=Predators,is.pelagic=Pelagics)
+        AnnualStatusMeasuredVals <- CalcAnnualStatusMeasures(UseStatusMeasures=ChosenStatusMeasures,Historic=FALSE, Biomass=NI.obs, Catch=CI.obs,BMSY=KGuild,trophic.level=MeanTrophicLevel,is.predator=Predators,is.pelagic=Pelagics)
+        PerformMetricTimeSeries <- rbind(PerformMetricTimeSeries, AnnualStatusMeasuredVals$PerformMetric)
+        IndicatorTimeSeries <- rbind(IndicatorTimeSeries, AnnualStatusMeasuredVals$Indicators)
+        AnnualIndicatorVals <- AnnualStatusMeasuredVals$Indicators
         # ????????does update of indicators just rerun calculation after new data is added (doesn't just use the last year of data)
-        ei.now <- eco.results$ei.last
-        indicators <- rbind(indicators,eco.results$indicators) # Append new indicator values to indicators dataframe
-        #why bother with indicators if only ei.now is referenced and ei.now=indicators???????????????
         
-        # Work out status relative to refernce points given new indicators(ei.now)
-        fmult <- calc.indicator.hcr(refvals=RefptsVals$refvals,limvals=RefptsVals$limvals, RefFile=IndicatorRefVals, IndicatorValues=ei.now, Nsp=10)
+        
+        
+        
+        # Work out status relative to refernce points given new indicators values (AnnualIndicatorVals)
+        fmult <- IndStatusAdjustFMultiplier(refvals=RefptsVals$refvals,limvals=RefptsVals$limvals, RefFile=IndicatorRefVals, IndicatorValues= AnnualIndicatorVals, Nsp=10)
       }
       # This is where projection 2:Nyr ends
       # Save results for this simulation, [isim] adds the most recent results to the list
