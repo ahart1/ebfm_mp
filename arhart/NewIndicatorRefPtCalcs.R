@@ -12,8 +12,9 @@ calc.indicator.hcr <- function(refvals=NULL,limvals=NULL, RefFile=NULL, Indicato
   
   #### Indicators with refvals greater than limvals ####
   RefvalsLarger <- names(which(refvals>=limvals)) # This is fine since refvals and limvals labeled in the same way #?????? check that this is true
-  UseRefvalsLarger <- Refvalslarger[RefvalsLarger!="NAMEOFROWNUMBER5"] # ??????? NAMEOFROWNUMBER5 needs to be replaced with whatever this indicator is since it is treated differently
-
+  # ??? Confirm ???UseRefvalsLarger <- RefvalsLarger[RefvalsLarger!="NAMEOFROWNUMBER5"] # ??????? NAMEOFROWNUMBER5 needs to be replaced with whatever this indicator is since it is treated differently
+  UseRefvalsLarger <- RefvalsLarger[RefvalsLarger!="High.prop.predators"]
+  
   temp[IndicatorValues[UseRefvalsLarger]>=refvals[UseRefvalsLarger]] <- 1 # This assigns the value 1 to indicators that meet the condition (return TRUE, indicator greater than or equal to refvals)
   
   temp[IndicatorValues[UseRefvalsLarger]<limvals[UseRefvalsLarger]] <- 0 # This assigns 0 to indicators whose value is less than limvals
@@ -24,7 +25,8 @@ calc.indicator.hcr <- function(refvals=NULL,limvals=NULL, RefFile=NULL, Indicato
   
   #### Indicators with limvals greater than refvals ####
   LimvalsLarger <- names(which(refvals<limvals))
-  UseLimvalsLarger <- c(LimvalsLarger, "NAMEOFROWNUMBER5") # ??????? NAMEOFROWNUMBER5 needs to be replaced with whatever this indicator is since it is treated differently
+  # ???Confirm??? UseLimvalsLarger <- c(LimvalsLarger, "NAMEOFROWNUMBER5") # ??????? NAMEOFROWNUMBER5 needs to be replaced with whatever this indicator is since it is treated differently
+  UseLimvalsLarger <- c(LimvalsLarger, "High.prop.predators")
   
   temp[IndicatorValues[UseLimvalsLarger]<=refvals[UseLimvalsLarger]] <- 1 # Assigns 1 to indicators with values less than or equal to refvals
   
@@ -39,17 +41,10 @@ calc.indicator.hcr <- function(refvals=NULL,limvals=NULL, RefFile=NULL, Indicato
   return(fmult)
 }
  
-  
-  
-  
-  
- 
 
-## ???????????????? I probably want the below to pick values from a vector as in PickIndicators rather than running a for() loop
 
 # For each indicator get.refpts() calculates reference and limit values for all possible indicators that may be used in indicator-based harvest control rules and returns refpts 
-get.refpts <- function(use.defaults=TRUE, RefFile=NULL){
-  
+get.refpts <- function(use.defaults=TRUE, RefFile=NULL, ModelIndicators=ModelIndicators){
   # This section of code uses default values passed to the model in the initial conditions, it is mostly to test performance against known refvals and limvals
   if (use.defaults==TRUE)
   {
@@ -61,77 +56,53 @@ get.refpts <- function(use.defaults=TRUE, RefFile=NULL){
     # This section of code calculates new refvals and limvals rather than using defaults
     refvals <- rep(NA,nrow(RefFile))
     limvals <- rep(NA,nrow(RefFile))
-    names(refvals) = RefFile[,"Indicator"] #these names should be asigned as they go not at the end to make sure that name corresponds to calculation
-    names(limvals) = RefFile[,"Indicator"]
+    names(refvals) = ModelIndicators 
+    names(limvals) = ModelIndicators
     
-    # Read in bounds from RefFile 
-    # Bound1 <- RefFile[,"Bound1]
-    # Bound2 <- RefFile[,"Bound2]
-    # Bounds <- cbind(Bound1, Bound2)
-    # Lower <- NULL
-    # Upper <- NULL
-    
-    # ID Lower and upper bounds and label
-    # for(i in 1:nrow(RefFile)){
-    # Lower[i] <- which.min(Bounds[i,])
-    # Upper[i] <- which.max(Bounds[i,])
-    # }
-    # names(Lower) <- RefFile[,"Indicator"]
-    # names(Upper) <- RefFile[,"Indicator]
-    
-    # Run the following to ask questions below: ???
     bounds <- matrix(c(6,3,6,3,1,0,0,1,0,1,0,1,0,1,20,0),ncol=2,byrow=TRUE)
-    rownames(bounds) = IndicatorRefVals[,"Indicator"]
-    bounds
-    # end of example, delete in final code???????? Calculate initial indicator refvals and limvals based on name not number!!!!!!
+    rownames(bounds) = ModelIndicators
     
-    for (i in 1:nrow(RefFile))
-    {
-      
-      # which((RefFile[,"Bound1"]<RefFile[,"Bound2"])==TRUE)
-      
-      flag=0
-      lo <- which.min(bounds[i,]) # ID lower bound
-      hi <- which.max(bounds[i,]) # ID upper bound
-      if (bounds[i,2]>bounds[i,1]) # if upper bound is in second column flag=1
-      {
-        flag=1
-      }
-      # ????? I don't really understand the above flag stuff still
-      
-      # if(RefFile[,"Indicator"]=="High.prop.pel"){
-      #  refvals["High.prop.pel"] <- runif(1, Bounds["High.prop.pel",Lower["High.prop.pel"]], Bounds["High.prop.pel",Upper["High.prop.pel"]]) # calculates 1 value from a uniform distribution with calculated position of lower bound (column2), calculated position of upper bound (column1)
-      #  limvals["High.prop.pel"] <- runif(1, refvals["High.prop.pel], Bounds["High.prop.pel",Upper["High.prop.pel"]])
-      if (i==3) 
-      {
+    for (i in ModelIndicators){
+      lo <- which.min(bounds[i,]) # ID lower bound value location
+      hi <- which.max(bounds[i,]) # ID upper bound value location
+     
+      if (i=="High.prop.pel"){
+        # This proportion must fall between 0 and 1
+        # Therefore the refvals must fall between 0 and 1, refval is the lower bound for High.prop.pel
+        # The limvals must fall between the chosen refval and 1, so limval is the upper bound for High.prop.pel
         refvals[i] <- runif(1,bounds[i,2],bounds[i,1]) # calculates 1 value from a uniform distribution with lower bound in second column of row 3, upper bound in 1st column of row 3
         limvals[i] <- runif(1,refvals[i],bounds[i,1]) # calculates 1 value with lowerbound=refval in row 3, upper bound in first column of row 3
-      }
-      if (i==4)
-      {
+      } else if (i=="Low.prop.pel"){
+        # This proportion must fall between 0 and 1
+        # refvals must fall between 0 and the refval for High.prop.pel
+        # limvals must fall between 0 and the chosen refval for Low.prop.pel
         refvals[i] <- runif(1,bounds[i,1],refvals[i-1]) 
         limvals[i] <- runif(1,bounds[i,1],refvals[i])
-      }
-      if (i==5)
-      {
+      } else if (i=="High.prop.predators"){
+        # This proportion must fall between 0 and 1
+        # refvals must fall between 0 and 1
+        # limvals is equal to refvals
         refvals[i] <- runif(1,bounds[i,1],bounds[i,2])
         limvals[i] <- refvals[i]
-      }
-      if (i==6)
-      {
-        refvals[i] <- runif(1,bounds[i,lo],refvals[i-1]) # ???? Why the different inc syntax from previous rows
+      } else if (i=="Low.prop.predators"){
+        # This proportion must fall between 0 and 1
+        # refvals must fall between 0 and 1
+        # limvals is equal to refvals
+        refvals[i] <- runif(1,bounds[i,lo],refvals[i-1]) 
         limvals[i] <- refvals[i]
-      }
-      vec <- c(1,2,7,8)
-      if (is.na(match(i,vec))==FALSE)
-      {
-        refvals[i] <- runif(1,bounds[i,lo],bounds[i,hi])
-        if (flag==0) limvals[i] <- runif(1,bounds[i,lo],refvals[i])
-        if (flag==1) limvals[i] <- runif(1,refvals[i],bounds[i,hi])
+      } else{
+        # refvals must fall between the low and the high bound
+        # if bound in column2 is greater than bound in column1 limvals must be greater than refvals and below upper bound
+        # else limvals must be above the lower bound, and below the chosen refvals
+        refvals[i] <- runif(1,bounds[i,lo],bounds[i,hi]) # ????? Why does the order matter?
+        if (bounds[i,2]>bounds[i,1]){ 
+          limvals[i] <- runif(1,refvals[i],bounds[i,hi])
+        }else{
+          limvals[i] <- runif(1,bounds[i,lo],refvals[i]) 
+        }
       }
     }
   }
- 
   refpts <- NULL
   refpts$refvals <- refvals
   refpts$limvals <- limvals
