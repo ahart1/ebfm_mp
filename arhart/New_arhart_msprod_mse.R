@@ -133,6 +133,34 @@ Run <- function()
   # ???? I need the line above to be replaced with the line below
   # ??? Pelagics <- c("Pelagic1", "Pelagic2", "Pelagic3"...)
   
+  
+  
+  
+  
+  ###################################################################################################
+  # Model Options (Subset may be chosen for model simulations executed below)
+  ###################################################################################################
+  # These are the possible indicators which may be chosen as StatusMeasures in the model simulations
+  ModelIndicators <- c("TL.survey", "TL.landings", "High.prop.pelagic", "Low.prop.pelagic", "High.prop.predators", "Low.prop.predators", "prop.overfished", "div.cv.bio")
+  # These are the possible performance metrics which may be chosen as StatusMeasures in the model simulations
+  ModelPerformanceMetrics <- c("tot.bio", "tot.cat", "exprate", "pd.ratio")
+  # This is the list of all StatusMeasures available to evaluate ecosystem status for this model
+  ModelStatusMeasures <- c(ModelIndicators, ModelPerformanceMetrics)
+  
+  
+  
+  
+  ###################################################################################################
+  # Study-specifics (should include global information to be used throughout the entire model simulation)
+  ###################################################################################################
+  SpeciesNames <- # list of species names here
+  
+  
+  
+  
+  
+  
+  
   ##############################################################################
   # RUN MSE WITH SINGLE SPECIES ASSESSMENT
   ##############################################################################
@@ -149,12 +177,7 @@ Run <- function()
     # Set up a storage object to contain results for each simulation
     ALL.results <- NULL
     
-    # These are the possible indicators which may be chosen as StatusMeasures in the model simulations
-    ModelIndicators <- c("TL.survey", "TL.landings", "High.prop.pelagic", "Low.prop.pelagic", "High.prop.predators", "Low.prop.predators", "prop.overfished", "div.cv.bio")
-    # These are the possible performance metrics which may be chosen as StatusMeasures in the model simulations
-    ModelPerformanceMetrics <- c("tot.bio", "tot.cat", "exprate", "pd.ratio")
-    # This is the list of all StatusMeasures available to evaluate ecosystem status for this model
-    ModelStatusMeasures <- c(ModelIndicators, ModelPerformanceMetrics)
+   
     
     
     # Do a bunch of simulations
@@ -183,11 +206,7 @@ Run <- function()
       
       
       
-      
-      ###################################################################################################
-      # Study-specifics
-      ###################################################################################################
-      
+
       
       
       
@@ -211,8 +230,8 @@ Run <- function()
       # First model year: starting conditions for model projections
       ###################################################################################################
       ########## Status Measures ##########
-      StartingIndicatorVals <- tail(IndicatorTimeSeries, 1)
-      
+      StartingIndicatorVals <- as.vector(tail(IndicatorTimeSeries, 1))
+      names(StartingIndicatorVals) <- colnames(IndicatorTimeSeries)
       # ??????????????????? I would like all arguments for CalcAnnualStatusMeasures to be specified as part of the model's initial conditions,
       # ??????????????????? I think that initial conditions should be formatted separately and passed to this model in a specific format
       # ??????????????????? is.predator and is.pelagic should not be calculated here, they should be calculated above
@@ -260,7 +279,7 @@ Run <- function()
       for (iyr in 2:Nyr)
       {    
         # Changed workdir=tempdir to workdir=getwd()
-        SShrate.output <- SShrate.calc(Nsp,BioObs=cbind(1:nrow(NI.obs),NI.obs),CatObs=cbind(1:nrow(CI.obs),CI.obs),workdir=getwd(), inits=InitsData, FMultiplier=fmult, inds.use=ChosenStatusMeasures, Nabund=Nabund)
+        SShrate.output <- SShrate.calc(Nsp,ObsBiomass=cbind(1:nrow(NI.obs),NI.obs),ObsCatch=cbind(1:nrow(CI.obs),CI.obs),workdir=getwd(), inits=InitsData, FMultiplier=fmult, inds.use=ChosenStatusMeasures, Nabund=Nabund, ChooseFMultOption=4)
         hrate <- SShrate.output$hrate
         SSresults <- SShrate.output$SSresults
         estu <- SShrate.output$estu
@@ -333,7 +352,7 @@ Run <- function()
         
         
         # Work out status relative to refernce points given new indicators values (AnnualIndicatorVals)
-        fmult <- IndStatusAdjustFMultiplier(refvals=RefptsVals$refvals,limvals=RefptsVals$limvals, RefFile=IndicatorRefVals, IndicatorValues= AnnualIndicatorVals, Nsp=10)
+        fmult <- IndStatusAdjustFMultiplier(refvals=RefptsVals$refvals,limvals=RefptsVals$limvals, RefFile=IndicatorRefVals, IndicatorValues=AnnualIndicatorVals, Nsp=10)
       }
       # This is where projection 2:Nyr ends
       # Save results for this simulation, [isim] adds the most recent results to the list
