@@ -81,7 +81,7 @@ CalcAnnualStatusMeasures <- function(UseStatusMeasures=NULL, Historic=TRUE,Bioma
   Indicators <- NULL 
   PerformMetric <- NULL
   
-  if(Historic=TRUE){ # Calculates status measures for historic time series (based on historic data)
+  if(Historic==TRUE){ # Calculates status measures for historic time series (based on historic data)
     #### Performance Metrics ####
     if("tot.bio"%in%UseStatusMeasures | "exprate"%in%UseStatusMeasures | "Low.prop.pelagic"%in%UseStatusMeasures | "High.prop.pelagic"%in%UseStatusMeasures | "Low.prop.predators"%in%UseStatusMeasures | "High.prop.predators"%in%UseStatusMeasures | "TL.survey"%in%UseStatusMeasures | "mean.length"%in%UseStatusMeasures | "mean.lifespan"%in%UseStatusMeasures ==TRUE){ # ??? may need to include div.cv.bio??? see below also
       tot.bio <-  rowSums(Biomass,na.rm=TRUE) # Total system biomass summed over all species
@@ -164,7 +164,7 @@ CalcAnnualStatusMeasures <- function(UseStatusMeasures=NULL, Historic=TRUE,Bioma
     return(StatusMeasuredValues)
   }
   
-  if(Historic=FALSE){ # Calculates status measures for forward projection of model simulation
+  if(Historic==FALSE){ # Calculates status measures for forward projection of model simulation
     #### Performance Metrics ####
     if("tot.bio"%in%UseStatusMeasures | "exprate"%in%UseStatusMeasures | "Low.prop.pelagic"%in%UseStatusMeasures | "High.prop.pelagic"%in%UseStatusMeasures | "Low.prop.predators"%in%UseStatusMeasures | "High.prop.predators"%in%UseStatusMeasures | "TL.survey"%in%UseStatusMeasures | "mean.length"%in%UseStatusMeasures | "mean.lifespan"%in%UseStatusMeasures ==TRUE){
       tot.bio <- rowSums(Biomass[nrow(Biomass),],na.rm=TRUE) # Total system biomass summed over all species for most recent year (last row of matrix)
@@ -246,16 +246,18 @@ CalcAnnualStatusMeasures <- function(UseStatusMeasures=NULL, Historic=TRUE,Bioma
 }
 
 
+# ????????? this code may not work since IndicatorValues can't be referenced using labels "" but refvals and limvals can so refvals[UseRefvals] works
+
 # This function compares indicators in this time step (current model year) to reference and limit values to calculate the F-multiplier used to adjust fishing mortality in harvest control rules
         # Indicator status is evaluated by comparing the calculated value to refvals and limvals for this model run
         # This status is used to adjust fishing mortality via a F-multiplier
         # F-multipliers are applied across all species
-IndStatusAdjustFMultiplier <- function(refvals=NULL,limvals=NULL, RefFile=NULL, IndicatorValues=NULL, Nsp=NULL, ModelIndicators=ModelIndicators, SpeciesNames=SpeciesNames){ # ??? this comment should be deleted later: there will be 1 indicator value for each indicator used, each is named, not for each species
+IndStatusAdjustFMultiplier <- function(refvals=NULL,limvals=NULL, RefFile=NULL, IndicatorValues=NULL, Nsp=NULL){ #ModelIndicators=ModelIndicators, SpeciesNames=SpeciesNames){ # ??? this comment should be deleted later: there will be 1 indicator value for each indicator used, each is named, not for each species
 
   fmult <- matrix(NA, nrow=length(refvals), ncol=Nsp)
   rownames(fmult) <- ModelIndicators
   colnames(fmult) <- SpeciesNames
-  temp <- rep(NA, length(refvals))
+  temp <- NULL
   
   #### Indicators with refvals greater than limvals ####
   RefvalsLarger <- names(which(refvals>=limvals)) 
@@ -266,9 +268,15 @@ IndStatusAdjustFMultiplier <- function(refvals=NULL,limvals=NULL, RefFile=NULL, 
   
   temp[IndicatorValues[UseRefvalsLarger]<limvals[UseRefvalsLarger]] <- 0 # This assigns 0 to indicators whose value is less than limvals
 
-  temp[IndicatorValues[UseRefvalsLarger]<refvals[UseRefvalsLarger] && IndicatorValues[UseRefvalsLarger]>=limvals[UseRefvalsLarger]] <- (IndicatorValues[UseRefvalsLarger]-limvals[UseRefvalsLarger])/(refvals[UseRefvalsLarger]-limvals[UseRefvalsLarger]) # for indicator values between refvals and limvals
+# ?????? I need the line below to calculate the right side only for those things that meet the condition on the left so # calculaions=# things to replace
+  BetweenRefLimvals <- which((IndicatorValues[UseRefvalsLarger]<refvals[UseRefvalsLarger] & IndicatorValues[UseRefvalsLarger]>=limvals[UseRefvalsLarger])==TRUE) # gives names of indicators in UseRefvalsLarger with values between refvals and limvals
+  temp[BetweenRefLimvals] <- (IndicatorValues[BetweenRefLimvals]-limvals[BetweenRefLimvals])/(refvals[BetweenRefLimvals]-limvals[BetweenRefLimvals]) # ???? can these values be greater than 1, can they be negative????
   
-  fmult[UseRefvalsLarger,] <- -1*temp*as.numeric(RefFile[UseRefvalsLarger,SpeciesNames]) #  ???Test that the multiplication is ocurring across the correct rows of RefFile
+  Position <- which(RefFile[,"Indicator"] %in% UseRefvalsLarger)
+  names(Position) <- RefFile[Position, "Indicator"]
+  fmult[UseRefvalsLarger,] <- as.matrix(-1*temp*RefFile[Position,SpeciesNames]) # This calculates an fmultiplier across all species
+  #???Test that the multiplication is ocurring across the correct rows of RefFile
+  # ??? this should fill in by name, but I haven't tested with a correct IndicatorRefVals format
   
   #### Indicators with limvals greater than refvals ####
   LimvalsLarger <- names(which(refvals<limvals))
@@ -281,7 +289,7 @@ IndStatusAdjustFMultiplier <- function(refvals=NULL,limvals=NULL, RefFile=NULL, 
   
   temp[IndicatorValues[UseLimvalsLarger]>refvals[UseLimvalsLarger] && IndicatorValues[UseLimvalsLarger]<=limvals[UseLimvalsLarger]] <- (IndicatorValues[UseLimvalsLarger]-limvals[UseLimvalsLarger])/(refvals[UseLimvalsLarger]-limvals[UseLimvalsLarger]) # indicator less than/=limval or greater than refval
   
-  fmult[UseLimvalsLarger,] <- -1*temp*as.numeric(RefFile[UseLimvalsLarger,SpeciesNames])
+  fmult[UseLimvalsLarger,] <- as.matrix(-1*temp*RefFile[UseLimvalsLarger,SpeciesNames])
   
   
   fmult[which(is.na(fmult)==TRUE)] <- 1 # Assign missing (NA) values 1, no change in F
