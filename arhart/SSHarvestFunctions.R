@@ -1,21 +1,34 @@
-# Functions which implement harvest control rules
-
+# This file contains functions which formats data and runs single species assessments and uses the output to calculate exploitation rate (estimated and used)
+# SShrate.calc() encompasses this whole process
+# writeSSdatfiles() formats data files for use in SS assessments
+# doSSassess() performs the SS assessments
+# CalcFMultiplier() calculates the final F-multiplier for each species
 ########## SShrate.calc ##########
-# SShrate.calc function processes the outputs of functions that format and run the Single Species assessment in order to calculate the harvest rate (hrate) to be used when updating the operating model
-          # Data for the SS assessment is formatted/compiled by writeSSdatfiles function
-          # SS assessment is run by doSSassess function
-          # The resulting output from doSSassess include values for: growth rate(r), carrying capacity(k), z, theta, sigma?????????????????????????fill this in based on SSresults??????????????????
-          # Remaining lines of code included in SShrate.calc take the returned information from doSSassess to calculate estimated catch(estCat), estimated exploitation rate (estu)
-# The working directory will need to be set to a temporary working directory on the computer that is running the script, it may need to be changed when switching between computers ??????
-
-SShrate.calc <- function(Nsp=NULL, ObsBiomass=NULL, ObsCatch=NULL, workdir=NULL, inits=NULL, FMultiplier=NULL, inds.use=NULL, Nabund=NULL, ChosenStatusMeasure=ModelStatusMeasures, ChooseFMultOption=1) {
+SShrate.calc <- function(Nsp=NULL, ObsBiomass=NULL, ObsCatch=NULL, workdir=NULL, inits=NULL, inds.use=NULL, Nabund=NULL, ChosenStatusMeasure=ModelStatusMeasures, FMultiplier=NULL, ChooseFMultOption=1) {
+  # This function formats data for and runs single species (SS) assessments and uses the resulting catch at FMSY to calculate estimated and actual (used) harvest rate for each species
+  
+  # Args:
+       # Nsp: Number of species in the model
+       # ObsBiomass: Matrix of observed biomass, each species in a single column
+       # ObsCatch: Matrix of observed catch, each species in a single column
+       # workdir: working directory where files and calculations for SS assessment should be stored and executed
+       # inits: Data.frame containing columns with the following: Species (names, should match format of SpeciesNames), R, K, THETA
+       # Nabund: Biomass for each species at the end of the last model year
+       # ChosenStatusMeasure: Vector of status measures chosen for inclusion in the model simulation run
+       # FMultiplier: Matrix of F-Multipliers where each row indicates a different indicator and each column represents a species, may contain NA
+       # ChooseFMultOption: Indicates how final F-multiplier should be chosen from the list of possible F-multipliers (one for each indicator)
+             # ChooseFMultOption = 1   Choose minimum F-Multiplier for each species column
+             # ChooseFMultOption = 2   Choose maximum F-Multiplier for each species column
+             # ChooseFMultOption = 3   Choose mean F-Multiplier for each species column
+             # ChooseFMultOption = 4   Choose median F-Multiplier for each species column
+  # Return:
+       # List containing results of SS assessment (biomass estimate, harvest estimate, r, k, theta, z, sigma), estimate exploitation rate (EstimatedExploitRate) and to use (UseExploitRate)
+  
   # Write single species assessment data files based on available biomass and catch timeseries (these timeseries will be updated each model year)
   FormatSSDatfiles(Nsp=Nsp, ObsBiomass=ObsBiomass, ObsCatch=ObsCatch, workdir=workdir, inits=inits)
   
   # Use the doSSassess function to produce parameter values (r, k, z, theta, and sigma) which are used to update esimates of catch(estCat) and estimated harvest rate(estu)
   SSresults <- doSSassess(Nsp=Nsp, getwd(), plotdiag=FALSE)
-  
-  ##### Harvest Rate Calculations ##### 
   # Calculate catch at Fmsy (CatchFMSY) for each species based on SS assessments
   CatchFMSY <- rep(NA,Nsp)
   # Fill in CatchFMSY list from single species assessments (SSresults) for all ten species (Nsp=number of species)
@@ -24,30 +37,19 @@ SShrate.calc <- function(Nsp=NULL, ObsBiomass=NULL, ObsCatch=NULL, workdir=NULL,
     CatchFMSY[isp] <- SSresults$BiomassEstimate[[isp]][nrow(SSresults$BiomassEstimate[[isp]]), 2]*SSresults$r[isp]/2 # ?????? what is the second column in SSresults$BiomassEstimate??????
   }
   
-  AnnualSpeciesFMultiplier <- fmult.use(FMultiplier=FMultiplier,ChosenStatusMeasure=ChosenStatusMeasure, ChooseFMultOption=ChooseFMultOption)
+  # Calculate final FMultiplier using the matrix of FMultipliers for each species based on every Indicator included in the ChosenStatusMeasures for this model simulation
+  AnnualSpeciesFMultiplier <- CalcFMultiplier(FMultiplier=FMultiplier, ChooseFMultOption=ChooseFMultOption)
   
-  # Update estimated catch (estCat) and exploitation rate (estu) with indicator-based control rule information
-  # Estimated catch caluclated(estCat) by multiplying catch fmsy (CatchFMSY) from SS assessment times output of fmult.use function
-  estCat <- CatchFMSY*AnnualSpeciesFMultiplier # Use to calculate exploitation rate for next year (u.use)
-  # Estimated exploitation rate(estu) caclculated by dividing growth rate (r) from SS assement by 2 and multiplying by fmult.use function output based on control rules
-  estu <- (SSresults$r/2)*AnnualSpeciesFMultiplier
+  # Calculate estimated catch for each species
+  EstimatedCatch <- CatchFMSY*AnnualSpeciesFMultiplier # Use to calculate exploitation rate for next year (u.use)
+  # Calculate estimated exploitation rate for each species relative to growth rate (r)
+  EstimatedExploitRate <- (SSresults$r/2)*AnnualSpeciesFMultiplier
   
-  # Update estimated catch (estCat) and exploitation rate (estu) without indicator-based control rule information
-  #estCat <- CatchFMSY # Use to calculate exploitation rate for next year (u.use)
-  #estu <- (SSresults$r/2)
+  # Calculate exploitation rate to use for each species, fix to 0.99 if greater than 1 
+  UseExploitRate <- as.numeric(EstimatedCatch/Nabund)
+  UseExploitRate[UseExploitRate>0.99] <- 0.99
   
-  # Calculate exploitation rate for next year of the model (u.use) and set hrate equal to u.use(effectively updating value used for hrate in next year)
-  # This will be used to update operating model parameters below
-  # This sets exploitation rate as u.use which is equal to estimated catch/actual abundance, for each of 10 species if this value is greater than 0.99, then it is fixed to 0.99 (can't actually catch more fish than the actual abundance available to fish)
-  u.use = as.numeric(estCat/Nabund)
-  for (i in 1:10) if (u.use[i]>0.99) u.use[i]=0.99
-  hrate <- u.use
-  
-  # Resulting estu is used as the harvest rate in the update of operating model parameters (ode() function)
-  
-  # The harvest rate to be used in other calculations (the returned value of this scripts is hrate) is calculated by dividing estimated catch by abundance and constraining this fraction to be less than or equal to 0.99
-  
-  return(list(hrate=hrate, SSresults=SSresults, estu=estu, u.use=u.use))
+  return(list(SSresults=SSresults, EstimatedExploitRate=EstimatedExploitRate, UseExploitRate=UseExploitRate))
 }
 
 ########## writeSSdatfiles ##########
@@ -58,7 +60,6 @@ FormatSSDatfiles <- function(Nsp=24,ObsBiomass=NULL,ObsCatch=NULL,workdir="C:/te
 {
   curdir <- getwd()
   setwd(workdir)
-  Inits <- inits
   #Inits <- read.csv("/Users/arhart/Research/ebfm_modeltesting/data/inits.csv",header=TRUE)
   #Inits <- read.csv("G:/NEFSC/MS_PROD/admb/single_schaef/inits.csv",header=TRUE)
   
@@ -76,11 +77,12 @@ FormatSSDatfiles <- function(Nsp=24,ObsBiomass=NULL,ObsCatch=NULL,workdir="C:/te
     write("# r phase",outfile,append=TRUE) # writes # r phase
     write(1,outfile,append=TRUE) # places 1 below # r phase
     write("# rinit",outfile,append=TRUE) # writes # rinit
-    write(Inits[isp,1],outfile,append=TRUE) # places the value of R for species row Nsp from InitsData file
+    write(inits[isp,1],outfile,append=TRUE) # places the value of R for species row Nsp from InitsData file
+    # ?????????????????????? This assumes that the first 10 species in InitsData file are the 10 species in this analysis, would be better to have species labels and refer to species by name (loop over list of names)
     write("# k phase",outfile,append=TRUE) # writes # k phase
     write(1,outfile,append=TRUE) # places 1 beneath # k phase
     write("# Kinit",outfile,append=TRUE) # writes # Kinit
-    #write(Inits[isp,2],outfile,append=TRUE) 
+    #write(inits[isp,2],outfile,append=TRUE) 
     write(1500000,outfile,append=TRUE) # writes 1,500,000 below # Kinint   #??????? why this number and not K from InitsData file??????
     write("# z phase",outfile,append=TRUE) # writes # z phase
     write(-3,outfile,append=TRUE) # places -3 below # z phase
@@ -89,13 +91,13 @@ FormatSSDatfiles <- function(Nsp=24,ObsBiomass=NULL,ObsCatch=NULL,workdir="C:/te
     write("# theta phase",outfile,append=TRUE) # writes # theta phase
     write(2,outfile,append=TRUE) # places 2 below # theta phase
     write("# Theta init",outfile,append=TRUE) # writes # Theta init
-    write(Inits[isp,3],outfile,append=TRUE) # places value of Theta from InitsData file in row Nsp
+    write(inits[isp,3],outfile,append=TRUE) # places value of Theta from InitsData file in row Nsp
     write("# fyear",outfile,append=TRUE) # writes # fyear
     write(fyear,outfile,append=TRUE) # places fyear below #fyear
     write("# lyear",outfile,append=TRUE) # writes # lyear
     write(lyear,outfile,append=TRUE) # places lyear below #lyear
     write("# catches",outfile,append=TRUE) # writes # catches
-    write.table(round(ObsCatch[,isp+1],digits=0),outfile,append=TRUE,row.names=FALSE,col.names=FALSE) # rounds the values of ObsCatch to whole numbers in correspondign column
+    write.table(round(ObsCatch[,isp+1],digits=0),outfile,append=TRUE,row.names=FALSE,col.names=FALSE) # rounds the values of ObsCatch to whole numbers in corresponding column
     write("# nbio",outfile,append=TRUE) # writes #nbio
     write(nrow(ObsBiomass),outfile,append=TRUE) # places number of rows
     write("# obs bio",outfile,append=TRUE) # writes # obs bio
@@ -190,15 +192,21 @@ doSSassess <- function(Nsp,workdir,plotdiag=FALSE)
   return(SSresults)
 }
 
+# ?????? check that this labels everything
 
-
-########## fmult.use ##########
-#This script applies a function (minimum, median...) to each column of fmult and returns a single value for each column 
-
-#?????????????????????????????????does this have more than one column? is fumult a vector (1 column 1 output) or a matrix(multiple column, multiple outputs)? what is a reference point?????????????????
-
-# This function calculates a final FMultiplier using the matrix of FMultipliers for each species based on every Indicator included in the ChosenStatusMeasures for this model simulation
-fmult.use <- function(FMultiplier=NULL,ChosenStatusMeasure=ModelStatusMeasures, ChooseFMultOption=1){
+########## CalcFMultiplier ##########
+CalcFMultiplier <- function(FMultiplier=NULL, ChooseFMultOption=1){
+  # This function calculates a final FMultiplier using the matrix of FMultipliers for each species based on every Indicator included in the ChosenStatusMeasures for this model simulation
+  # Args:
+       # FMultiplier: Matrix of F-Multipliers where each row indicates a different indicator and each column represents a species, may contain NA
+       # ChooseFMultOption: Indicates how final F-multiplier should be chosen from the list of possible F-multipliers (one for each indicator)
+            # ChooseFMultOption = 1   Choose minimum F-Multiplier for each species column
+            # ChooseFMultOption = 2   Choose maximum F-Multiplier for each species column
+            # ChooseFMultOption = 3   Choose mean F-Multiplier for each species column
+            # ChooseFMultOption = 4   Choose median F-Multiplier for each species column
+  # Return:
+       # A vector containing final F-Multiplier values for each species, any species for shich no F-Multiplier was calculated is given a value of 1 so F is not adjusted
+  
   if("ChooseFMultOption"==1){
     FinalFMultiplier <- apply(FMultiplier, 2, FUN=min, na.rm=TRUE) # Choose minimum F-Multiplier for each species column
   } else if ("ChooseFMultOption"==2){
@@ -218,9 +226,9 @@ fmult.use <- function(FMultiplier=NULL,ChosenStatusMeasure=ModelStatusMeasures, 
   #submatrix of FMultiplier is stored as temp (the reference points for the only the chosen indicators(in this case 1-8 were chosen) are stored as temp)
   # temp <- FMultiplier[ChosenStatusMeasure,]
   # #if there is more than 1 row, use apply to execute function named "type" on each column( in this example take the minimum of each column)
-  # if(length(ChosenRefs)>1) fmult.use <- apply(temp,2,type,na.rm=TRUE)
-  # if(length(ChosenRefs)==1) fmult.use <- apply(matrix(temp,nrow=1),2,type,na.rm=TRUE)
-  # return(fmult.use)
+  # if(length(ChosenRefs)>1) CalcFMultiplier <- apply(temp,2,type,na.rm=TRUE)
+  # if(length(ChosenRefs)==1) CalcFMultiplier <- apply(matrix(temp,nrow=1),2,type,na.rm=TRUE)
+  # return(CalcFMultiplier)
 }
 
 
