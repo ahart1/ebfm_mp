@@ -3,10 +3,18 @@
 # and compares annual indicator values to reference and limit values to adjust the F-multiplier used in harvest control rules IndStatusAdjustFMultiplier()
 
 
-# For each indicator get.refpts() calculates reference and limit values for all possible indicators that may be used in indicator-based harvest control rules and returns refpts
-# This calculation is performed only once for each model run
-# Indicator values calculated in each model year are compared to these refvals and limvals to evaluate ecosystem status 
-CalcRefvalLimval <- function(use.defaults=TRUE, RefFile=NULL, ModelIndicators=ModelIndicators){
+########## CalcRefvalLimval ##########
+CalcRefvalLimval <- function(use.defaults=TRUE, RefFile=NULL, UseIndicators=ModelIndicators){
+  # This function calculates reference (refvals) and limit (limvals) values for all indicators available for use in model indicator-based harvest control rules
+  # Although refvals and limvals are calculated for all ModelIndicators, specification of ChosenStatusMeasures allows only a subset of the associated harvest control rules to be implemented
+ 
+  # Args: 
+       # use.defaults: If TRUE then default refvals and limvals are used, if FALSE these values are calculated by this function
+       # RefFile: File containing columns containing the following information: Indicator, Threshold, Limit, and a column for each species in the model, may also contain IndC and T.L columns
+       # UseIndicators: A vector of indicator names (strings) to be calculated, name format should match those in RefFile
+  # Returns: 
+       # An object (refpts) containing a list of reference values (refpts$refvals) and limit values (refpts$limvals)
+  
   # This section of code uses default values passed to the model in the initial conditions, it is mostly to test performance against known refvals and limvals
   if (use.defaults==TRUE)
   {
@@ -18,13 +26,13 @@ CalcRefvalLimval <- function(use.defaults=TRUE, RefFile=NULL, ModelIndicators=Mo
     # This section of code calculates new refvals and limvals rather than using defaults
     refvals <- rep(NA,nrow(RefFile))
     limvals <- rep(NA,nrow(RefFile))
-    names(refvals) = ModelIndicators 
-    names(limvals) = ModelIndicators
+    names(refvals) = UseIndicators 
+    names(limvals) = UseIndicators
     
     bounds <- matrix(c(6,3,6,3,1,0,0,1,0,1,0,1,0,1,20,0),ncol=2,byrow=TRUE)
-    rownames(bounds) = ModelIndicators
+    rownames(bounds) = UseIndicators
     
-    for (i in ModelIndicators){
+    for (i in UseIndicators){
       lo <- which.min(bounds[i,]) # ID lower bound value location
       hi <- which.max(bounds[i,]) # ID upper bound value location
       
@@ -73,11 +81,26 @@ CalcRefvalLimval <- function(use.defaults=TRUE, RefFile=NULL, ModelIndicators=Mo
 
 
 ########## CalcAnnualStatusMeasures ##########
-# Historic= indicates whether this function is calculating the status measures using historic data (TRUE) or updating based on annual new model simulated data (FALSE)
-      # UseStatusMeasures = indicators and performance metrics to be calculated for this simulation, calculated using PickStatusMeasures as part of initial model conditions
-      # Arguments is.predator and is.pelagic must be a list/vector of species names in ""
-      # UseStatusMeasures and Historic arguments must always be passed to this function, but the remaining arguments need only be passed values when being used to calculate a status measure (eg. lifespan is only needed if mean.lifespan performance metric is an option for the model run)
 CalcAnnualStatusMeasures <- function(UseStatusMeasures=NULL, Historic=TRUE,Biomass=NULL,Catch=NULL,BMSY=NULL,trophic.level=NULL,is.predator=NULL,is.pelagic=NULL,lifespan=NULL,size=NULL){
+  # This function calculates values for performance metrics and indicators used to measure ecosystem status
+  
+  # Args: 
+       # Historic: If TRUE function calculates status measures using historic data, if FALSE calculates status measure values for most recent model year (last in timeseries) using annual new model simulated data 
+       # UseStatusMeasures: Vector of indicators and performance metrics to be calculated for this simulation, calculated using PickStatusMeasures as part of initial model conditions
+            # UseStatusMeasures and Historic arguments must always be passed to this function, but the remaining arguments need only be passed values when being used to calculate a status measure (eg. lifespan is only needed if mean.lifespan performance metric is an option for the model run)
+       # Biomass: Matrix of historic biomass, each species should be in a single column
+       # Catch: Matrix of historic catch, each species should be in a single column
+       # BMSY: Vector containing BMSY for each species
+       # trophic.level: vector containing the trophic level of each species
+       # is.predator: Vector of predatory species names (strings) 
+       # is.pelagic: Vector of pelagic species names (strings)
+       # lifespan: Vector containing lifespan of each species
+       # size: Vector containing size of each species
+  # Return:
+       # An object (StatusMeasuredValues) containing values for performance metrics (StatusMeasuredValues$PerformMetric) and indicators (StatusMEasuredValues$Indicators)
+       # If Historic = TRUE then these values are returned as a matrix with status measured values for each year
+       # If Historic = FALSE then these values are calculated only for the most recent model year and are returned as a vector 
+  
   Indicators <- NULL 
   PerformMetric <- NULL
   
@@ -247,16 +270,27 @@ CalcAnnualStatusMeasures <- function(UseStatusMeasures=NULL, Historic=TRUE,Bioma
 
 
 # ????????? this code may not work since IndicatorValues can't be referenced using labels "" but refvals and limvals can so refvals[UseRefvals] works
-
-# This function compares indicators in this time step (current model year) to reference and limit values to calculate the F-multiplier used to adjust fishing mortality in harvest control rules
-        # Indicator status is evaluated by comparing the calculated value to refvals and limvals for this model run
-        # This status is used to adjust fishing mortality via a F-multiplier
-        # F-multipliers are applied across all species
-IndStatusAdjustFMultiplier <- function(refvals=NULL,limvals=NULL, RefFile=NULL, IndicatorValues=NULL, Nsp=NULL){ #ModelIndicators=ModelIndicators, SpeciesNames=SpeciesNames){ # ??? this comment should be deleted later: there will be 1 indicator value for each indicator used, each is named, not for each species
-
+########## IndStatusAdjustFMultiplier ##########
+IndStatusAdjustFMultiplier <- function(refvals=NULL,limvals=NULL, RefFile=NULL, IndicatorValues=NULL, Nsp=NULL, UseSpecies=SpeciesNames){ 
+  # This function compares indicators in this time step (current model year) to reference and limit values to calculate the F-multiplier used to adjust fishing mortality in harvest control rules
+  # Indicator status is evaluated by comparing the calculated value to refvals and limvals for this model run
+  # This status is used to adjust fishing mortality via a F-multiplier
+  # F-multipliers are applied across all species
+  
+  # Args: 
+       # refvals: Vector of reference values for this simulation
+       # limvals: Vector of limit values for this simulation
+       # RefFile: File containing columns containing the following information: Indicator, Threshold, Limit, and a column for each species in the model, may also contain IndC and T.L columns
+       # IndicatorValues: Vector containing values for indicators chosen for use in indicator-based harvest control rules
+       # Nsp: Number of species used in this model
+       # UseSpecies: Vector containing species names (strings)
+  # Return:
+       # Matrix of F-Multipliers where each row indicates a different indicator and each column represents a species
+       # refvals and limvals are available for all indicators, but this matrix may contain NA for indicators that are not included in this simulation
+  
   fmult <- matrix(NA, nrow=length(refvals), ncol=Nsp)
-  rownames(fmult) <- ModelIndicators
-  colnames(fmult) <- SpeciesNames
+  rownames(fmult) <- names(refvals)
+  colnames(fmult) <- UseSpecies
   temp <- NULL
   
   #### Indicators with refvals greater than limvals ####
@@ -274,7 +308,7 @@ IndStatusAdjustFMultiplier <- function(refvals=NULL,limvals=NULL, RefFile=NULL, 
   
   Position <- which(RefFile[,"Indicator"] %in% UseRefvalsLarger)
   names(Position) <- RefFile[Position, "Indicator"]
-  fmult[UseRefvalsLarger,] <- as.matrix(-1*temp*RefFile[Position,SpeciesNames]) # This calculates an fmultiplier across all species
+  fmult[UseRefvalsLarger,] <- as.matrix(-1*temp*RefFile[Position,UseSpecies]) # This calculates an fmultiplier across all species
   #???Test that the multiplication is ocurring across the correct rows of RefFile
   # ??? this should fill in by name, but I haven't tested with a correct IndicatorRefVals format
   
@@ -289,7 +323,7 @@ IndStatusAdjustFMultiplier <- function(refvals=NULL,limvals=NULL, RefFile=NULL, 
   
   temp[IndicatorValues[UseLimvalsLarger]>refvals[UseLimvalsLarger] && IndicatorValues[UseLimvalsLarger]<=limvals[UseLimvalsLarger]] <- (IndicatorValues[UseLimvalsLarger]-limvals[UseLimvalsLarger])/(refvals[UseLimvalsLarger]-limvals[UseLimvalsLarger]) # indicator less than/=limval or greater than refval
   
-  fmult[UseLimvalsLarger,] <- as.matrix(-1*temp*RefFile[UseLimvalsLarger,SpeciesNames])
+  fmult[UseLimvalsLarger,] <- as.matrix(-1*temp*RefFile[UseLimvalsLarger,UseSpecies])
   
   
   fmult[which(is.na(fmult)==TRUE)] <- 1 # Assign missing (NA) values 1, no change in F
