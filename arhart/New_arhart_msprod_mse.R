@@ -31,110 +31,69 @@
 tempdir <- paste(getwd(), "arhart/temp", sep="/")
 # Actually create temporary directory with above name
 dir.create(tempdir, showWarnings=FALSE)
+# ???????? Figure out where tempdir is used, if not used, delete this section of code
 
-# Create directory to store output files
-OUTPUTdir <- "OutputDirectory" 
 
-# Install packages used by scripts
-library(deSolve)
-library(jsonlite)
-
-# Set working directory to R folder so .R files(scripts) can be sourced in next line
-setwd("/Users/ahart2/Research/ebfm_mp/R")
-# Source all the *.R files in the main ebfm '/R' directory, this defines all functions included in these files but does not run them(they are not called)
-lapply(list.files(pattern = "[.]R$", recursive = TRUE), source)
-
-# Set working directory to allow sourcing of R scripts contained in arhart
-setwd("/Users/ahart2/Research/ebfm_mp/arhart/")
-# This sources the file contining R scripts that will be regularly used when running arhart_msprod_mse.R contained in arhart folder
-source("UtilityFunctions.R")
-source("calc.indicators.R")
-
-# Set working directory so R scripts previously loaded and all data files are in directory
-setwd("/Users/ahart2/Research/ebfm_mp")
-
+Run(PickStatusMeasureOption=1, )
 
 ###########################This is the start of a function (for debugging purposes) that actually runs all parts of model#########################################
 # My function makes the assumption that all R files needed to run this program are within the same working directory, these include: This file, SSHarvestFunctions.R, and NewIndicatorRefPtCalcs.R
-Run <- function()
-{
-  # Read in data files, this location must be changed when running on a new device, values from data file assigned to parameters below
-  # Read in BMSY and inits data
-  BMSYData <- read.csv("/Users/ahart2/Research/ebfm_mp/data/Bmsy.csv", header=TRUE) # column1 is species name, column2 is Bmsy, column3 is mean trophic level
-  InitsData <- read.csv("/Users/ahart2/Research/ebfm_mp/data/inits.csv", header=TRUE)
-  IndicatorRefVals <- read.csv("/Users/ahart2/Research/ebfm_mp/data/indicator_refvals.csv", header=TRUE) # Must contain the following columns: Indicator, IndC, Threshold, Limit, T.L, column for each species
-  # datfile variable contains the file name, reads from json file
-  datfilename <- "/Users/ahart2/Research/ebfm_mp/data/Georges.dat.json"
-  dat <- fromJSON(datfilename)
+Run <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUTPUTdir=NULL, Nsim=1, Nyr=5, SpeciesNames=NULL, Predators=NULL, Pelagics=NULL, StatusMeasures=NULL, HistoricBiomass=NULL,
+                HistoricCatch=NULL, BMSYData=NULL, MeanTrophicLevel=NULL, DefaultRefLimVals=TRUE, IndicatorData=NULL, InitialSpeciesData=NULL, ChooseFMult=NULL){
   
-  #Set number of simulations
-  Nsim <- 1000
-  ##############################################################################
-  # Define parameters for use in the model
-  ##############################################################################
-  # Parameters include r, KGuild (Carrying capacity of guild), Ktot (Carrying capacity of total system), Guildmembership, BetweenGuildComp (competition), WithinGuildComp, alpha, hrate(harvest rate) 
-  
-  # Read number of species from datfile
-  Nsp <- dat$Nsp
-  # Guilds / functional groups from datfile (in this case each guild is a single species)
-  Guildmembership <- dat$Guildmembership
-  NGuild = length(unique(Guildmembership))
-  # Initial values of depletion biomass for each guild
-  Initvals <- dat$Initvals
-  # Carrying capacity for each guild
-  KGuild <- dat$KGuild
-  # Total carrying capacity is sum of guild carrying capacity
-  Ktot <- sum(KGuild)
-  # Harvest rate for each species
-  hrate <- dat$hrate
-  # Growth rates for each species
-  r <- dat$r
-  
-  # Interactions as matrix
-  BetweenGuildComp <- dat$BetweenGuildComp
-  WithinGuildComp <- dat$WithinGuildComp
-  # alpha is predation
-  alpha <- dat$alpha
-  spatial.overlap <- dat$spatial.overlap
-  # Redefine parameter alpha and WithinGuildComp as products of matrices listed above
-  alpha <- alpha*spatial.overlap
-  WithinGuildComp <- WithinGuildComp*spatial.overlap
-  # Redefine harvest rate as list of zeros
-  hrate <- rep(0,Nsp)
-  
-  # Define BMSY and pick the species to include in the model
-  SpeciesNames <- as.character(BMSYData[c(4,5,21,22,14,23,24,6,3,7),1]) # pick species names
-  MeanTrophicLevel <- BMSYData[c(4,5,21,22,14,23,24,6,3,7),3] # ID mean trophic level for chosen species
-  BMSY <- KGuild/2 # Set values for BMSY
-  
-  # Identify columns containing predator species
-  Predators <- which(colSums(alpha)>0)
-  # ???? I need the line above to be replaced with the line below
-  # ??? Predators <- c("Predator1", "Predator2", "Predator3"...)
-  
-  #initial biomass for each species
-  Nabund <- Initvals
+  # Args:
+       # ScriptWorkDir: This is the working directory containing function scripts to source: SSHarvestFunctions.R, StatusMeasureFunctions.R,     
+       # WorkDir: This is the working directory
+       # OUTPUTdir: This is the working directory where the output from this function will be stored 
+       # Nsim: Number of model simulations to run, default=1
+       # Nyr: Number of years model projects forward in time, default=5
+       # SpeciesNames: Vector of species names (strings) to be used in this analysis
+       # Predators: Vector of species names (strings) for predatory species
+       # Pelagics: Vector of species names (strings) for pelagic species
+       # PickStatusMeasureOption: Indicates how status measures are chosen, default=1
+            # PickStatusMeasureOption = 1: uses all available status measures
+            # PickStatusMeasureOption = 2: picks a random subset of the available status measures
+       # StatusMeasures: Vector of status measures (strings) to be considered in the model simulation
+       # HistoricBiomass: Matrix of historic biomass, each species should be in a single column
+       # HistoricCatch: Matrix of historic catch, each species should be in a single column
+       # BMSYData: Vector containing BMSY for each species
+       # MeanTrophicLevel: vector containing the trophic level of each species
+       # DefaultRefLimVals: If TRUE then default refvals and limvals are used, if FALSE these values are calculated by this function, default=TRUE
+       # IndicatorData: Data.frame containing columns containing the following information: Indicator, Threshold, Limit, and a column for each species in the model, may also contain IndC and T.L columns
+       # InitialSpeciesData: Data.frame containing columns with the following: Species (names, should match format of SpeciesNames), R, K, THETA
+       # ChooseFMult: Indicates how final F-multiplier should be chosen from the list of possible F-multipliers (one for each indicator)
+            # ChooseFMult = 1   Choose minimum F-Multiplier for each species column
+            # ChooseFMult = 2   Choose maximum F-Multiplier for each species column
+            # ChooseFMult = 3   Choose mean F-Multiplier for each species column
+            # ChooseFMult = 4   Choose median F-Multiplier for each species column
   
   
   
-  ############## get historical time series of biomass and catch, 33 year of data####################
-  # Define NI(abundandce index) for 33 years of data
-  NI <- dat$NI
-  # Remove the first column which represents year not initial abundance for a species
-  NI <- NI[,-1]
+# Optional # /????????????? I think I need to fix how these are passed to function, may need to include .. in function??????
+  # lifespan: Vector containing lifespan of each species
+  # size: Vector containing size of each species
   
-  # Define CI(catch index) for 33 years of data
-  CI <- dat$CI
+  # Set working directory containing R scripts to be sourced
+  setwd(ScriptWorkDir)
+  # Source R scripts
+  lapply(list.files(pattern = "[.]R$", recursive = TRUE), source)
   
-  # Redefine functional groups
-  theguilds <- c(1,1,2,2,1,3,3,1,1,1)  ##### ???????????????? this is very error prone, is there a way to get this information from BMSY above or one of the other documents, if yes then change the code for Pelagics below
+  # Set working directory for this analysis
+  setwd(WorkDir)
   
-  # Identify columns containing pelagic species
-  Pelagics <- which(theguilds==2)
-  # ???? I need the line above to be replaced with the line below
-  # ??? Pelagics <- c("Pelagic1", "Pelagic2", "Pelagic3"...)
+  # Install packages used by scripts
+  library(deSolve)
+  library(jsonlite)
+  
+  # Define model parameters not passed to function as arguments
+  Nsp <- length(SpeciesNames) # Number of Species
   
   
+  
+  
+  
+  
+
   
   
   
@@ -169,7 +128,7 @@ Run <- function()
   # The following creates a list of indicators to be used in each simulation
   ChosenStatusMeasureList <- NULL
   for(isim in 1: Nsim){
-    ChosenStatusMeasureList[[isim]] <- PickStatusMeasures(PickOption=1, PotentialStatusMeasures=StatusMeasures)
+    ChosenStatusMeasureList[[isim]] <- PickStatusMeasures(PickOption=PickStatusMeasureOption, PotentialStatusMeasures=StatusMeasures)
   }
   
   # First for loop runs each simulations through values of maxcatch from 50,000 to 200,000 in steps of 25,000 and allows each of these to be saved to a different file name
@@ -205,20 +164,20 @@ Run <- function()
       # Historic timeseries
       ###################################################################################################
       ########## Biomass ##########
-      NI.obs <- NI
+      NI.obs <- HistoricBiomass
       
       ########## Catch ##########
-      CI.obs <- CI
+      CI.obs <- HistoricCatch
      
       ########## Status Measures ##########
       # CalcAnnualStatusMeasures calculates values for status measures (performance metrics and indicators used in indicator-based harvest control rules) for historic timeseries 
-      StatusMeasuredVals <- CalcAnnualStatusMeasures(UseStatusMeasures=ChosenStatusMeasures,Historic=TRUE, Biomass=NI,Catch=CI,BMSY=KGuild,trophic.level=MeanTrophicLevel,is.predator=Predators,is.pelagic=Pelagics)
+      StatusMeasuredVals <- CalcAnnualStatusMeasures(UseStatusMeasures=ChosenStatusMeasures,Historic=TRUE, Biomass=HistoricBiomass,Catch=HistoricCatch,BMSY=BMSYData,trophic.level=MeanTrophicLevel,is.predator=Predators,is.pelagic=Pelagics)
       PerformMetricTimeSeries <- StatusMeasuredVals$PerformMetric
       IndicatorTimeSeries <- StatusMeasuredVals$Indicators
       
       # Calculate reference and limit values for this simulation
       # Although refvals and limvals are calculated for all ModelIndicators, specification of ChosenStatusMeasures allows only a subset of the associated harvest control rules to be implemented
-      RefptsVals <- CalcRefvalLimval(use.defaults=FALSE, RefFile=IndicatorRefVals, UseIndicators=ModelIndicators)
+      RefptsVals <- CalcRefvalLimval(use.defaults=DefaultRefLimVals, RefFile=IndicatorData, UseIndicators=ModelIndicators)
       
       
       ########## Update Biomass at End of Historic Timeseries: Starting Conditions for Next Year ##########
@@ -229,7 +188,7 @@ Run <- function()
       StartingIndicatorVals <- as.vector(tail(IndicatorTimeSeries, 1)) 
       names(StartingIndicatorVals) <- colnames(IndicatorTimeSeries)
       # Work out status relative to refernce points given historic indicator values (StartingIndicatorVals) and adjust F-Multiplier
-      fmult <- IndStatusAdjustFMultiplier(refvals=RefptsVals$refvals, limvals=RefptsVals$limvals, RefFile=IndicatorRefVals, IndicatorValues=StartingIndicatorVals, Nsp=10, UseSpecies=SpeciesNames)
+      fmult <- IndStatusAdjustFMultiplier(refvals=RefptsVals$refvals, limvals=RefptsVals$limvals, RefFile=IndicatorData, IndicatorValues=StartingIndicatorVals, Nsp=Nsp, UseSpecies=SpeciesNames)
       
       
 # ?????????????????????????? targ.u doesn't appear to be used anywhere, can I get rid of it??????????
@@ -245,7 +204,8 @@ Run <- function()
         
         ########## Single Species Assessments ##########
         # Format data for and runs single species (SS) assessments, use the resulting catch at FMSY to calculate estimated and actual (used) harvest rate for each species
-        SSHarvestInfo <- SShrate.calc(Nsp,ObsBiomass=cbind(1:nrow(NI.obs),NI.obs),ObsCatch=cbind(1:nrow(CI.obs),CI.obs),workdir=getwd(), inits=InitsData, FMultiplier=fmult, inds.use=ChosenStatusMeasures, Nabund=Nabund, ChooseFMultOption=4) # ??????? Changed workdir=tempdir to workdir=getwd()
+        # ???????? fix ObsBiomass and ObsCatch, no calculations here, figure out what it means
+        SSHarvestInfo <- SShrate.calc(Nsp=Nsp,ObsBiomass=cbind(1:nrow(NI.obs),NI.obs),ObsCatch=cbind(1:nrow(CI.obs),CI.obs),workdir=getwd(), inits=InitialSpeciesData, FMultiplier=fmult, inds.use=ChosenStatusMeasures, Nabund=Nabund, ChooseFMultOption=ChooseFMult) # ??????? Changed workdir=tempdir to workdir=getwd()
         # ?????? Not currently used or stored anywhere why return/label here???????? SSresults <- SSHarvestInfo$SSresult
         # Append new exploitation rates (estimated and used) 
         EstimatedExploitationRateTimeseries <- rbind(EstimatedExploitationRateTimeseries,SSHarvestInfo$EstimatedExploitRate)  
@@ -339,28 +299,28 @@ Run <- function()
         
         ########## Update Status Measures at End of Model Year: Starting Conditions for Next Year ##########
         # Assess ecosystem status: calculate values for status measures and append to PerformMetricTimeSeries and IndicatorTimeSeries
-        AnnualStatusMeasuredVals <- CalcAnnualStatusMeasures(UseStatusMeasures=ChosenStatusMeasures,Historic=FALSE, Biomass=NI.obs, Catch=CI.obs,BMSY=KGuild,trophic.level=MeanTrophicLevel,is.predator=Predators,is.pelagic=Pelagics)
+        AnnualStatusMeasuredVals <- CalcAnnualStatusMeasures(UseStatusMeasures=ChosenStatusMeasures,Historic=FALSE, Biomass=NI.obs, Catch=CI.obs,BMSY=BMSYData,trophic.level=MeanTrophicLevel,is.predator=Predators,is.pelagic=Pelagics)
         PerformMetricTimeSeries <- rbind(PerformMetricTimeSeries, AnnualStatusMeasuredVals$PerformMetric)
         IndicatorTimeSeries <- rbind(IndicatorTimeSeries, AnnualStatusMeasuredVals$Indicators)
         # Annual indicator values
         AnnualIndicatorVals <- AnnualStatusMeasuredVals$Indicators
         # Work out status relative to refernce points given new indicator values (AnnualIndicatorVals) and adjust F-Multiplier
-        fmult <- IndStatusAdjustFMultiplier(refvals=RefptsVals$refvals,limvals=RefptsVals$limvals, RefFile=IndicatorRefVals, IndicatorValues=AnnualIndicatorVals, Nsp=10, UseSpecies=SpeciesNames)
+        fmult <- IndStatusAdjustFMultiplier(refvals=RefptsVals$refvals,limvals=RefptsVals$limvals, RefFile=IndicatorData, IndicatorValues=AnnualIndicatorVals, Nsp=Nsp, UseSpecies=SpeciesNames)
       }
       # This is where projection 2:Nyr ends
       # Save results for this simulation, [isim] adds the most recent results to the list
       ALL.results[[isim]] <- list(targ.u=targ.u,
-                                  inds.use=ChosenStatusMeasures,
+                                  ChosenStatusMeasures=ChosenStatusMeasures,
                                   refvals=RefptsVals$refvals,
                                   limvals=RefptsVals$limvals,
-                                  estu=EstimatedExploitationRateTimeseries,
-                                  u.use=UsedExploitationRateTimeseries,
-                                  Nabundobs=NI.obs,
-                                  Catchobs=CI.obs,
-                                  ei=indicators, 
-                                  maxcat=maxcat,
-                                  BiomassResult=BiomassResult, 
-                                  CatchResult=CatchResult, 
+                                  EstimatedExploitationRate=EstimatedExploitationRateTimeseries,
+                                  UsedExploitationRate=UsedExploitationRateTimeseries,
+                                  ObservedBiomass=NI.obs,
+                                  ObservedCatch=CI.obs,
+                                  ei=indicators, # ?????????? where is this from?
+                                  maxcat=maxcat, # maxcat ?????? where
+                                  TrueBiomassResult=BiomassResult, 
+                                  TrueCatchResult=CatchResult, 
                                   PredlossResult=PredlossResult, 
                                   WithinlossResult=WithinlossResult, 
                                   BetweenlossResult=BetweenlossResult)
