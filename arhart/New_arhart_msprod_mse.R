@@ -55,6 +55,7 @@ setwd("/Users/ahart2/Research/ebfm_mp")
 
 
 ###########################This is the start of a function (for debugging purposes) that actually runs all parts of model#########################################
+# My function makes the assumption that all R files needed to run this program are within the same working directory, these include: This file, SSHarvestFunctions.R, and NewIndicatorRefPtCalcs.R
 Run <- function()
 {
   # Read in data files, this location must be changed when running on a new device, values from data file assigned to parameters below
@@ -181,178 +182,170 @@ Run <- function()
     
     
     # Do a bunch of simulations
-    for(isim in 1:Nsim)
-    {
-      #########determine which of the ecosystem indicators to use in the control rule for  this simulation#########
-      # PickStatusMeasures() indicates which control rules will be used for use in each simulation and stores them as ChosenStatusMeasures in each simulation run
+    for(isim in 1:Nsim){
+      ###################################################################################################
+      # Setup for each model simulation
+      ###################################################################################################
+      # Select status measures for use in this simulation from the provided list
       ChosenStatusMeasures <- ChosenStatusMeasureList[[isim]]
 
-      # Make some storage arrays
-      NI.obs <- NI
-      CI.obs <- CI
+      # Make some storage arrays 
+      # Store SS exploitation
+      EstimatedExploitationRateTimeseries <- NULL
+      UsedExploitationRateTimeseries <- NULL
+      # Store Multi-species results
       BiomassResult <- NULL
       CatchResult <- NULL
       PredlossResult <- NULL
       WithinlossResult <- NULL
       BetweenlossResult <- NULL
       
-      # Exploitation rate
-      exprate.est <- NULL
-      exprate.use <- NULL
-      
-      
-      
-      
-      
-      
-      
-
-      
-      
-      
       
       ###################################################################################################
-      # Historic calculations
+      # Historic timeseries
       ###################################################################################################
+      ########## Biomass ##########
+      NI.obs <- NI
+      
+      ########## Catch ##########
+      CI.obs <- CI
+     
       ########## Status Measures ##########
       # CalcAnnualStatusMeasures calculates values for status measures (performance metrics and indicators used in indicator-based harvest control rules) for historic timeseries 
       StatusMeasuredVals <- CalcAnnualStatusMeasures(UseStatusMeasures=ChosenStatusMeasures,Historic=TRUE, Biomass=NI,Catch=CI,BMSY=KGuild,trophic.level=MeanTrophicLevel,is.predator=Predators,is.pelagic=Pelagics)
       PerformMetricTimeSeries <- StatusMeasuredVals$PerformMetric
       IndicatorTimeSeries <- StatusMeasuredVals$Indicators
       
-      ########## Biomass ##########
-      NI # ????? this is where the value from the input file can be defined
-      
-     
-      
-      
-      ###################################################################################################
-      # First model year: starting conditions for model projections
-      ###################################################################################################
-      ########## Status Measures ##########
-      StartingIndicatorVals <- as.vector(tail(IndicatorTimeSeries, 1))
-      names(StartingIndicatorVals) <- colnames(IndicatorTimeSeries)
-      # ??????????????????? I would like all arguments for CalcAnnualStatusMeasures to be specified as part of the model's initial conditions,
-      # ??????????????????? I think that initial conditions should be formatted separately and passed to this model in a specific format
-      # ??????????????????? is.predator and is.pelagic should not be calculated here, they should be calculated above
-      
-      # CalcRefvalLimval calculates reference (refvals) and limit (limvals) values used in indicator-based harvest control rules for all indicators included in ModelIndicators
-              # The same refvals and limvals are used for the duration of each simulation
-              # Although refvals and limvals are calculated for all ModelIndicators, specification of ChosenStatusMeasures allows only a subset of the associated harvest control rules to be implemented
-      RefptsVals <- CalcRefvalLimval(use.defaults=FALSE, RefFile=IndicatorRefVals, ModelIndicators=ModelIndicators)
-      # Calculate the F multipliers based on the status of indicators compared to reference points (refvals and limvals)
-      fmult <- IndStatusAdjustFMultiplier(refvals=RefptsVals$refvals, limvals=RefptsVals$limvals, RefFile=IndicatorRefVals, IndicatorValues=StartingIndicatorVals, Nsp=10)
+      # Calculate reference and limit values for this simulation
+      # Although refvals and limvals are calculated for all ModelIndicators, specification of ChosenStatusMeasures allows only a subset of the associated harvest control rules to be implemented
+      RefptsVals <- CalcRefvalLimval(use.defaults=FALSE, RefFile=IndicatorRefVals, UseIndicators=ModelIndicators)
       
       
-      
-      ########## Biomass ##########
+      ########## Update Biomass at End of Historic Timeseries: Starting Conditions for Next Year ##########
       Nabund <- as.numeric(NI[nrow(NI),])*exp(rnorm(10,0,0.2)-0.5*0.2*0.2) # Error added to biomass at end of historic time series
       
-    
- 
+      ########## Update Status Measures at End of Historic Timeseries: Starting Conditions for Next Year ##########
+      # Indicators at the end of historic time series
+      StartingIndicatorVals <- as.vector(tail(IndicatorTimeSeries, 1)) 
+      names(StartingIndicatorVals) <- colnames(IndicatorTimeSeries)
+      # Work out status relative to refernce points given historic indicator values (StartingIndicatorVals) and adjust F-Multiplier
+      fmult <- IndStatusAdjustFMultiplier(refvals=RefptsVals$refvals, limvals=RefptsVals$limvals, RefFile=IndicatorRefVals, IndicatorValues=StartingIndicatorVals, Nsp=10, UseSpecies=SpeciesNames)
       
       
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      ######################## set initial values for operating model biomass##################################
-      # Defines conditions for year one of the operating model, from which a forward projection will be carried out
-      
-      
-
+# ?????????????????????????? targ.u doesn't appear to be used anywhere, can I get rid of it??????????
       # Target exploitation rate(u)= Target FMSY =Growth rate divided in half
       targ.u <- r/2
-      
       
       
       ###################################################################################################
       # Begin forward projection from model year 2-Nyr
       ###################################################################################################
       # This starts projection in year 2 through Nyr=30(defined in initial values for operating model), initial values for year 1 are defined in previous section of script
-      for (iyr in 2:Nyr)
-      {    
-        # Changed workdir=tempdir to workdir=getwd()
-        SShrate.output <- SShrate.calc(Nsp,ObsBiomass=cbind(1:nrow(NI.obs),NI.obs),ObsCatch=cbind(1:nrow(CI.obs),CI.obs),workdir=getwd(), inits=InitsData, FMultiplier=fmult, inds.use=ChosenStatusMeasures, Nabund=Nabund, ChooseFMultOption=4)
-        hrate <- SShrate.output$hrate
-        SSresults <- SShrate.output$SSresults
-        estu <- SShrate.output$estu
-        u.use <- SShrate.output$u.use
+      for (iyr in 2:Nyr){
         
-        # Append exploitation rate (new estu and u.use values) to exprate.est and exprate.use ????????not from ode() from SShrate.output
-        exprate.est <- rbind(exprate.est,estu)  
-        exprate.use <- rbind(exprate.use,u.use)  
+        ########## Single Species Assessments ##########
+        # Format data for and runs single species (SS) assessments, use the resulting catch at FMSY to calculate estimated and actual (used) harvest rate for each species
+        SSHarvestInfo <- SShrate.calc(Nsp,ObsBiomass=cbind(1:nrow(NI.obs),NI.obs),ObsCatch=cbind(1:nrow(CI.obs),CI.obs),workdir=getwd(), inits=InitsData, FMultiplier=fmult, inds.use=ChosenStatusMeasures, Nabund=Nabund, ChooseFMultOption=4) # ??????? Changed workdir=tempdir to workdir=getwd()
+        # ?????? Not currently used or stored anywhere why return/label here???????? SSresults <- SSHarvestInfo$SSresult
+        # Append new exploitation rates (estimated and used) 
+        EstimatedExploitationRateTimeseries <- rbind(EstimatedExploitationRateTimeseries,SSHarvestInfo$EstimatedExploitRate)  
+        UsedExploitationRateTimeseries <- rbind(UsedExploitationRateTimeseries,SSHarvestInfo$UseExploitRate)  
         
-        ###########################################This is where the multispecies operating model comes into play######################
+        # Update harvest rate for each species based on SS assessments
+        HarvestRate <- SSHarvestInfo$UseExploitRate
         
-        # Update exploitation rate, u.use data fed into harvest rate
+        ########## Solve Multi-Species Operating Model ##########
         # Define the list of parameters that will be given to operating model as arguments below, values for each parameter are manipulated within the operating model (eg. dNbydt and dNbydt_max)
         # maxcat was added for dNbydt_max to reference when given to ode() as an argument (not needed if using dNbydt)
-        parms=list(r=r,
+        parms <- list(r=r,
                    KGuild=KGuild,
                    Ktot=Ktot,
                    Guildmembership=Guildmembership,
                    BetweenGuildComp=BetweenGuildComp,
                    WithinGuildComp=WithinGuildComp,
                    alpha=alpha,
-                   hrate=hrate, 
+                   hrate=HarvestRate, 
                    maxcat=maxcat)
         # dNbydt is the MSProd model equation, solve using ode() and store in OdeResult
         OdeResult <- ode(Nabund, seq(iyr-1,(iyr+0.5),0.5), dNbydt_max, parms=parms, method="rk4")
         
-        # Store objects from OdeResult for current simulation year
-        BiomassResult <- rbind(BiomassResult, OdeResult[1,2:(Nsp+1)])  # Predicted biomass(abundance)
-        CatchResult <- rbind(CatchResult, OdeResult[2,(Nsp+2):(Nsp+11)]) # Predicted catch
+        # # Append new biomass, catch, loss due to predators, within aggregate groups, and between aggregate groups
+        # BiomassResult <- rbind(BiomassResult, OdeResult[1,2:(Nsp+1)])  # Predicted biomass(abundance)
+        # CatchResult <- rbind(CatchResult, OdeResult[2,(Nsp+2):(Nsp+11)]) # Predicted catch
+        # PredlossResult <- rbind(PredlossResult, OdeResult[2,(Nsp+12):(Nsp+21)]) # Loss to predators
+        # WithinlossResult <- rbind(WithinlossResult, OdeResult[2,(Nsp+22):(Nsp+31)]) # Within loss
+        # BetweenlossResult <- rbind(BetweenlossResult, OdeResult[2,(Nsp+32):(Nsp+41)]) # Between loss
+        # 
+        # if (iyr==Nyr) { # If last simulation year append results as follows:
+        #   # Store results for last year of simulation (stores forward projection of 1 year rather than using this projection to update Nabundance and Cat)
+        #   BiomassResult <- rbind(BiomassResult, OdeResult[3,2:(Nsp+1)])  # Predicted biomass(abundance)
+        #   CatchResult <- rbind(CatchResult, OdeResult[4,(Nsp+2):(Nsp+11)]) # Predicted catch
+        #   PredlossResult <- rbind(PredlossResult, OdeResult[4,(Nsp+12):(Nsp+21)]) # Loss to predators
+        #   WithinlossResult <- rbind(WithinlossResult, OdeResult[4,(Nsp+22):(Nsp+31)]) # Within loss
+        #   BetweenlossResult <- rbind(BetweenlossResult, OdeResult[4,(Nsp+32):(Nsp+41)]) # Between loss
+        # }
+        # 
+        # ################# Update abundance and catch (true and observed) time series, calculate indicators and status for next simulation year calculations using OdeResult output############################
+        # 
+        # # ?????????????????????????????????????????????
+        # # ???????? where is this catch actually used, where is the Rem used????????? I don't think either is actually, Cat used to generate observed data
+        # # Update catch estimate for use in next simulation year calculations
+        # Cat <- 1.e-07+OdeResult[2,(Nsp+2):(Nsp+11)] # ?????????? why add very small number (1.e-7) when the next line does effectively the same thing?
+        # Cat[Cat<=0] <- 0.01 # Catch values less than or equal to 0 replaced with 0.01 (Catch can't be less than or equal to 0)
+        # # Rem is loss due to competition/predation interactions (stored each year as PredlossResult, WithinlossResult, BetweenlossResult)
+        # Rem <- OdeResult[2,(Nsp+12):ncol(OdeResult)]
+        # # ?????????????????????????????????????????????
+        # 
+        # # Generate observed data for this timestep and append to observed dataset (includes historic observations)
+        # Nobs <- OdeResult[2,2:(Nsp+1)]*exp(rnorm(10,0,0.2)-0.5*0.2*0.2)
+        # Cobs <- Cat*exp(rnorm(10,0,0.2)-0.5*0.2*0.2)
+        # NI.obs <- rbind(NI.obs,Nobs) 
+        # CI.obs <- rbind(CI.obs,Cobs) 
+        
+        # Append new true biomass, true catch, loss due to predators, within aggregate groups, and between aggregate groups
+        TrueBiomass <-  OdeResult[1,2:(Nsp+1)]  # Predicted biomass(abundance) at start of model year
+        BiomassResult <- rbind(BiomassResult, TrueBiomass)
+        CatchResult <-  OdeResult[2,(Nsp+2):(Nsp+11)] # Predicted catch half way through model year
         PredlossResult <- rbind(PredlossResult, OdeResult[2,(Nsp+12):(Nsp+21)]) # Loss to predators
         WithinlossResult <- rbind(WithinlossResult, OdeResult[2,(Nsp+22):(Nsp+31)]) # Within loss
         BetweenlossResult <- rbind(BetweenlossResult, OdeResult[2,(Nsp+32):(Nsp+41)]) # Between loss
         
-        # If last simulation year
-        if (iyr==Nyr) {
+        if (iyr==Nyr) { # If last simulation year append results as follows:
           # Store results for last year of simulation (stores forward projection of 1 year rather than using this projection to update Nabundance and Cat)
-          BiomassResult <- rbind(BiomassResult, OdeResult[3,2:(Nsp+1)])  # Predicted biomass(abundance)
-          CatchResult <- rbind(CatchResult, OdeResult[4,(Nsp+2):(Nsp+11)]) # Predicted catch
+          BiomassResult <-  OdeResult[3,2:(Nsp+1)]  # Predicted biomass(abundance)
+          CatchResult <-  OdeResult[4,(Nsp+2):(Nsp+11)] # Predicted catch
           PredlossResult <- rbind(PredlossResult, OdeResult[4,(Nsp+12):(Nsp+21)]) # Loss to predators
           WithinlossResult <- rbind(WithinlossResult, OdeResult[4,(Nsp+22):(Nsp+31)]) # Within loss
           BetweenlossResult <- rbind(BetweenlossResult, OdeResult[4,(Nsp+32):(Nsp+41)]) # Between loss
         }
         
-        ################# Update abundance and catch (true and observed) time series, calculate indicators and status for next simulation year calculations using OdeResult output############################
-        # Update biomass estimate for use in next simulation year calculations
+        # Generate and append observed biomass and catch data for this timestep (observed values recorded half way through model year)
+        ObservedBiomass <- OdeResult[2,2:(Nsp+1)]*exp(rnorm(10,0,0.2)-0.5*0.2*0.2)
+        NI.obs <- rbind(NI.obs, ObservedBiomass)
+        
+        # ?????????????????????????????????????????????
+        # ???????? where is this catch actually used, where is the Rem used????????? I don't think either is actually, Cat used to generate observed data
+        # Update catch estimate for use in next simulation year calculations
+        Cat <- 1.e-07+ OdeResult[2,(Nsp+2):(Nsp+11)] # ?????????? why add very small number (1.e-7) when the next line does effectively the same thing?
+        Cat[Cat<=0] <- 0.01 # Catch values less than or equal to 0 replaced with 0.01 (Catch can't be less than or equal to 0)
+        ObservedCatch <- Cat*exp(rnorm(10,0,0.2)-0.5*0.2*0.2)
+        CI.obs <- rbind(CI.obs, ObservedCatch) 
+        
+        
+        ########## Update Biomass at End of Model Year: Starting Conditions for Next Year ##########
+        # Update biomass at end of this model year (starting biomass for next model year moving forward in time)
         Nabund <- OdeResult[3,2:(Nsp+1)]
         Nabund[Nabund<=0] <- 0.01 # N values less than or equal to 0 replaced with 0.01 (Abundance can't be less than or equal to 0)
-        # Update catch estimate for use in next simulation year calculations
-        Cat <- 1.e-07+OdeResult[2,(Nsp+2):(Nsp+11)]
-        Cat[Cat<=0] <- 0.01 # Catch values less than or equal to 0 replaced with 0.01 (Catch can't be less than or equal to 0)
-        # Rem is loss due to competition/predation interactions (stored each year as PredlossResult, WithinlossResult, BetweenlossResult)
-        Rem <- OdeResult[2,(Nsp+12):ncol(OdeResult)]
         
-        # Generate observed data for this timestep and append to observed dataset
-        Nobs <- OdeResult[2,2:(Nsp+1)]*exp(rnorm(10,0,0.2)-0.5*0.2*0.2)
-        Cobs <- Cat*exp(rnorm(10,0,0.2)-0.5*0.2*0.2)
-        NI.obs <- rbind(NI.obs,Nobs) 
-        CI.obs <- rbind(CI.obs,Cobs) 
-        
-        ############# Update indicators and status
-        
-        # Calculate ecological indicators based on new data at this time step
+        ########## Update Status Measures at End of Model Year: Starting Conditions for Next Year ##########
+        # Assess ecosystem status: calculate values for status measures and append to PerformMetricTimeSeries and IndicatorTimeSeries
         AnnualStatusMeasuredVals <- CalcAnnualStatusMeasures(UseStatusMeasures=ChosenStatusMeasures,Historic=FALSE, Biomass=NI.obs, Catch=CI.obs,BMSY=KGuild,trophic.level=MeanTrophicLevel,is.predator=Predators,is.pelagic=Pelagics)
         PerformMetricTimeSeries <- rbind(PerformMetricTimeSeries, AnnualStatusMeasuredVals$PerformMetric)
         IndicatorTimeSeries <- rbind(IndicatorTimeSeries, AnnualStatusMeasuredVals$Indicators)
+        # Annual indicator values
         AnnualIndicatorVals <- AnnualStatusMeasuredVals$Indicators
-        # ????????does update of indicators just rerun calculation after new data is added (doesn't just use the last year of data)
-        
-        
-        
-        
-        # Work out status relative to refernce points given new indicators values (AnnualIndicatorVals)
-        fmult <- IndStatusAdjustFMultiplier(refvals=RefptsVals$refvals,limvals=RefptsVals$limvals, RefFile=IndicatorRefVals, IndicatorValues=AnnualIndicatorVals, Nsp=10)
+        # Work out status relative to refernce points given new indicator values (AnnualIndicatorVals) and adjust F-Multiplier
+        fmult <- IndStatusAdjustFMultiplier(refvals=RefptsVals$refvals,limvals=RefptsVals$limvals, RefFile=IndicatorRefVals, IndicatorValues=AnnualIndicatorVals, Nsp=10, UseSpecies=SpeciesNames)
       }
       # This is where projection 2:Nyr ends
       # Save results for this simulation, [isim] adds the most recent results to the list
@@ -360,8 +353,8 @@ Run <- function()
                                   inds.use=ChosenStatusMeasures,
                                   refvals=RefptsVals$refvals,
                                   limvals=RefptsVals$limvals,
-                                  estu=exprate.est,
-                                  u.use=exprate.use,
+                                  estu=EstimatedExploitationRateTimeseries,
+                                  u.use=UsedExploitationRateTimeseries,
                                   Nabundobs=NI.obs,
                                   Catchobs=CI.obs,
                                   ei=indicators, 
