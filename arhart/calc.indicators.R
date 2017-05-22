@@ -17,15 +17,15 @@ calc.indicator.hcr <- function(refvals,limvals,use.defaults=TRUE,indvals, RefFil
   {
     refvals <- ind.hcr[,3]
     limvals <- ind.hcr[,4]
-    names(refvals) = ind.hcr[,1]
+    names(refvals) = ind.hcr[,1] # Assigns names from RefFile
     names(limvals) = ind.hcr[,1]
   }
   
   fmult <- matrix(NA,nrow=length(refvals),ncol=10)
    for (ind.use in 1:length(refvals))
   {
-    name = names(refvals[ind.use])
-     i <- which(names(indvals)== name)
+    name = names(refvals[ind.use]) # sets name to the ind.use item in refvals (in this case a number between 1-8)
+     i <- which(names(indvals)== name) # identifies location of refval named "name" in list of indvals, ??? mistakenly uses 1 value of prop.pel from ei.hist to fill 2 values of prop.pel
     #print(c(i,ind.use,refvals[ind.use],limvals[ind.use]))
     if (refvals[ind.use]>=limvals[ind.use] & ind.use !=5)
     {
@@ -53,24 +53,23 @@ calc.indicator.hcr <- function(refvals,limvals,use.defaults=TRUE,indvals, RefFil
     return(fmult)
 }
   
-  
+ 
+## ???????????????? I probably want the below to pick values from a vector as in PickIndicators rather than running a for() loop
+ 
 # Where indicator.hcr used, get.fmults=FALSE in the original script
 # This function calculates the reference points
-get.refpts <- function(refvals,limvals,use.defaults=TRUE, indvals, RefFile=NULL)
-{
-  reffile <- RefFile
-  ind.hcr <- reffile
+get.refpts <- function(refvals,limvals,use.defaults=TRUE, RefFile=NULL){
   
   if (use.defaults==TRUE)
   {
-    refvals <- ind.hcr[,3]
-    limvals <- ind.hcr[,4]
-    names(refvals) = ind.hcr[,1]
-    names(limvals) = ind.hcr[,1]
+    refvals <- RefFile[,"Threshold"]
+    limvals <- RefFile[,"Limit"]
+    names(refvals) = RefFile[,"Indicator"]
+    names(limvals) = RefFile[,"Indicator"]
   }  
   #Calculate refpoints
   bounds <- matrix(c(6,3,6,3,1,0,0,1,0,1,0,1,0,1,20,0),ncol=2,byrow=TRUE)
-  rownames(bounds) = ind.hcr[,1]
+  rownames(bounds) = RefFile[,"Indicator"]
   refvals <- rep(NA,nrow(bounds))
   limvals <- rep(NA,nrow(bounds))
   
