@@ -186,7 +186,7 @@ for(maxcat in seq(50000,200000, by=25000))
     targ.u <- r/2
     
     # Get the indicator-based reference points based on the chosen indicators using indicator.hcr function, save reference points in xx
-    xx <- get.refpts(refvals,limvals,use.defaults=FALSE, indvals=ei.hist, RefFile=IndicatorRefVals)
+    xx <- get.refpts(refvals,limvals,use.defaults=FALSE, RefFile=IndicatorRefVals)
     # Calculate the F multipliers based on the status of ecological indicators compared to reference points
     # The indicator.hcr function does this calculations when get.fmults=TRUE
     fmult <- calc.indicator.hcr(xx$refvals, xx$limvals, use.defaults=FALSE, indvals=ei.hist, RefFile=IndicatorRefVals)
