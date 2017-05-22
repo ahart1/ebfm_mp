@@ -145,7 +145,7 @@ TreeAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL, AsFactor=NULL, Seed
   PerformMet <- colnames(Data[1:NPerformMetrics])
   
   for(i in 1:NPerformMetrics){
-    tryCatch({
+    tryCatch({ # Allows for loop to continue if a tree is not produced for one of the performance metrics, an error is still printed
       
       set.seed(SeedNumber) # plots same tree every time, may change SeedNumber argument to vary results
       
@@ -248,6 +248,73 @@ TreeAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL, AsFactor=NULL, Seed
   capture.output(print(OptimalTreeVar), file="OptimalTreeVariables")
   capture.output(print(OptimalTreeVarImport), file="OptimalTreeVariableImportance")
 }
+
+
+
+
+###################################### RandomForestAnalysis #######################################################################################################
+RandomForestAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL, AsFactor=NULL, SeedNumber=1, NTree=10){
+  ##### Run regression tree #####
+  # Read in Formatted Data
+  Data <- read.table(DataFile)
+  # Load programs
+  library(randomForest)
+  # Set up storage for trees and pruning cross validation
+  # TreeResults <- list()
+  # CPResult <- list()
+  # OptimalSplits <- list()
+  # OptimalCP <- list()
+  # OptimalTreeResults <- list()
+  # OptimalTreeVar <- list()
+  # OptimalTreeVarImport <- list()
+  # 
+  # Define list of Performance Metrics
+  PerformMet <- colnames(Data[1:NPerformMetrics])
+  
+  for(i in 1:NPerformMetrics){
+    tryCatch({
+      
+      set.seed(SeedNumber) # plots same tree every time, may change SeedNumber argument to vary results
+      
+      ####################### Run Random Forest Analysis ###########################################################################
+      # ?????? Currently only plots importance of each variale, no individual tree printed, no output of randomForest saved (# splits... see this output when run individually for each, not part of a loop)
+      # ???????? Catch Ceiling is always a factor but randomForest() can't handle the as.factor(CatchCeiling) calculation
+      # ?????? as a result I read this data into a variable that is used
+      FactorCatchCeiling <- as.factor(Data$CatchCeiling)
+      
+      if(AsFactor[[i]]==TRUE){
+        RandomTree <- randomForest(as.factor(Data[,i]) ~ FactorCatchCeiling + # response is treated as.factor when data is true/false, or categorical rather than continuous
+                        RefVal1 + RefVal2 + RefVal3 + RefVal4 + 
+                        RefVal5 + RefVal6 + RefVal7 + RefVal8 + # ????????? doesn't currently work since can't have as.factor on right side (explanatory variable Catch Ceiling)
+                        LimVal1 + LimVal2 + LimVal3 + LimVal4 +
+                        LimVal5 + LimVal6 + LimVal7 + LimVal8,
+                      ntree = NTree,
+                      data = Data,
+                      importance = TRUE)
+      } else{
+        RandomTree <- randomForest(Data[,i] ~ FactorCatchCeiling + 
+                        RefVal1 + RefVal2 + RefVal3 + RefVal4 + 
+                        RefVal5 + RefVal6 + RefVal7 + RefVal8 +
+                        LimVal1 + LimVal2 + LimVal3 + LimVal4 +
+                        LimVal5 + LimVal6 + LimVal7 + LimVal8,
+                      ntree = NTree,
+                      data = Data,
+                      importance = TRUE) # cp=complexity parameter, splits that don't decrease lack of fit by 0.001 not attempted
+      }
+      
+      # Plot variable importance
+      varImpPlot(RandomTree,  main=paste(PerformMet[i],sep=""))
+      
+     })
+   }
+}
+
+
+
+
+
+
+
 
 
 
