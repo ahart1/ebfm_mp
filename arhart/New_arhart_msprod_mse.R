@@ -66,6 +66,56 @@ Run <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUTPUTdir=NULL, Nsim=1, Nyr=5,
             # ChooseFMult = 2   Choose maximum F-Multiplier for each species column
             # ChooseFMult = 3   Choose mean F-Multiplier for each species column
             # ChooseFMult = 4   Choose median F-Multiplier for each species column
+  # Return:
+     # List containing the following:
+       # targ.u: Target exploitation rate
+       # ChosenStatusMeasures: A vector containing the names of Status Measures chosen for this simulation (only chosen indicators inform indicator-based control rules)
+       # refvals: A vector of calculated reference values for all model indicators, not all may be used
+       # limvals: A vector of calculated limit values for all model indicators, not all may be used
+       # EstimatedExploitationRate: A matrix of estimated exploitation rates for each species and each model year (not calculated for historical timeseries)
+       # Used ExploitationRate: A matrix of exploitation rates used to update model for calculations in the following year (not calculated for historical timeseries)
+       # ObservedBiomass: A matrix containing observed biomass for each species and each model year
+       # ObservedCatch: A matrix containing observed catch for each species and each model year
+       # IndicatorTimeSeries: A matrix containing indicator values for each model year
+       # maxcat: A paramter estimated each year when solving the ode() # ???????? why is only one value printed, this should probably be a matrix, different than maxcatch used to set ceiling??????
+       # TrueBiomassResult: A matrix of "true" biomass values calculated for each species and each model year
+       # TrueCatchResult: A matrix of "true" catch values calculated for each species and each model year
+       # PredlossResult: A matrix of loss due to predation
+       # WithinlossResult: A matrix of loss within aggregate species groups ?????????????????
+       # BetweenlossResult: A matrix of loss between species in the same aggregate species group ?????????????
+  
+  co(targ.u=targ.u,
+  ChosenStatusMeasures=ChosenStatusMeasures,
+  refvals=RefptsVals$refvals,
+  limvals=RefptsVals$limvals,
+  EstimatedExploitationRate=EstimatedExploitationRateTimeseries,
+  UsedExploitationRate=UsedExploitationRateTimeseries,
+  ObservedBiomass=NI.obs,
+  ObservedCatch=CI.obs,
+  ei=indicators, # ?????????? where is this from?
+  maxcat=maxcat, # maxcat ?????? where
+  TrueBiomassResult=BiomassResult, 
+  TrueCatchResult=CatchResult, 
+  PredlossResult=PredlossResult, 
+  WithinlossResult=WithinlossResult, 
+  BetweenlossResult=BetweenlossResult)
+  
+  # Available Model Status Measures (Listed in ModelStatusMeasures)
+     # Performance Metrics
+       # tot.bio: Total system biomass summed over all species
+       # tot.cat: Total system catch summed over all species
+       # exprate: Exploitation rate
+       # pd.ratio: Pelagic demersal ratio of biomass
+       # mean.length: Mean length of fish across all species based on biomass
+       # mean.lifespan: Mean lifespan of fish across all species based on biomass
+     # Indicators for control rules
+       # Low.prop.predators: Proportion of total biomass that is comprised by predatory species, used in low predator control rule
+       # High.prop.predators: Proportion of total biomass that is comprised by predatory species, used in high predator control rule
+       # Low.prop.pelagic: Proportion of total biomass that is made of pelagic species, used in low pelagic control rule 
+       # High.prop.pelagic: Proportion of total biomass that is made of pelagic species, used in high pelagic control rule
+       # TL.landings: # Trophic level of landings, based on catch
+       # TL.survey: # Trophic level of survey, based on biomass
+       # div.cv.bio: # 1/(CV biomass) for last ten years (current model year and previous 9 years), no values for the first 9 years of the timeseries
   
   
   
@@ -132,7 +182,7 @@ Run <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUTPUTdir=NULL, Nsim=1, Nyr=5,
   }
   
   # First for loop runs each simulations through values of maxcatch from 50,000 to 200,000 in steps of 25,000 and allows each of these to be saved to a different file name
-  for(maxcat in seq(50000,200000, by=25000))
+  for(maxcatch in seq(50000,200000, by=25000))
   {
     # Set up a storage object to contain results for each simulation
     ALL.results <- NULL
@@ -317,7 +367,7 @@ Run <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUTPUTdir=NULL, Nsim=1, Nyr=5,
                                   UsedExploitationRate=UsedExploitationRateTimeseries,
                                   ObservedBiomass=NI.obs,
                                   ObservedCatch=CI.obs,
-                                  ei=indicators, # ?????????? where is this from?
+                                  IndicatorTimeSeries=IndicatorTimeSeries,
                                   maxcat=maxcat, # maxcat ?????? where
                                   TrueBiomassResult=BiomassResult, 
                                   TrueCatchResult=CatchResult, 
@@ -334,8 +384,8 @@ Run <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUTPUTdir=NULL, Nsim=1, Nyr=5,
     # This creates a file name that includes datfile (which has info on the location of the original file) so the new file will be saved to the same location when file=filename in write() funciton below
     location <- paste(getwd(), "arhart",OUTPUTdir, sep="/")
     dir.create(location, showWarnings=TRUE) # makes sure that OUTPUTdir exists (actually makes directory)
-    # sprintf() replaces the %d with an integer maxcat, this is called a c-style string formating function
-    filename <- paste(location, sprintf("results%d.json", maxcat), sep="/")
+    # sprintf() replaces the %d with an integer maxcatch, this is called a c-style string formating function
+    filename <- paste(location, sprintf("results%d.json", maxcatch), sep="/")
     write(prettify(ALL.OUTPUT), file = filename)
   }
   
