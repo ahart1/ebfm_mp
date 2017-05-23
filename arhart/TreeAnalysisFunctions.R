@@ -9,10 +9,19 @@
 
 
 FormatTreeAnalysisData <- function(FileName=NULL, Nsim=NULL, CeilingValue=NULL, BMSY=NULL){
-  # FileName should be in ""
-  # CeilingValue should match file name
-  # BMSYData is data for each species BMSY
-  # Nsim is number of simulation runs stored in FileName 
+  # This function uses the output from arhart_msprod_mse.R to calculate 8 performance metrics and saves as a table
+     # The resulting tables may be bound together using rbind() after this function is called if more than one catch ceiling was used
+     # This function formats the data as required by TreeAnalysis and RandomForestAnalysis
+  
+  # Args:
+       # FileName: Name of data file produced by arhart_msprod_mse.R
+       # Nsim: Number of simulation runs stored in FileName
+       # CeilingValue: Ceiling value for simulations stored in FileName
+       # BMSY: Vector containing BMSY data for each species considered in FileName
+  # Return:
+       # A matrix with columns containing the following:
+          # Each performance metric has its own column
+          # Each explanatory variable for tree analysis has its own column
   
   ######## Set up storage 
   Results <- data.frame()
@@ -114,19 +123,64 @@ FormatTreeAnalysisData <- function(FileName=NULL, Nsim=NULL, CeilingValue=NULL, 
   return(Results=Results)
 }
 
+########## Example use of FormatTreeAnalysisData() which binds simulations under multiple catch ceilings ##########
+
+    # setwd("/Users/ahart2/Research/ebfm_mp/arhart/BioStats_Sim1000_AllInds")
+    # 
+    # # BMSY data used in model(consistent across all simulations and values for catch ceilings)
+    # BMSYDataInit <- read.csv("/Users/ahart2/Research/ebfm_mp/data/Bmsy.csv", header=TRUE) # Read in initial BMSY Data
+    # dat <- fromJSON("/Users/ahart2/Research/ebfm_mp/data/Georges.dat.json")               # Read in file containing carrying capacity (KGuild)
+    # KGuild <- dat$KGuild                                                                  # Extract carrying capacity
+    # SpeciesBMSY <- BMSYDataInit[c(4,5,21,22,14,23,24,6,3,7),]                             # Pick species to include
+    # SpeciesBMSY <- KGuild/2                                                               # Update BMSY to be carrying capacity/2
+    # # SpeciesBMSY should be passed to the function for the BMSYData argument
+    # 
+    # Result_Ceiling50000 <- FormatTreeAnalysisData(FileName="results50000.json", Nsim=1000, CeilingValue=50000, BMSY=SpeciesBMSY)
+    # Result_Ceiling75000 <- FormatTreeAnalysisData(FileName="results75000.json", Nsim=1000, CeilingValue=75000, BMSY=SpeciesBMSY)
+    # Result_Ceiling100000 <- FormatTreeAnalysisData(FileName="results100000.json", Nsim=1000, CeilingValue=100000, BMSY=SpeciesBMSY)
+    # Result_Ceiling125000 <- FormatTreeAnalysisData(FileName="results125000.json", Nsim=1000, CeilingValue=125000, BMSY=SpeciesBMSY)
+    # Result_Ceiling150000 <- FormatTreeAnalysisData(FileName="results150000.json", Nsim=1000, CeilingValue=150000, BMSY=SpeciesBMSY)
+    # Result_Ceiling175000 <- FormatTreeAnalysisData(FileName="results175000.json", Nsim=1000, CeilingValue=175000, BMSY=SpeciesBMSY)
+    # Result_Ceiling200000 <- FormatTreeAnalysisData(FileName="results200000.json", Nsim=1000, CeilingValue=200000, BMSY=SpeciesBMSY)
+    # 
+    # FormattedTreeData <- rbind(Result_Ceiling50000, Result_Ceiling75000, Result_Ceiling100000, Result_Ceiling125000, 
+    #                            Result_Ceiling150000, Result_Ceiling175000, Result_Ceiling200000)
+    # 
+    # write.table(FormattedTreeData, file="FormattedTreeData_BioStats_Sim1000_AllInds") # Writes resulting single table to a file
+
 
 
 ###################################### TreeAnalysis #######################################################################################################
 
-# The TreeAnalysis function runs tree analysis for each performance metric (response variable) against all explanatory variables
+# 
 # If response variable is categorical (TRUE value in AsFactor argument) a classification tree rather than a regression tree is produced
 
 # DataFile should contain a data.frame of response (listed first) and explanatory variables
-# NPerformMetrics is the number of performance metrics (number of columns containing response variable data)
-# AsFactor is a list of True/False values that determine if response variable is treated as a factor (categorical)
-# SeedNumber fixes the analysis so results can be replicated
-
+# NPerformMetrics is the 
+# AsFactor is a 
+# 
 TreeAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL, AsFactor=NULL, SeedNumber=1){
+  # The TreeAnalysis function runs tree analysis for each performance metric (response variable) against all explanatory variables
+  
+  # Args:
+       # DataFile: File containing data.frame formatted using FormatTreeAnalysisData(), each response (listed first) and explanatory variable should have a separate column
+       # NPerformMetrics: number of performance metrics (number of columns containing response variable data)
+       # AsFactor: List of True/False values that determine if response variable is treated as a factor (categorical)
+       # SeedNumber: This number fixes the analysis so results can be replicated
+  # Return:
+       # For each response variable the following is produced:
+          # Initial tree plot which is overfitted to data, not produced if no variance can be explained by splitting the data into subsets
+          # Plot of complexity parameter (cp), pick smallest cp within 1-Std Error of the minimum cp value (cross-validation procedure)
+          # Optimal tree produced using chosen cp
+       # Also produce the final files containing more detailed information for each tree:
+          # Tree Results: node), split, n, deviance, yval  information for the initial tree
+          # TreeCPResults: Non-graphical information used for cross-validation
+          # OptimalTreeResults: node), split, n, deviance, yval   information for the optimal tree
+          # OptimalTreeSplits: Number of splits associated with optimal cp
+          # OptimalTreeCP: Optimal cp used to construct optimal tree
+          # OptimalTreeVariables: List of explanatory variables used to make splits in the tree (no information on # of splits each variable informs)
+          # OptimalTreeVariableImportance: Numerical representation of importance when making splits
+  
   ##### Run regression tree #####
   # Read in Formatted Data
   Data <- read.table(DataFile)
@@ -249,11 +303,27 @@ TreeAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL, AsFactor=NULL, Seed
   capture.output(print(OptimalTreeVarImport), file="OptimalTreeVariableImportance")
 }
 
+########## Example of TreeAnalysis ##########
+  #
+  # setwd("/Users/ahart2/Research/ebfm_mp/arhart/BioStats_Sim1000_AllInds")
+  # 
+  # AsFactorBioStats <- c(FALSE, FALSE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE)
+  # 
+  # TreeAnalysis(DataFile="FormattedTreeData_BioStats_Sim1000_AllInds", NPerformMetrics=11, AsFactor = AsFactorBioStats, SeedNumber = 1)
 
 
 
 ###################################### RandomForestAnalysis #######################################################################################################
 RandomForestAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL, AsFactor=NULL, SeedNumber=1, NTree=10){
+  # The RandomForestAnalysis function runs random forest analysis for each performance metric (response variable) against all explanatory variables
+  
+  # Args:
+       # DataFile: File containing data.frame formatted using FormatTreeAnalysisData(), each response (listed first) and explanatory variable should have a separate column
+       # NPerformMetrics: number of performance metrics (number of columns containing response variable data)
+       # AsFactor: List of True/False values that determine if response variable is treated as a factor (categorical)
+       # SeedNumber: This number fixes the analysis so results can be replicated
+       # NTree: Number of trees to grow, argument passed directly to randomForest()
+  
   ##### Run regression tree #####
   # Read in Formatted Data
   Data <- read.table(DataFile)
@@ -299,7 +369,7 @@ RandomForestAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL, AsFactor=NU
                         LimVal5 + LimVal6 + LimVal7 + LimVal8,
                       ntree = NTree,
                       data = Data,
-                      importance = TRUE) # cp=complexity parameter, splits that don't decrease lack of fit by 0.001 not attempted
+                      importance = TRUE) 
       }
       
       # Plot variable importance
