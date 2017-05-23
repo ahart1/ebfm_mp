@@ -84,22 +84,6 @@ Run <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUTPUTdir=NULL, Nsim=1, Nyr=5,
        # WithinlossResult: A matrix of loss within aggregate species groups ?????????????????
        # BetweenlossResult: A matrix of loss between species in the same aggregate species group ?????????????
   
-  co(targ.u=targ.u,
-  ChosenStatusMeasures=ChosenStatusMeasures,
-  refvals=RefptsVals$refvals,
-  limvals=RefptsVals$limvals,
-  EstimatedExploitationRate=EstimatedExploitationRateTimeseries,
-  UsedExploitationRate=UsedExploitationRateTimeseries,
-  ObservedBiomass=NI.obs,
-  ObservedCatch=CI.obs,
-  ei=indicators, # ?????????? where is this from?
-  maxcat=maxcat, # maxcat ?????? where
-  TrueBiomassResult=BiomassResult, 
-  TrueCatchResult=CatchResult, 
-  PredlossResult=PredlossResult, 
-  WithinlossResult=WithinlossResult, 
-  BetweenlossResult=BetweenlossResult)
-  
   # Available Model Status Measures (Listed in ModelStatusMeasures)
      # Performance Metrics
        # tot.bio: Total system biomass summed over all species
