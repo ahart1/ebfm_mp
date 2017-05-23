@@ -102,6 +102,23 @@ CalcAnnualStatusMeasures <- function(UseStatusMeasures=NULL, Historic=TRUE,Bioma
        # If Historic = TRUE then these values are returned as a matrix with status measured values for each year
        # If Historic = FALSE then these values are calculated only for the most recent model year and are returned as a vector 
   
+  # Available Model Status Measures
+     # Performance Metrics
+       # tot.bio: Total system biomass summed over all species
+       # tot.cat: Total system catch summed over all species
+       # exprate: Exploitation rate
+       # pd.ratio: Pelagic demersal ratio of biomass
+       # mean.length: Mean length of fish across all species based on biomass
+       # mean.lifespan: Mean lifespan of fish across all species based on biomass
+     # Indicators for control rules
+       # Low.prop.predators: Proportion of total biomass that is comprised by predatory species, used in low predator control rule
+       # High.prop.predators: Proportion of total biomass that is comprised by predatory species, used in high predator control rule
+       # Low.prop.pelagic: Proportion of total biomass that is made of pelagic species, used in low pelagic control rule 
+       # High.prop.pelagic: Proportion of total biomass that is made of pelagic species, used in high pelagic control rule
+       # TL.landings: # Trophic level of landings, based on catch
+       # TL.survey: # Trophic level of survey, based on biomass
+       # div.cv.bio: # 1/(CV biomass) for last ten years (current model year and previous 9 years), no values for the first 9 years of the timeseries
+  
   Indicators <- NULL 
   PerformMetric <- NULL
   
@@ -125,12 +142,12 @@ CalcAnnualStatusMeasures <- function(UseStatusMeasures=NULL, Historic=TRUE,Bioma
     }
     if("mean.length" %in% UseStatusMeasures==TRUE){
       tot.mean.length <- rowSums(mapply(X=Biomass, FUN=IndicatorCalcs, IndData=size),na.rm=TRUE)
-      mean.length <- tot.mean.length/tot.bio # Average mean length of fish across all biomass
+      mean.length <- tot.mean.length/tot.bio # Mean length of fish across all biomass
       PerformMetric <- cbind(PerformMetric, mean.length)
     }
     if("mean.lifespan" %in% UseStatusMeasures==TRUE){
       tot.mean.lifespan <- rowSums(mapply(X=Biomass, FUN=IndicatorCalcs, IndData=length),na.rm=TRUE)
-      mean.lifespan <- tot.mean.lifespan/tot.bio # Average mean lifespan of fish across all biomass 
+      mean.lifespan <- tot.mean.lifespan/tot.bio # Mean lifespan of fish across all biomass 
       PerformMetric <- cbind(PerformMetric, mean.lifespan)
     }
     #### Indicators for control rules ####
