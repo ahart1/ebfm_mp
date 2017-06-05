@@ -4,16 +4,12 @@
 ########  Last updated: November 16, 2016
 
 
-########  Modifications by Amanda Hart
-########  Updated: March 28, 2017
-
-# For each time you run the model: change name for OUTPUTdir (line36), and Nsim (line70) and pick how indicators should be defined (see line 129)
+########  Extensive Modifications by Amanda Hart
+########  Updated: June 5, 2017
 
 
 #N changed to Nabund so easier to search in code, possible that N used in equations may not be changed so it breaks
 
-#Everything is within the Run function (after set working directory and sourcing of functions) which is called in the last line of this script and has no arguments passed in
-#This avoids the problem of having calculated variables saved to global memory rather than being propperly passed in to different functions within the code
 
 # Working directory and datfile source location for "Georges.dat", and "BMSYData", "InitsData", and "IndicatorRefVals" must be changed before running code on new device, these commands rely on directory location of files 
 # For single species assessments a temporary working directory must be provided to run the associated functions, this may need to be reset when switching between computers
@@ -34,11 +30,9 @@ dir.create(tempdir, showWarnings=FALSE)
 # ???????? Figure out where tempdir is used, if not used, delete this section of code
 
 
-Run(PickStatusMeasureOption=1, )
-
 ###########################This is the start of a function (for debugging purposes) that actually runs all parts of model#########################################
 # My function makes the assumption that all R files needed to run this program are within the same working directory, these include: This file, SSHarvestFunctions.R, and NewIndicatorRefPtCalcs.R
-Run <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUTPUTdir=NULL, Nsim=1, Nyr=5, SpeciesNames=NULL, Predators=NULL, Pelagics=NULL, StatusMeasures=NULL, HistoricBiomass=NULL,
+RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUTPUTdir=NULL, Nsim=1, Nyr=5, SpeciesNames=NULL, Predators=NULL, Pelagics=NULL, StatusMeasures=NULL, HistoricBiomass=NULL,
                 HistoricCatch=NULL, BMSYData=NULL, MeanTrophicLevel=NULL, DefaultRefLimVals=TRUE, IndicatorData=NULL, InitialSpeciesData=NULL, ChooseFMult=NULL){
   
   # Args:
@@ -47,7 +41,7 @@ Run <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUTPUTdir=NULL, Nsim=1, Nyr=5,
        # OUTPUTdir: This is the working directory where the output from this function will be stored 
        # Nsim: Number of model simulations to run, default=1
        # Nyr: Number of years model projects forward in time, default=5
-       # SpeciesNames: Vector of species names (strings) to be used in this analysis
+       # SpeciesNames: Vector of species names (strings) to be used in this analysis, can not have spaces in names
        # Predators: Vector of species names (strings) for predatory species
        # Pelagics: Vector of species names (strings) for pelagic species
        # PickStatusMeasureOption: Indicates how status measures are chosen, default=1
@@ -55,7 +49,7 @@ Run <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUTPUTdir=NULL, Nsim=1, Nyr=5,
             # PickStatusMeasureOption = 2: picks a random subset of the available status measures
        # StatusMeasures: Vector of status measures (strings) to be considered in the model simulation
        # HistoricBiomass: Matrix of historic biomass, each species should be in a single column
-       # HistoricCatch: Matrix of historic catch, each species should be in a single column
+       # HistoricCatch: Matrix of historic catch, each species should be in a single column, there should not be a year column
        # BMSYData: Vector containing BMSY for each species
        # MeanTrophicLevel: vector containing the trophic level of each species
        # DefaultRefLimVals: If TRUE then default refvals and limvals are used, if FALSE these values are calculated by this function, default=TRUE
@@ -373,29 +367,23 @@ Run <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUTPUTdir=NULL, Nsim=1, Nyr=5,
     write(prettify(ALL.OUTPUT), file = filename)
   }
   
-  # This produces a file containing the name of the initial data file, and values for the starting parameter values used for the above set of simulations
-  TempList <- list(datfilename=datfilename, 
-                   Nsp=Nsp, 
-                   Guildmembership=Guildmembership, 
-                   NGuild=NGuild, 
-                   Initvals=Initvals, 
-                   KGuild=KGuild, 
-                   Ktot=Ktot, 
-                   hrate=dat$hrate, 
-                   r=dat$r, 
-                   BetweenGuildComp=BetweenGuildComp, 
-                   WithinGuildComp=WithinGuildComp, 
-                   alpha=alpha, 
-                   spatial.overlap=spatial.overlap, 
-                   NI=dat$NI, 
-                   CI=dat$CI, 
-                   theguilds=theguilds, 
-                   BMSYData=BMSYData, 
-                   InitsData=InitsData, 
-                   IndicatorRefVals=IndicatorRefVals)
-  TempListValues <- toJSON(TempList)
+  # This produces a file containing the all data passed to the function for this model run (initial conditions for Nsim number of simulations)
+  InitialDataList <- list(Nsim = Nsim,
+                   Nyr = Nyr,
+                   SpeciesNames = SpeciesNames,
+                   Predators = Predators,
+                   StatusMeasures = StatusMeasures,
+                   HistoricBiomass = HistoricBiomass,
+                   HistoricCatch = HistoricCatch,
+                   BMSYData = BMSYData,
+                   MeanTrophicLevel = MeanTrophicLevel,
+                   DefaultRefLimVals = DefaultRefLimVals,
+                   IndicatorData = IndicatorData,
+                   InitialSpeciesData = InitialSpeciesData,
+                   ChooseFMult = ChooseFMult)
+  InitialDataValues <- toJSON(InitialDataList)
   filename <- paste(location, "InitialConditions", sep="/")
-  write(prettify(TempListValues), file=filename)
+  write(prettify(InitialDataValues), file=filename)
 }
 
-Run()
+
