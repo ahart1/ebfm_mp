@@ -110,11 +110,13 @@ CalcAnnualStatusMeasures <- function(UseStatusMeasures=NULL, Historic=TRUE,Bioma
        # pd.ratio: Pelagic demersal ratio of biomass
        # mean.length: Mean length of fish across all species based on biomass
        # mean.lifespan: Mean lifespan of fish across all species based on biomass
-     # Indicators for control rules
+     # Indicators for control rules 
        # Low.prop.predators: Proportion of total biomass that is comprised by predatory species, used in low predator control rule
        # High.prop.predators: Proportion of total biomass that is comprised by predatory species, used in high predator control rule
+          # Low/High prop.predators are the same value but are compared to different indicator control rule reference/limit values
        # Low.prop.pelagic: Proportion of total biomass that is made of pelagic species, used in low pelagic control rule 
        # High.prop.pelagic: Proportion of total biomass that is made of pelagic species, used in high pelagic control rule
+          # Low/High prop.pelagic are the same value but are compared to different indicator control rule reference/limit values
        # TL.landings: # Trophic level of landings, based on catch
        # TL.survey: # Trophic level of survey, based on biomass
        # div.cv.bio: # 1/(CV biomass) for last ten years (current model year and previous 9 years), no values for the first 9 years of the timeseries
@@ -236,7 +238,7 @@ CalcAnnualStatusMeasures <- function(UseStatusMeasures=NULL, Historic=TRUE,Bioma
     #### Indicators for control rules ####
     if("Low.prop.predators" %in% UseStatusMeasures==TRUE){
       Low.prop.predators <- rowSums(Biomass[nrow(Biomass),is.predator],na.rm=TRUE)/tot.bio # Proportion of total biomass that is comprised by predatory species
-      Indicators <- cbind(Indicators, Low.prop.predators)
+      Indicators <- cbind(Indicators, Low.prop.predators) # is.predator and is.pelagic currently are names, but names will not work for this code, also need to refer to multiple columns
     }
     if("High.prop.predators" %in% UseStatusMeasures==TRUE){
       High.prop.predators <- rowSums(Biomass[nrow(Biomass),is.predator],na.rm=TRUE)/tot.bio # Proportion of total biomass that is comprised by predatory species
@@ -250,11 +252,11 @@ CalcAnnualStatusMeasures <- function(UseStatusMeasures=NULL, Historic=TRUE,Bioma
       High.prop.pelagic <- rowSums(Biomass[nrow(Biomass),is.pelagic],na.rm=TRUE)/tot.bio  # Proportion of total biomass that is made of pelagic species
       Indicators <- cbind(Indicators, High.prop.pelagic)
     }
-    if("TL.landings %in% UseStatusMeasures==TRUE"){
+    if("TL.landings" %in% UseStatusMeasures==TRUE){
       IndicatorCalcs <- function(X,IndData){
         X*IndData
       }
-      tot.cat.TL <- rowSums(mapply(X=Catch[nrow(Catch),], FUN=IndicatorCalcs, IndData=trophic.level), na.rm=TRUE)
+      tot.cat.TL <- sum(mapply(X=Catch[nrow(Catch),], FUN=IndicatorCalcs, IndData=trophic.level), na.rm=TRUE)
       TL.landings <- tot.cat.TL/tot.cat  # Trophic level of landings
       Indicators <- cbind(Indicators, TL.landings)
     }
@@ -262,7 +264,7 @@ CalcAnnualStatusMeasures <- function(UseStatusMeasures=NULL, Historic=TRUE,Bioma
       IndicatorCalcs <- function(X,IndData){
         X*IndData
       }
-      tot.bio.TL <- rowSums(mapply(X=Biomass[nrow(Biomass),], FUN=IndicatorCalcs, IndData=trophic.level), na.rm=TRUE)
+      tot.bio.TL <- sum(mapply(X=Biomass[nrow(Biomass),], FUN=IndicatorCalcs, IndData=trophic.level), na.rm=TRUE)
       TL.survey <- tot.bio.TL/tot.bio    # Trophic level of survey
       Indicators <- cbind(Indicators, TL.survey)
     }
