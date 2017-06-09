@@ -56,3 +56,7 @@ TreeAnalysis(DataFile="FormattedTreeData_BioStats_Sim1000_AllInds", NPerformMetr
 setwd("/Users/ahart2/Research/ebfm_mp/arhart/BioStats_Sim1000_AllInds")
 
 PlotPerfMet(DataFile="FormattedTreeData_BioStats_Sim1000_AllInds", NPerformMetrics = 11,  PlotMatrix=matrix(c(1,2,3,4,5,6,7,8,9,10,11,12),3,4, byrow=TRUE))
+
+
+########## Run Random Forest Analysis on Same Data ##########
+RandomForestAnalysis(DataFile="FormattedTreeData_BioStats_Sim1000_AllInds", NPerformMetrics = 11, AsFactor=AsFactorBioStats, SeedNumber=1, NTree=100)
