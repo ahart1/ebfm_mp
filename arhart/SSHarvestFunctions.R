@@ -4,7 +4,7 @@
 # doSSassess() performs the SS assessments
 # CalcFMultiplier() calculates the final F-multiplier for each species
 ########## SShrate.calc ##########
-SShrate.calc <- function(Nsp=NULL, ObsBiomass=NULL, ObsCatch=NULL, workdir=NULL, inits=NULL, inds.use=NULL, Nabund=NULL, ChosenStatusMeasure=ModelStatusMeasures, FMultiplier=NULL, ChooseFMultOption=1) {
+SShrate.calc <- function(Nsp=NULL, SpeciesNames=NULL, ObsBiomass=NULL, ObsCatch=NULL, workdir=NULL, inits=NULL, inds.use=NULL, Nabund=NULL, ChosenStatusMeasure=ModelStatusMeasures, FMultiplier=NULL, ChooseFMultOption=1) {
   # This function formats data for and runs single species (SS) assessments and uses the resulting catch at FMSY to calculate estimated and actual (used) harvest rate for each species
   
   # Args:
@@ -56,7 +56,7 @@ SShrate.calc <- function(Nsp=NULL, ObsBiomass=NULL, ObsCatch=NULL, workdir=NULL,
 # This function formats file to be used in Single Species assessment calculations (required format for ADMB calculations)
           # For single species assessments a temporary working directory (workdir="C:/temp/") must be provided to run the associated functions, this may need to be reset when switching between computers
           # The working directory given indicates the storage location of ADMB ".dat" files and must be the same for ADMB scripts that call on these files
-FormatSSDatfiles <- function(Nsp=24,ObsBiomass=NULL,ObsCatch=NULL,workdir="C:/temp/", inits=NULL)
+FormatSSDatfiles <- function(Nsp=24, SpeciesNames=NULL, ObsBiomass=NULL,ObsCatch=NULL,workdir="C:/temp/", inits=NULL)
 {
   curdir <- getwd()
   setwd(workdir)
@@ -69,9 +69,9 @@ FormatSSDatfiles <- function(Nsp=24,ObsBiomass=NULL,ObsCatch=NULL,workdir="C:/te
   #lyear <- as.integer(ObsCatch[nrow(ObsCatch),1])
   LastYear <- FirstYear + as.integer(nrow(ObsCatch)-1)
   
-  for (isp in 1:Nsp)
+  for (isp in 1:length(SpeciesNames))
   {
-    outfile <- paste(isp,".dat",sep="")
+    outfile <- paste(SpeciesNames[isp],".dat",sep="")
     write("#Nsp",outfile) # writes #Nsp
     write(1,outfile,append=TRUE) # places 1 beneath #Nsp
     write("# r phase",outfile,append=TRUE) # writes # r phase
@@ -138,29 +138,29 @@ doSSassess <- function(Nsp,workdir,plotdiag=FALSE)
   
   # This makes a call to the ADMB program 'single_schaef' for each of the species, and allows switching between different computers
   # how does this code work????? what should the output look like??????
-  for (isp in 1:Nsp) {
+  for (isp in 1:length(SpeciesNames)) {
     switch(Sys.info()[['sysname']],
            Windows= {
              exename <- "single_schaef";
-             command <- paste(navigate," & single_schaef -ind ",isp,".dat -nohess",sep="");
+             command <- paste(navigate," & single_schaef -ind ",SpeciesNames[isp],".dat -nohess",sep="");
              shell(command,wait=TRUE,invisible=TRUE)
            },
            Linux  = {
              exename <- "single_schaef_linux";
-             command <- paste(navigate," & ./single_schaef_linux -ind ",isp,".dat -nohess",sep="");
+             command <- paste(navigate," & ./single_schaef_linux -ind ",SpeciesNames[isp],".dat -nohess",sep="");
              system(command,wait=TRUE)
            },
            Darwin = {
              exename <- "single_schaef_mac";
-             command <- paste(navigate," & ./single_schaef_mac -ind ",isp,".dat -nohess",sep="");
+             command <- paste(navigate," & ./single_schaef_mac -ind ",SpeciesNames[isp],".dat -nohess",sep="");
              print(getwd());
              print(command);
              system(command,wait=TRUE)
            })
     
     # Take output and change name to reflect species
-    file.copy(paste0(exename,".rep"),paste(isp,".rep",sep=""),overwrite=TRUE) # copy file from exename.rep to Nsp.rep, overwrite when looping ????? returns TRUE
-    file.copy(paste0(exename,".par"),paste(isp,".par",sep=""),overwrite=TRUE) # copy file from exename.rep to Nsp.rep, overwrite when looping ????? returns TRUE
+    file.copy(paste0(exename,".rep"),paste(SpeciesNames[isp],".rep",sep=""),overwrite=TRUE) # copy file from exename.rep to Nsp.rep, overwrite when looping ????? returns TRUE
+    file.copy(paste0(exename,".par"),paste(SpeciesNames[isp],".par",sep=""),overwrite=TRUE) # copy file from exename.rep to Nsp.rep, overwrite when looping ????? returns TRUE
     
     # Plot diagnostics option ?????? I don't think this does anything, can I delete this section of code???????
     if (plotdiag==TRUE) par(mfrow=c(5,5),oma=c(4,0,0,0),mar=c(0,0,0,0))
