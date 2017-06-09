@@ -1,4 +1,12 @@
 
+
+# Working directory and datfile source location for "Georges.dat", and "BMSYData", "InitsData", and "IndicatorRefVals" must be changed before running code on new device, these commands rely on directory location of files 
+# For single species assessments a temporary working directory must be provided to run the associated functions, this may need to be reset when switching between computers
+
+
+
+
+
 # Read in data files
 BMSYData <- read.csv("/Users/ahart2/Research/ebfm_mp/arhart/DataFiles/FormattedSpeciesBmsy.csv", header=TRUE) # column1 is species name, column2 is Bmsy, column3 is mean trophic level
 InitsData <- read.csv("/Users/ahart2/Research/ebfm_mp/arhart/DataFiles/FormattedInitialSpeciesParameters.csv", header=TRUE)
@@ -46,7 +54,7 @@ dat <- fromJSON(datfilename)
    IndicatorData <- IndicatorRefVals
    InitialSpeciesData <- InitsData
    ChooseFMult <- 4   # Choose median F-Multiplier for each species column
-
+   CeilingValues <- seq(50000,200000, by=25000)
    
 # 1 Double check the return values from the function
 # 2 source new script
