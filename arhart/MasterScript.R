@@ -95,17 +95,7 @@ RunMultiSpeciesProdWithCeiling(ScriptWorkDir=ScriptWorkDir, WorkDir=WorkDir, OUT
                                BetweenGuildComp=BetweenGuildComp, WithinGuildComp=WithinGuildComp, r_GrowthRate=r_GrowthRate, PickStatusMeasureOption=PickStatusMeasureOption, StatusMeasures=StatusMeasures, 
                                HistoricBiomass=HistoricBiomass, HistoricCatch=HistoricCatch, KGuild=KGuild, Ktot=Ktot, BMSYData=BMSYData, MeanTrophicLevel=MeanTrophicLevel, DefaultRefLimVals=DefaultRefLimVals, IndicatorData=IndicatorData, 
                                InitialSpeciesData=InitialSpeciesData, ChooseFMult=ChooseFMult, IncludeCatchCeilings=IncludeCatchCeilings, CeilingValues=CeilingValues)
-     
 
-(r=r,
-KGuild=KGuild,
-Ktot=Ktot,
-Guildmembership=Guildmembership,
-BetweenGuildComp=BetweenGuildComp,
-WithinGuildComp=WithinGuildComp,
-alpha=alpha,
-hrate=HarvestRate, 
-maxcat=maxcat)
 
 ########## The following doesnt appear to be used by the model but perhaps I should double check where this information is coming from to ensure that these aren't set as defaults without my knowledge ??????
 
@@ -114,11 +104,6 @@ maxcat=maxcat)
 NGuild = length(unique(Guildmembership))
 # Initial values of depletion biomass for each guild
 Initvals <- dat$Initvals
-
-
-
-
-
 
 
 WithinGuildComp <- WithinGuildComp*spatial.overlap
