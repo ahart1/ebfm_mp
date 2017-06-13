@@ -10,7 +10,7 @@
 
 #N changed to Nabund so easier to search in code, possible that N used in equations may not be changed so it breaks
 
-
+# ????????? I don't think that I really need this tempdir ????? why
 ##############################################################################
 # Set working directory and read in all data files
 ##############################################################################
@@ -24,8 +24,10 @@ dir.create(tempdir, showWarnings=FALSE)
 
 ###########################This is the start of a function (for debugging purposes) that actually runs all parts of model#########################################
 # My function makes the assumption that all R files needed to run this program are within the same working directory, these include: This file, SSHarvestFunctions.R, and NewIndicatorRefPtCalcs.R
-RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUTPUTdir=NULL, Nsim=1, Nyr=5, SpeciesNames=NULL, alpha=NULL, Predators=NULL, Pelagics=NULL, Guildmembership=NULL, PickStatusMeasureOption= 1, StatusMeasures=NULL, HistoricBiomass=NULL,
-                HistoricCatch=NULL, KGuild=NULL, BMSYData=NULL, MeanTrophicLevel=NULL, DefaultRefLimVals=TRUE, IndicatorData=NULL, InitialSpeciesData=NULL, ChooseFMult=NULL, IncludeCatchCeilings=FALSE, CeilingValues=NULL){
+RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUTPUTdir=NULL, Nsim=1, Nyr=5, SpeciesNames=NULL, alpha=NULL, Predators=NULL, 
+                                           Pelagics=NULL, Guildmembership=NULL, PickStatusMeasureOption= 1, StatusMeasures=NULL, HistoricBiomass=NULL, 
+                                           HistoricCatch=NULL, KGuild=NULL, BMSYData=NULL, MeanTrophicLevel=NULL, DefaultRefLimVals=TRUE, IndicatorData=NULL, 
+                                           InitialSpeciesData=NULL, ChooseFMult=NULL, IncludeCatchCeilings=FALSE, CeilingValues=NULL){
   
   # Args:
        # ScriptWorkDir: This is the working directory containing function scripts to source: SSHarvestFunctions.R, StatusMeasureFunctions.R,     
