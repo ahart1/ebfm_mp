@@ -11,10 +11,6 @@
 #N changed to Nabund so easier to search in code, possible that N used in equations may not be changed so it breaks
 
 
-# dNbydt is called in the ode() operating model section of code and may be replaced with dNbydt_max to run different maximum catch senarios if a maxcat parameter is added to the params list 
-# Currently the first for loop provides values of maxcat
-# Must also add maxcat to parameters saved in ALL.results at end of script
-
 ##############################################################################
 # Set working directory and read in all data files
 ##############################################################################
@@ -28,8 +24,8 @@ dir.create(tempdir, showWarnings=FALSE)
 
 ###########################This is the start of a function (for debugging purposes) that actually runs all parts of model#########################################
 # My function makes the assumption that all R files needed to run this program are within the same working directory, these include: This file, SSHarvestFunctions.R, and NewIndicatorRefPtCalcs.R
-RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUTPUTdir=NULL, Nsim=1, Nyr=5, SpeciesNames=NULL, Predators=NULL, Pelagics=NULL, StatusMeasures=NULL, HistoricBiomass=NULL,
-                HistoricCatch=NULL, BMSYData=NULL, MeanTrophicLevel=NULL, DefaultRefLimVals=TRUE, IndicatorData=NULL, InitialSpeciesData=NULL, ChooseFMult=NULL, IncludeCatchCeilings=FALSE, CeilingValues=NULL){
+RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUTPUTdir=NULL, Nsim=1, Nyr=5, SpeciesNames=NULL, alpha=NULL, Predators=NULL, Pelagics=NULL, Guildmembership=NULL, PickStatusMeasureOption= 1, StatusMeasures=NULL, HistoricBiomass=NULL,
+                HistoricCatch=NULL, KGuild=NULL, BMSYData=NULL, MeanTrophicLevel=NULL, DefaultRefLimVals=TRUE, IndicatorData=NULL, InitialSpeciesData=NULL, ChooseFMult=NULL, IncludeCatchCeilings=FALSE, CeilingValues=NULL){
   
   # Args:
        # ScriptWorkDir: This is the working directory containing function scripts to source: SSHarvestFunctions.R, StatusMeasureFunctions.R,     
@@ -38,14 +34,21 @@ RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUT
        # Nsim: Number of model simulations to run, default=1
        # Nyr: Number of years model projects forward in time, default=5
        # SpeciesNames: Vector of species names (strings) to be used in this analysis, can not have spaces in names
+       # alpha: A predation matrix, each species in a column
        # Predators: Vector of species names (strings) for predatory species
        # Pelagics: Vector of species names (strings) for pelagic species
+       # Guildmembership: Vector specifying guild for each species (each guild may be a single species)
+       # BetweenGuildComp: Matrix of competition between guilds, each species in a column
+       # WithinGuildComp: Matrix of competiton within guilds, each species in a column
+       # r_GrowthRate: Vector of growth rates for each species
        # PickStatusMeasureOption: Indicates how status measures are chosen, default=1
             # PickStatusMeasureOption = 1: uses all available status measures
             # PickStatusMeasureOption = 2: picks a random subset of the available status measures
        # StatusMeasures: Vector of status measures (strings) to be considered in the model simulation
        # HistoricBiomass: Matrix of historic biomass, each species should be in a single column
        # HistoricCatch: Matrix of historic catch, each species should be in a single column, there should not be a year column
+       # KGuild: Vector of carrying capacity for each guild, each species may be its own guild
+       # Ktot: Total carrying capacity is sum of guild carrying capacity
        # BMSYData: Vector containing BMSY for each species
        # MeanTrophicLevel: vector containing the trophic level of each species
        # DefaultRefLimVals: If TRUE then default refvals and limvals are used, if FALSE these values are calculated by this function, default=TRUE
@@ -70,7 +73,7 @@ RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUT
        # ObservedBiomass: A matrix containing observed biomass for each species and each model year
        # ObservedCatch: A matrix containing observed catch for each species and each model year
        # IndicatorTimeSeries: A matrix containing indicator values for each model year
-       # maxcat: A paramter estimated each year when solving the ode() # ???????? why is only one value printed, this should probably be a matrix, different than maxcatch used to set ceiling??????
+       # maxcat: A paramter passed to the multi-species production operating model 
        # TrueBiomassResult: A matrix of "true" biomass values calculated for each species and each model year
        # TrueCatchResult: A matrix of "true" catch values calculated for each species and each model year
        # PredlossResult: A matrix of loss due to predation
@@ -135,7 +138,7 @@ RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUT
   
   
   ###################################################################################################
-  # Ceiling Loop
+  # Catch Ceiling Loop
   ###################################################################################################
   for(maxcatch in CeilingValues){
     # Set up a storage object to contain results for each simulation
@@ -213,8 +216,8 @@ RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUT
         ########## Solve Multi-Species Operating Model ##########
         if(IncludeCatchCeilings = TRUE){
           # Define the list of parameters that will be given to operating model as arguments below, values for each parameter are manipulated within the operating model (eg. dNbydt and dNbydt_max)
-          # maxcat was added for dNbydt_max to reference when given to ode() as an argument (not needed if using dNbydt)
-          parms <- list(r=r,
+          # maxcat was added for dNbydt_CatchCeiling to reference when given to ode() as an argument (not needed if using dNbydt_Default)
+          parms <- list(r_GrowthRate=r_GrowthRate,
                         KGuild=KGuild,
                         Ktot=Ktot,
                         Guildmembership=Guildmembership,
@@ -222,12 +225,12 @@ RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUT
                         WithinGuildComp=WithinGuildComp,
                         alpha=alpha,
                         hrate=HarvestRate, 
-                        maxcat=maxcat)
+                        maxcat=maxcatch)
           # dNbydt is the MSProd model equation, solve using ode() and store in OdeResult
-          OdeResult <- ode(Nabund, seq(iyr-1,(iyr+0.5),0.5), dNbydt_max, parms=parms, method="rk4")
+          OdeResult <- ode(Nabund, seq(iyr-1,(iyr+0.5),0.5), dNbydt_CatchCeiling, parms=parms, method="rk4")
         } else if(IncludeCatchCeilings = FALSE){
           # Define the list of parameters that will be given to operating model as arguments below, values for each parameter are manipulated within the operating model (eg. dNbydt and dNbydt_max)
-          parms <- list(r=r,
+          parms <- list(r_GrowthRate=r_GrowthRate,
                         KGuild=KGuild,
                         Ktot=Ktot,
                         Guildmembership=Guildmembership,
@@ -236,8 +239,7 @@ RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUT
                         alpha=alpha,
                         hrate=HarvestRate)
           # dNbydt is the MSProd model equation, solve using ode() and store in OdeResult
-          OdeResult <- ode(Nabund, seq(iyr-1,(iyr+0.5),0.5), dNbydt, parms=parms, method="rk4")
-          
+          OdeResult <- ode(Nabund, seq(iyr-1,(iyr+0.5),0.5), dNbydt_Default, parms=parms, method="rk4")
         }
         
         
@@ -325,19 +327,28 @@ RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUT
   InitialDataList <- list(Nsim = Nsim,
                    Nyr = Nyr,
                    SpeciesNames = SpeciesNames,
+                   alpha = alpha,
                    Predators = Predators,
+                   Pelagics = Pelagics,
+                   Guildmembership = Guildmembership, 
+                   BetweenGuildComp = BetweenGuildComp,
+                   WithinGuildComp = WithinGuildComp, 
+                   r_GrowthRate = r_GrowthRate,
+                   PickStatusMeasureOption = PickStatusMeasureOption, 
                    StatusMeasures = StatusMeasures,
                    HistoricBiomass = HistoricBiomass,
                    HistoricCatch = HistoricCatch,
+                   KGuild = KGuild,
+                   Ktot = Ktot,
                    BMSYData = BMSYData,
                    MeanTrophicLevel = MeanTrophicLevel,
                    DefaultRefLimVals = DefaultRefLimVals,
                    IndicatorData = IndicatorData,
                    InitialSpeciesData = InitialSpeciesData,
-                   ChooseFMult = ChooseFMult)
+                   ChooseFMult = ChooseFMult,
+                   IncludeCatchCeilings = IncludeCatchCeilings,
+                   CeilingValues = CeilingValues)
   InitialDataValues <- toJSON(InitialDataList)
   filename <- paste(location, "InitialConditions", sep="/")
   write(prettify(InitialDataValues), file=filename)
 }
-
-
