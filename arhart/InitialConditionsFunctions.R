@@ -34,6 +34,8 @@ PickStatusMeasures <- function(PickOption="Option1", PotentialStatusMeasures=Mod
   # Returns:
        # A vector of choosen status measures by name
   
+  StatusMeasurePicks <- NULL
+  
   if(PickOption=="Option1"){
     StatusMeasurePicks <- sample(PotentialStatusMeasures, length(PotentialStatusMeasures), replace=FALSE) #This creates a list of all indicators being considered (samples each possible indicator)
   }
