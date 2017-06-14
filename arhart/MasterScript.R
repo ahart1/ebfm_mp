@@ -49,6 +49,7 @@ dat <- fromJSON(datfilename)
     BetweenGuildComp <- dat$BetweenGuildComp
  # WithinGuildComp: Matrix of competiton within guilds, each species in a column
     WithinGuildComp <- dat$WithinGuildComp
+    WithinGuildComp <- WithinGuildComp*spatial.overlap
  # r_GrowthRate: Vector of growth rates for each species
     r_GrowthRate <- dat$r 
  # PickStatusMeasureOption: Indicates how status measures are chosen, default=1
@@ -64,10 +65,12 @@ dat <- fromJSON(datfilename)
     colnames(HistoricCatch) <- SpeciesNames
  # KGuild: Vector of carrying capacity for each guild, each species is its own guild
     KGuild <- dat$KGuild 
+    names(KGuild) <- SpeciesNames
  # Ktot: Total carrying capacity is sum of guild carrying capacity
     Ktot <- sum(KGuild)
  # BMSYData: Vector containing BMSY for each species
     BMSY <- KGuild/2 # Set values for BMSY
+    names(BMSY) <- SpeciesNames
  # MeanTrophicLevel: vector containing the trophic level of each species
     MeanTrophicLevel <- BMSYData[c(4,5,21,22,14,23,24,6,3,7),"MTL"] # ID mean trophic level for chosen species, could also ID by species
     names(MeanTrophicLevel) <- SpeciesNames
@@ -78,8 +81,8 @@ dat <- fromJSON(datfilename)
  # InitialSpeciesData: Data.frame containing columns with the following: Species (names, should match format of SpeciesNames), R, K, THETA
     InitialSpeciesData <- InitsData
  # ChooseFMult: Indicates how final F-multiplier should be chosen from the list of possible F-multipliers (one for each indicator)
-    # ChooseFMult = 4   Choose median F-Multiplier for each species column
-    ChooseFMult <- 4   # Choose median F-Multiplier for each species column
+    # ChooseFMult = "Median"   Choose median F-Multiplier for each species column
+    ChooseFMult <- "Median"   # Choose median F-Multiplier for each species column
  # IncludeCatchCeilings: If TRUE then catch ceilings are implemented and dNbydt_max solved by ode(), if FALSE then no catch ceilings are implemented and dNbydt function solved by ode(), default=FALSE
     IncludeCatchCeilings <- TRUE
  # CeilingValues: A list or sequence of ceiling values
@@ -97,6 +100,12 @@ RunMultiSpeciesProdWithCeiling(ScriptWorkDir=ScriptWorkDir, WorkDir=WorkDir, OUT
                                InitialSpeciesData=InitialSpeciesData, ChooseFMult=ChooseFMult, IncludeCatchCeilings=IncludeCatchCeilings, CeilingValues=CeilingValues)
 
 
+RunMultiSpeciesProdWithCeiling(ScriptWorkDir=ScriptWorkDir, WorkDir=WorkDir, OUTPUTdir=OUTPUTdir, Nsim=Nsim, Nyr=Nyr, SpeciesNames=SpeciesNames, alpha=alpha, Predators=Predators, Pelagics=Pelagics, Guildmembership=Guildmembership, 
+                                PickStatusMeasureOption=PickStatusMeasureOption, StatusMeasures=StatusMeasures, 
+                               HistoricBiomass=HistoricBiomass, HistoricCatch=HistoricCatch, KGuild=KGuild, BMSYData=BMSYData, MeanTrophicLevel=MeanTrophicLevel, DefaultRefLimVals=DefaultRefLimVals, IndicatorData=IndicatorData, 
+                               InitialSpeciesData=InitialSpeciesData, ChooseFMult=ChooseFMult, IncludeCatchCeilings=IncludeCatchCeilings, CeilingValues=CeilingValues)
+
+
 ########## The following doesnt appear to be used by the model but perhaps I should double check where this information is coming from to ensure that these aren't set as defaults without my knowledge ??????
 
 
@@ -106,7 +115,7 @@ NGuild = length(unique(Guildmembership))
 Initvals <- dat$Initvals
 
 
-WithinGuildComp <- WithinGuildComp*spatial.overlap
+
 # Redefine harvest rate as list of zeros
 hrate <- rep(0,Nsp)
 
