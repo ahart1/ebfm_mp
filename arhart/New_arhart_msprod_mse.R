@@ -57,13 +57,13 @@ RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUT
        # IndicatorData: Data.frame containing columns containing the following information: Indicator, Threshold, Limit, and a column for each species in the model, may also contain IndC and T.L columns
        # InitialSpeciesData: Data.frame containing columns with the following: Species (names, should match format of SpeciesNames), R, K, THETA
        # ChooseFMult: Indicates how final F-multiplier should be chosen from the list of possible F-multipliers (one for each indicator)
-            # ChooseFMult = 1   Choose minimum F-Multiplier for each species column
-            # ChooseFMult = 2   Choose maximum F-Multiplier for each species column
-            # ChooseFMult = 3   Choose mean F-Multiplier for each species column
-            # ChooseFMult = 4   Choose median F-Multiplier for each species column
+            # ChooseFMult = "Min"   Choose minimum F-Multiplier for each species column
+            # ChooseFMult = "Mean"   Choose mean F-Multiplier for each species column
+            # ChooseFMult = "Median"   Choose median F-Multiplier for each species column
        # IncludeCatchCeilings: If TRUE then catch ceilings are implemented and dNbydt_max solved by ode(), if FALSE then no catch ceilings are implemented and dNbydt function solved by ode(), default=FALSE
-            # If TRUE the following must also be provided:
-            # CeilingValues: A list or sequence of ceiling values
+       # CeilingValues: Vector of ceiling values
+            # if IncludeCatchCeilings = TRUE vector should include catch ceilings of interest 
+            # if IncludeCatchCeilings = FALSE vector should contain 0 as its only value (this will run the loop only once and maxcatch in output will = 0), this can be accomplished using: c(0)
   # Return:
      # List containing the following:
        # targ.u: Target exploitation rate
@@ -100,6 +100,70 @@ RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUT
        # div.cv.bio: # 1/(CV biomass) for last ten years (current model year and previous 9 years), no values for the first 9 years of the timeseries
   
   
+  Nsim <- 3
+  # Nyr: Number of years model projects forward in time, default=5
+  Nyr <- 30
+  # SpeciesNames: Vector of species names (strings) to be used in this analysis, can not have spaces in names  
+  SpeciesNames <- as.character(BMSYData[c(4,5,21,22,14,23,24,6,3,7),"Species.Group"]) 
+  # alpha: A predation matrix, each species in a column
+  alpha <- as.matrix(dat$alpha)
+  colnames(alpha) <- SpeciesNames
+  spatial.overlap <- dat$spatial.overlap
+  alpha <- alpha*spatial.overlap
+  # Predators: Vector of species names (strings) for predatory species
+  Predators <- names(which(colSums(alpha)>0))
+  # Pelagics: Vector of species names (strings) for pelagic species
+  # Define functional groups
+  FunctionalGroups <- c(1,1,2,2,1,3,3,1,1,1)  ##### ???????????????? this is very error prone, is there a way to get this information from BMSY above or one of the other documents, if yes then change the code for Pelagics below
+  # Identify columns containing pelagic species
+  Pelagics <- which(FunctionalGroups==2)
+  # Guildmembership: Vector specifying guild for each species (in this case each guild is a single species)
+  Guildmembership <- dat$Guildmembership
+  # BetweenGuildComp: Matrix of competition between guilds, each species in a column
+  BetweenGuildComp <- dat$BetweenGuildComp
+  # WithinGuildComp: Matrix of competiton within guilds, each species in a column
+  WithinGuildComp <- dat$WithinGuildComp
+  WithinGuildComp <- WithinGuildComp*spatial.overlap
+  # r_GrowthRate: Vector of growth rates for each species
+  r_GrowthRate <- dat$r 
+  # PickStatusMeasureOption: Indicates how status measures are chosen, default=1
+  PickStatusMeasureOption <- 1
+  # StatusMeasures: Vector of status measures (strings) to be considered in the model simulation 
+  StatusMeasures <- c("TL.survey", "TL.landings", "High.prop.pelagic", "Low.prop.pelagic", "High.prop.predators", "Low.prop.predators", "prop.overfished", "div.cv.bio", "tot.bio", "tot.cat", "exprate", "pd.ratio")
+  # HistoricBiomass: Matrix of historic biomass, each species should be in a single column
+  HistoricBiomass <- dat$NI
+  HistoricBiomass <- HistoricBiomass[,-1]
+  colnames(HistoricBiomass) <- SpeciesNames
+  # HistoricCatch: Matrix of historic catch, each species should be in a single column, there should not be a year column  
+  HistoricCatch <- dat$CI
+  colnames(HistoricCatch) <- SpeciesNames
+  # KGuild: Vector of carrying capacity for each guild, each species is its own guild
+  KGuild <- dat$KGuild 
+  names(KGuild) <- SpeciesNames
+  # Ktot: Total carrying capacity is sum of guild carrying capacity
+  Ktot <- sum(KGuild)
+  # BMSYData: Vector containing BMSY for each species
+  BMSY <- KGuild/2 # Set values for BMSY
+  names(BMSY) <- SpeciesNames
+  # MeanTrophicLevel: vector containing the trophic level of each species
+  MeanTrophicLevel <- BMSYData[c(4,5,21,22,14,23,24,6,3,7),"MTL"] # ID mean trophic level for chosen species, could also ID by species
+  names(MeanTrophicLevel) <- SpeciesNames
+  # DefaultRefLimVals: If TRUE then default refvals and limvals are used, if FALSE these values are calculated by this function, default=TRUE
+  DefaultRefLimVals <- FALSE
+  # IndicatorData: Data.frame containing columns containing the following information: Indicator, Threshold, Limit, and a column for each species in the model, may also contain IndC and T.L columns
+  IndicatorData <- IndicatorRefVals
+  # InitialSpeciesData: Data.frame containing columns with the following: Species (names, should match format of SpeciesNames), R, K, THETA
+  InitialSpeciesData <- InitsData
+  # ChooseFMult: Indicates how final F-multiplier should be chosen from the list of possible F-multipliers (one for each indicator)
+  # ChooseFMult = 4   Choose median F-Multiplier for each species column
+  ChooseFMult <- 4   # Choose median F-Multiplier for each species column
+  # IncludeCatchCeilings: If TRUE then catch ceilings are implemented and dNbydt_max solved by ode(), if FALSE then no catch ceilings are implemented and dNbydt function solved by ode(), default=FALSE
+  IncludeCatchCeilings <- TRUE
+  # CeilingValues: A list or sequence of ceiling values
+  CeilingValues <- seq(50000,200000, by=25000)
+  
+  
+  
   
 # Optional # /????????????? I think I need to fix how these are passed to function, may need to include .. in function??????
   # lifespan: Vector containing lifespan of each species
@@ -108,7 +172,7 @@ RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUT
   # Set working directory containing R scripts to be sourced
   setwd(ScriptWorkDir)
   # Source R scripts
-  lapply(list.files(pattern = "[.]R$", recursive = TRUE), source)
+  #lapply(list.files(pattern = "[.]R$", recursive = TRUE), source) # This is not working properly yet ?????????????
   
   # Set working directory for this analysis
   setwd(WorkDir)
@@ -216,7 +280,7 @@ RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUT
         HarvestRate <- SSHarvestInfo$UseExploitRate
         
         ########## Solve Multi-Species Operating Model ##########
-        if(IncludeCatchCeilings = TRUE){
+        if(IncludeCatchCeilings == TRUE){
           # Define the list of parameters that will be given to operating model as arguments below, values for each parameter are manipulated within the operating model (eg. dNbydt and dNbydt_max)
           # maxcat was added for dNbydt_CatchCeiling to reference when given to ode() as an argument (not needed if using dNbydt_Default)
           parms <- list(r_GrowthRate=r_GrowthRate,
@@ -230,7 +294,7 @@ RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUT
                         maxcat=maxcatch)
           # dNbydt is the MSProd model equation, solve using ode() and store in OdeResult
           OdeResult <- ode(Nabund, seq(iyr-1,(iyr+0.5),0.5), dNbydt_CatchCeiling, parms=parms, method="rk4")
-        } else if(IncludeCatchCeilings = FALSE){
+        } else if(IncludeCatchCeilings == FALSE){
           # Define the list of parameters that will be given to operating model as arguments below, values for each parameter are manipulated within the operating model (eg. dNbydt and dNbydt_max)
           parms <- list(r_GrowthRate=r_GrowthRate,
                         KGuild=KGuild,
