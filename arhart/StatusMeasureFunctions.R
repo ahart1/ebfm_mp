@@ -143,13 +143,18 @@ CalcAnnualStatusMeasures <- function(UseStatusMeasures=NULL, Historic=TRUE,Bioma
       PerformMetric <- cbind(PerformMetric, pd.ratio)
     }
     if("mean.length" %in% UseStatusMeasures==TRUE){
+      IndicatorCalcs <- function(X,IndData){
+        X*IndData
+      }
       tot.mean.length <- rowSums(mapply(X=Biomass, FUN=IndicatorCalcs, IndData=size),na.rm=TRUE)
       mean.length <- tot.mean.length/tot.bio # Mean length of fish across all biomass
       PerformMetric <- cbind(PerformMetric, mean.length)
     }
     if("mean.lifespan" %in% UseStatusMeasures==TRUE){
-      tot.mean.lifespan <- rowSums(mapply(X=Biomass, FUN=IndicatorCalcs, IndData=length),na.rm=TRUE)
-      mean.lifespan <- tot.mean.lifespan/tot.bio # Mean lifespan of fish across all biomass 
+      IndicatorCalcs <- function(X,IndData){
+        X*IndData
+      }
+      mean.lifespan <- rowSums(mapply(X=Biomass, FUN=IndicatorCalcs, IndData= lifespan),na.rm=TRUE)/tot.bio  # Mean lifespan of fish across each year's biomass
       PerformMetric <- cbind(PerformMetric, mean.lifespan)
     }
     #### Indicators for control rules ####
@@ -210,11 +215,11 @@ CalcAnnualStatusMeasures <- function(UseStatusMeasures=NULL, Historic=TRUE,Bioma
   if(Historic==FALSE){ # Calculates status measures for forward projection of model simulation
     #### Performance Metrics ####
     if("tot.bio"%in%UseStatusMeasures | "exprate"%in%UseStatusMeasures | "Low.prop.pelagic"%in%UseStatusMeasures | "High.prop.pelagic"%in%UseStatusMeasures | "Low.prop.predators"%in%UseStatusMeasures | "High.prop.predators"%in%UseStatusMeasures | "TL.survey"%in%UseStatusMeasures | "mean.length"%in%UseStatusMeasures | "mean.lifespan"%in%UseStatusMeasures ==TRUE){
-      tot.bio <- rowSums(Biomass[nrow(Biomass),],na.rm=TRUE) # Total system biomass summed over all species for most recent year (last row of matrix)
+      tot.bio <- sum(Biomass[nrow(Biomass),],na.rm=TRUE) # Total system biomass summed over all species for most recent year (last row of matrix)
       PerformMetric <- cbind(PerformMetric, tot.bio)
     }
     if("tot.cat"%in%UseStatusMeasures | "exprate"%in%UseStatusMeasures | "TL.landings"%in%UseStatusMeasures==TRUE){
-      tot.cat <- rowSums(Catch[nrow(Catch),],na.rm=TRUE) # Total system catch summed over all species for most recent year
+      tot.cat <- sum(Catch[nrow(Catch),],na.rm=TRUE) # Total system catch summed over all species for most recent year
       PerformMetric <- cbind(PerformMetric, tot.cat)
     }
     if("exprate" %in% UseStatusMeasures==TRUE){
@@ -222,34 +227,39 @@ CalcAnnualStatusMeasures <- function(UseStatusMeasures=NULL, Historic=TRUE,Bioma
       PerformMetric <- cbind(PerformMetric, exprate)
     }
     if("pd.ratio" %in% UseStatusMeasures==TRUE){
-      pd.ratio <- rowSums(Biomass[nrow(Biomass),is.pelagic],na.rm=TRUE)/rowSums(Biomass[nrow(Biomass),-(is.pelagic)],na.rm=TRUE)   # Pelagic demersal ratio (Pelagic:Everything not pelagic ratio)
+      pd.ratio <- sum(Biomass[nrow(Biomass),is.pelagic],na.rm=TRUE)/sum(Biomass[nrow(Biomass),-(is.pelagic)],na.rm=TRUE)   # Pelagic demersal ratio (Pelagic:Everything not pelagic ratio)
       PerformMetric <- cbind(PerformMetric, pd.ratio)
     }
     if("mean.length" %in% UseStatusMeasures==TRUE){
+      IndicatorCalcs <- function(X,IndData){
+        X*IndData
+      }
       tot.mean.length <- rowSums(mapply(X=Biomass[nrow(Biomass),], FUN=IndicatorCalcs, IndData=size),na.rm=TRUE)
       mean.length <- tot.mean.length/tot.bio # Average mean length of fish across all biomass
       PerformMetric <- cbind(PerformMetric, mean.length)
     }
     if("mean.lifespan" %in% UseStatusMeasures==TRUE){
-      tot.mean.lifespan <- rowSums(mapply(X=Biomass[nrow(Biomass),], FUN=IndicatorCalcs, IndData=length),na.rm=TRUE)
-      mean.lifespan <- tot.mean.lifespan/tot.bio # Average mean lifespan of fish across all biomass
+      IndicatorCalcs <- function(X,IndData){
+        X*IndData
+      }
+      mean.lifespan <- rowSums(mapply(X=Biomass[nrow(Biomass),], FUN=IndicatorCalcs, IndData= lifespan),na.rm=TRUE)/tot.bio  # Mean lifespan of fish across each year's biomass
       PerformMetric <- cbind(PerformMetric, mean.lifespan)
     }
     #### Indicators for control rules ####
     if("Low.prop.predators" %in% UseStatusMeasures==TRUE){
-      Low.prop.predators <- rowSums(Biomass[nrow(Biomass),is.predator],na.rm=TRUE)/tot.bio # Proportion of total biomass that is comprised by predatory species
+      Low.prop.predators <- sum(Biomass[nrow(Biomass),is.predator],na.rm=TRUE)/tot.bio # Proportion of total biomass that is comprised by predatory species
       Indicators <- cbind(Indicators, Low.prop.predators) # is.predator and is.pelagic currently are names, but names will not work for this code, also need to refer to multiple columns
     }
     if("High.prop.predators" %in% UseStatusMeasures==TRUE){
-      High.prop.predators <- rowSums(Biomass[nrow(Biomass),is.predator],na.rm=TRUE)/tot.bio # Proportion of total biomass that is comprised by predatory species
+      High.prop.predators <- sum(Biomass[nrow(Biomass),is.predator],na.rm=TRUE)/tot.bio # Proportion of total biomass that is comprised by predatory species
       Indicators <- cbind(Indicators, High.prop.predators)
     }
     if("Low.prop.pelagic" %in% UseStatusMeasures==TRUE){
-      Low.prop.pelagic <- rowSums(Biomass[nrow(Biomass),is.pelagic],na.rm=TRUE)/tot.bio  # Proportion of total biomass that is made of pelagic species
+      Low.prop.pelagic <- sum(Biomass[nrow(Biomass),is.pelagic],na.rm=TRUE)/tot.bio  # Proportion of total biomass that is made of pelagic species
       Indicators <- cbind(Indicators, Low.prop.pelagic)
     }
     if("High.prop.pelagic" %in% UseStatusMeasures==TRUE){
-      High.prop.pelagic <- rowSums(Biomass[nrow(Biomass),is.pelagic],na.rm=TRUE)/tot.bio  # Proportion of total biomass that is made of pelagic species
+      High.prop.pelagic <- sum(Biomass[nrow(Biomass),is.pelagic],na.rm=TRUE)/tot.bio  # Proportion of total biomass that is made of pelagic species
       Indicators <- cbind(Indicators, High.prop.pelagic)
     }
     if("TL.landings" %in% UseStatusMeasures==TRUE){
@@ -311,39 +321,41 @@ IndStatusAdjustFMultiplier <- function(refvals=NULL,limvals=NULL, RefFile=NULL, 
   fmult <- matrix(NA, nrow=length(refvals), ncol=Nsp)
   rownames(fmult) <- names(refvals)
   colnames(fmult) <- UseSpecies
-  temp <- NULL
   
   #### Indicators with refvals greater than limvals ####
   RefvalsLarger <- names(which(refvals>=limvals)) 
   # ??? Confirm ???UseRefvalsLarger <- RefvalsLarger[RefvalsLarger!="NAMEOFROWNUMBER5"] # ??????? NAMEOFROWNUMBER5 needs to be replaced with whatever this indicator is since it is treated differently
   UseRefvalsLarger <- RefvalsLarger[RefvalsLarger!="High.prop.predators"]
+  temp <- NULL
+  names(temp) <- UseRefvalsLarger
   
-  temp[IndicatorValues[UseRefvalsLarger]>=refvals[UseRefvalsLarger]] <- 1 # This assigns the value 1 to indicators that meet the condition (return TRUE, indicator greater than or equal to refvals)
+  temp[IndicatorValues[c(UseRefvalsLarger)]>=refvals[c(UseRefvalsLarger)]] <- 1 # This assigns the value 1 to indicators that meet the condition (return TRUE, indicator greater than or equal to refvals)
   
-  temp[IndicatorValues[UseRefvalsLarger]<limvals[UseRefvalsLarger]] <- 0 # This assigns 0 to indicators whose value is less than limvals
+  temp[IndicatorValues[c(UseRefvalsLarger)]<limvals[c(UseRefvalsLarger)]] <- 0 # This assigns 0 to indicators whose value is less than limvals
 
 # ?????? I need the line below to calculate the right side only for those things that meet the condition on the left so # calculaions=# things to replace
-  BetweenRefLimvals <- which((IndicatorValues[UseRefvalsLarger]<refvals[UseRefvalsLarger] & IndicatorValues[UseRefvalsLarger]>=limvals[UseRefvalsLarger])==TRUE) # gives names of indicators in UseRefvalsLarger with values between refvals and limvals
-  temp[BetweenRefLimvals] <- (IndicatorValues[BetweenRefLimvals]-limvals[BetweenRefLimvals])/(refvals[BetweenRefLimvals]-limvals[BetweenRefLimvals]) # ???? can these values be greater than 1, can they be negative????
+  BetweenRefLimvals <- which((IndicatorValues[c(UseRefvalsLarger)]<refvals[c(UseRefvalsLarger)] & IndicatorValues[c(UseRefvalsLarger)]>=limvals[c(UseRefvalsLarger)])==TRUE) # gives names of indicators in UseRefvalsLarger with values between refvals and limvals
+  temp[BetweenRefLimvals] <- (IndicatorValues[c(BetweenRefLimvals)]-limvals[c(BetweenRefLimvals)])/(refvals[c(BetweenRefLimvals)]-limvals[c(BetweenRefLimvals)]) # ???? can these values be greater than 1, can they be negative????
   
   Position <- which(RefFile[,"Indicator"] %in% UseRefvalsLarger)
   names(Position) <- RefFile[Position, "Indicator"]
-  fmult[UseRefvalsLarger,] <- as.matrix(-1*temp*RefFile[Position,UseSpecies]) # This calculates an fmultiplier across all species
-  #???Test that the multiplication is ocurring across the correct rows of RefFile
-  # ??? this should fill in by name, but I haven't tested with a correct IndicatorRefVals format
+  fmult[UseRefvalsLarger,] <- as.matrix(-1*temp[UseRefvalsLarger]*RefFile[Position[UseRefvalsLarger],UseSpecies]) # This calculates an fmultiplier across all species, Values from RefFile are multiplied by temp based on the names of temp (items with matching names are multiplied)
   
   #### Indicators with limvals greater than refvals ####
   LimvalsLarger <- names(which(refvals<limvals))
-  # ???Confirm??? UseLimvalsLarger <- c(LimvalsLarger, "NAMEOFROWNUMBER5") # ??????? NAMEOFROWNUMBER5 needs to be replaced with whatever this indicator is since it is treated differently
   UseLimvalsLarger <- c(LimvalsLarger, "High.prop.predators")
+  temp <- NULL
+  names(temp) <- UseLimvalsLarger
   
-  temp[IndicatorValues[UseLimvalsLarger]<=refvals[UseLimvalsLarger]] <- 1 # Assigns 1 to indicators with values less than or equal to refvals
+  temp[IndicatorValues[c(UseLimvalsLarger)]<=refvals[c(UseLimvalsLarger)]] <- 1 # Assigns 1 to indicators with values less than or equal to refvals
   
-  temp[IndicatorValues[UseLimvalsLarger]>limvals[UseLimvalsLarger]] <- 0 # Assigns 0 to indicators with values greater than limvals
+  temp[IndicatorValues[c(UseLimvalsLarger)]>limvals[c(UseLimvalsLarger)]] <- 0 # Assigns 0 to indicators with values greater than limvals
   
-  temp[IndicatorValues[UseLimvalsLarger]>refvals[UseLimvalsLarger] && IndicatorValues[UseLimvalsLarger]<=limvals[UseLimvalsLarger]] <- (IndicatorValues[UseLimvalsLarger]-limvals[UseLimvalsLarger])/(refvals[UseLimvalsLarger]-limvals[UseLimvalsLarger]) # indicator less than/=limval or greater than refval
+  temp[IndicatorValues[c(UseLimvalsLarger)]>refvals[c(UseLimvalsLarger)] && IndicatorValues[c(UseLimvalsLarger)]<=limvals[c(UseLimvalsLarger)]] <- (IndicatorValues[c(UseLimvalsLarger)]-limvals[c(UseLimvalsLarger)])/(refvals[c(UseLimvalsLarger)]-limvals[c(UseLimvalsLarger)]) # indicator less than/=limval or greater than refval
   
-  fmult[UseLimvalsLarger,] <- as.matrix(-1*temp*RefFile[UseLimvalsLarger,UseSpecies])
+  Position <- which(RefFile[,"Indicator"] %in% UseLimvalsLarger)
+  names(Position) <- RefFile[Position, "Indicator"]
+  fmult[UseLimvalsLarger,] <- as.matrix(-1*temp[UseLimvalsLarger]*RefFile[Position[UseLimvalsLarger],UseSpecies]) # Values from RefFile are multiplied by temp based on the names of temp (items with matching names are multiplied)
   
   
   fmult[which(is.na(fmult)==TRUE)] <- 1 # Assign missing (NA) values 1, no change in F
