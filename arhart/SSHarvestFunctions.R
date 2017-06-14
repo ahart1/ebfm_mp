@@ -18,10 +18,9 @@ SShrate.calc <- function(Nsp=NULL, SpeciesNames=NULL, ObsBiomass=NULL, ObsCatch=
        # ChosenStatusMeasure: Vector of status measures chosen for inclusion in the model simulation run
        # FMultiplier: Matrix of F-Multipliers where each row indicates a different indicator and each column represents a species, may contain NA
        # ChooseFMultOption: Indicates how final F-multiplier should be chosen from the list of possible F-multipliers (one for each indicator)
-             # ChooseFMultOption = 1   Choose minimum F-Multiplier for each species column
-             # ChooseFMultOption = 2   Choose maximum F-Multiplier for each species column
-             # ChooseFMultOption = 3   Choose mean F-Multiplier for each species column
-             # ChooseFMultOption = 4   Choose median F-Multiplier for each species column
+             # ChooseFMultOption = "Min"   Choose minimum F-Multiplier for each species column
+             # ChooseFMultOption = "Mean"   Choose mean F-Multiplier for each species column
+             # ChooseFMultOption = "Median"   Choose median F-Multiplier for each species column
   # Return:
        # List containing results of SS assessment (SSresults), estimated exploitation rate (EstimatedExploitRate) and exploitation rate to use (UseExploitRate)
        # SSresults object which contains the following: ?????? check that SSresults contains a value for each species
@@ -238,20 +237,17 @@ CalcFMultiplier <- function(FMultiplier=NULL, ChooseFMultOption=1){
   # Args:
        # FMultiplier: Matrix of F-Multipliers where each row indicates a different indicator and each column represents a species, may contain NA
        # ChooseFMultOption: Indicates how final F-multiplier should be chosen from the list of possible F-multipliers (one for each indicator)
-            # ChooseFMultOption = 1   Choose minimum F-Multiplier for each species column
-            # ChooseFMultOption = 2   Choose maximum F-Multiplier for each species column
-            # ChooseFMultOption = 3   Choose mean F-Multiplier for each species column
-            # ChooseFMultOption = 4   Choose median F-Multiplier for each species column
+            # ChooseFMultOption = "Min"   Choose minimum F-Multiplier for each species column
+            # ChooseFMultOption = "Mean"   Choose mean F-Multiplier for each species column
+            # ChooseFMultOption = "Median"   Choose median F-Multiplier for each species column
   # Return:
        # A vector containing final F-Multiplier values for each species, any species for shich no F-Multiplier was calculated is given a value of 1 so F is not adjusted
   
-  if("ChooseFMultOption"==1){
+  if("ChooseFMultOption"=="Min"){
     FinalFMultiplier <- apply(FMultiplier, 2, FUN=min, na.rm=TRUE) # Choose minimum F-Multiplier for each species column
-  } else if ("ChooseFMultOption"==2){
-    FinalFMultiplier <- apply(FMultiplier, 2, FUN=max, na.rm=TRUE) # Choose maximum F-Multiplier for each species column
-  } else if ("ChooseFMultOption"==3){
+  } else if ("ChooseFMultOption"=="Mean"){
     FinalFMultiplier <- apply(FMultiplier, 2, FUN=mean, na.rm=TRUE) # Choose mean F-Multiplier for each species column
-  } else if ("ChooseFMultOption"==4){
+  } else if ("ChooseFMultOption"=="Median"){
     FinalFMultiplier <- apply(FMultiplier, 2, FUN=median, na.rm=TRUE) # Choose median F-Multiplier for each species column
   }
   FinalFMultiplier[is.na(FinalFMultiplier)] <- 1 # Any species for which no F-Multiplier was calculated (no applicable harvest control rules) will be given an F-Multiplier of 1 so F is not adjusted
