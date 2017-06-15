@@ -43,10 +43,10 @@ RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUT
        # BetweenGuildComp: Matrix of competition between guilds, each species in a column
        # WithinGuildComp: Matrix of competiton within guilds, each species in a column
        # r_GrowthRate: Vector of growth rates for each species
-       # PickStatusMeasureOption: Indicates how status measures are chosen, default=1
-            # PickStatusMeasureOption = 1: uses all available status measures
-            # PickStatusMeasureOption = 2: picks a random subset of the available status measures
-       # StatusMeasures: Vector of status measures (strings) to be considered in the model simulation
+       # PickStatusMeasureOption: Indicates how status measures are chosen, default=ALL
+            # PickStatusMeasureOption = ALL: uses all available status measures
+            # PickStatusMeasureOption = RandomSubset: picks a random subset of the available status measures
+       # PotentialStatusMeasures: Vector of status measures (strings) to be considered in the model simulation
        # HistoricBiomass: Matrix of historic biomass, each species should be in a single column
        # HistoricCatch: Matrix of historic catch, each species should be in a single column, there should not be a year column
        # KGuild: Vector of carrying capacity for each guild, each species may be its own guild
@@ -199,7 +199,7 @@ RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUT
   ##############################################################################
   ChosenStatusMeasureList <- NULL
   for(isim in 1: Nsim){
-    ChosenStatusMeasureList[[isim]] <- PickStatusMeasures(PickOption=PickStatusMeasureOption, PotentialStatusMeasures=StatusMeasures)
+    ChosenStatusMeasureList[[isim]] <- PickStatusMeasures(PickOption=PickStatusMeasureOption, PotentialStatusMeasures=PotentialStatusMeasures)
   }
   
   
