@@ -326,14 +326,13 @@ IndStatusAdjustFMultiplier <- function(refvals=NULL,limvals=NULL, RefFile=NULL, 
   RefvalsLarger <- names(which(refvals>=limvals)) 
   # ??? Confirm ???UseRefvalsLarger <- RefvalsLarger[RefvalsLarger!="NAMEOFROWNUMBER5"] # ??????? NAMEOFROWNUMBER5 needs to be replaced with whatever this indicator is since it is treated differently
   UseRefvalsLarger <- RefvalsLarger[RefvalsLarger!="High.prop.predators"]
-  temp <- NULL
+  temp <- rep(NA, times=length(UseRefvalsLarger))
   names(temp) <- UseRefvalsLarger
   
   temp[IndicatorValues[c(UseRefvalsLarger)]>=refvals[c(UseRefvalsLarger)]] <- 1 # This assigns the value 1 to indicators that meet the condition (return TRUE, indicator greater than or equal to refvals)
   
   temp[IndicatorValues[c(UseRefvalsLarger)]<limvals[c(UseRefvalsLarger)]] <- 0 # This assigns 0 to indicators whose value is less than limvals
 
-# ?????? I need the line below to calculate the right side only for those things that meet the condition on the left so # calculaions=# things to replace
   BetweenRefLimvals <- which((IndicatorValues[c(UseRefvalsLarger)]<refvals[c(UseRefvalsLarger)] & IndicatorValues[c(UseRefvalsLarger)]>=limvals[c(UseRefvalsLarger)])==TRUE) # gives names of indicators in UseRefvalsLarger with values between refvals and limvals
   temp[BetweenRefLimvals] <- (IndicatorValues[c(BetweenRefLimvals)]-limvals[c(BetweenRefLimvals)])/(refvals[c(BetweenRefLimvals)]-limvals[c(BetweenRefLimvals)]) # ???? can these values be greater than 1, can they be negative????
   
@@ -344,14 +343,14 @@ IndStatusAdjustFMultiplier <- function(refvals=NULL,limvals=NULL, RefFile=NULL, 
   #### Indicators with limvals greater than refvals ####
   LimvalsLarger <- names(which(refvals<limvals))
   UseLimvalsLarger <- c(LimvalsLarger, "High.prop.predators")
-  temp <- NULL
+  temp <- rep(NA, times=length(UseLimvalsLarger))
   names(temp) <- UseLimvalsLarger
   
   temp[IndicatorValues[c(UseLimvalsLarger)]<=refvals[c(UseLimvalsLarger)]] <- 1 # Assigns 1 to indicators with values less than or equal to refvals
   
   temp[IndicatorValues[c(UseLimvalsLarger)]>limvals[c(UseLimvalsLarger)]] <- 0 # Assigns 0 to indicators with values greater than limvals
   
-  temp[IndicatorValues[c(UseLimvalsLarger)]>refvals[c(UseLimvalsLarger)] && IndicatorValues[c(UseLimvalsLarger)]<=limvals[c(UseLimvalsLarger)]] <- (IndicatorValues[c(UseLimvalsLarger)]-limvals[c(UseLimvalsLarger)])/(refvals[c(UseLimvalsLarger)]-limvals[c(UseLimvalsLarger)]) # indicator less than/=limval or greater than refval
+  temp[IndicatorValues[c(UseLimvalsLarger)]>refvals[c(UseLimvalsLarger)] & IndicatorValues[c(UseLimvalsLarger)]<=limvals[c(UseLimvalsLarger)]] <- (IndicatorValues[c(UseLimvalsLarger)]-limvals[c(UseLimvalsLarger)])/(refvals[c(UseLimvalsLarger)]-limvals[c(UseLimvalsLarger)]) # indicator less than/=limval or greater than refval
   
   Position <- which(RefFile[,"Indicator"] %in% UseLimvalsLarger)
   names(Position) <- RefFile[Position, "Indicator"]
@@ -362,50 +361,3 @@ IndStatusAdjustFMultiplier <- function(refvals=NULL,limvals=NULL, RefFile=NULL, 
   return(fmult)
 }
  
-
-
-
-
-
-
-# 
-# 
-# 1. get initial catch advice from historical data / indicators / whatever
-# 2. generate initial biomass vector and get opmod parameters
-# 3. update operating model for Nt
-# 4. gen new observations
-# 5. get indicators
-# 6. do assessment
-# 7. get catch advice from hcr
-# 8. goto 3, loop 3-7 until tstop
-# 9. calculate performance measures
-# 
-# 
-# mgmt options
-# 1. random Frate
-# 2. fix at single-species Fmsy from current assessment - no assessment error
-# 3. fix at single-species Fmsy from current assessment - given observation error, no assessment error
-# 4. fix at single-species Fmsy, assessment error (estimate Fmsy)
-# 5. single-species Fmsy control rule, reduce F at low biomass, assessment error (estimate Fmsy)
-# 6. random Frate, indicator control rules
-# 7. single-species Fmsy, indicator control rule
-# 8. single-species Fmsy, reduce F at low biomass, indicator control rule
-# 9. single-species Fmsy, indicator-based ceiling on catch
-# 10.single-species Fmsy, reduce F at low biomass, indicator-based ceiling on catch
-# 
-# performance measures
-# Indicators
-# Propstocks below 0.5*BMSY
-# Propstocks that went below 0.5*BMSY >=10% of the time
-# species richness....
-# variability in totcat over time
-# variability in species richness of catch over time
-#'   
-
-
-
-
-
-
-
-
