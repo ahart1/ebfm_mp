@@ -98,7 +98,7 @@ RunMultiSpeciesProdWithCeiling(ScriptWorkDir=ScriptWorkDir, WorkDir=WorkDir, OUT
                                BetweenGuildComp=BetweenGuildComp, WithinGuildComp=WithinGuildComp, r_GrowthRate=r_GrowthRate, PickStatusMeasureOption=PickStatusMeasureOption, StatusMeasures=StatusMeasures, 
                                HistoricBiomass=HistoricBiomass, HistoricCatch=HistoricCatch, KGuild=KGuild, Ktot=Ktot, BMSYData=BMSYData, MeanTrophicLevel=MeanTrophicLevel, DefaultRefLimVals=DefaultRefLimVals, IndicatorData=IndicatorData, 
                                InitialSpeciesData=InitialSpeciesData, ChooseFMult=ChooseFMult, IncludeCatchCeilings=IncludeCatchCeilings, CeilingValues=CeilingValues)
-
+# The above does not use BetweenGuildComp, WithinGuildComp, r-GrowthRate, Ktot arguments ????????
 
 RunMultiSpeciesProdWithCeiling(ScriptWorkDir=ScriptWorkDir, WorkDir=WorkDir, OUTPUTdir=OUTPUTdir, Nsim=Nsim, Nyr=Nyr, SpeciesNames=SpeciesNames, alpha=alpha, Predators=Predators, Pelagics=Pelagics, Guildmembership=Guildmembership, 
                                 PickStatusMeasureOption=PickStatusMeasureOption, StatusMeasures=StatusMeasures, 
