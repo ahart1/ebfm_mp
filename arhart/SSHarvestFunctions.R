@@ -33,7 +33,7 @@ SShrate.calc <- function(Nsp=NULL, SpeciesNames=NULL, ObsBiomass=NULL, ObsCatch=
           # SSresults$sigma: ???? what is this
   
   # Write single species assessment data files based on available biomass and catch timeseries (these timeseries will be updated each model year)
-  FormatSSDatfiles(Nsp=Nsp, ObsBiomass=ObsBiomass, ObsCatch=ObsCatch, workdir=workdir, inits=inits)
+  FormatSSDatfiles(SpeciesNames=SpeciesNames, ObsBiomass=ObsBiomass, ObsCatch=ObsCatch, workdir=workdir, inits=inits)
   
   # Use the doSSassess function to produce parameter values (r, k, z, theta, and sigma) which are used to update esimates of catch(EstimatedCatch) and estimated harvest rate(EstimatedExploitRate)
   SSresults <- doSSassess(Nsp=Nsp, workdir=getwd(), plotdiag=FALSE)
@@ -94,7 +94,7 @@ FormatSSDatfiles <- function(SpeciesNames=NULL, ObsBiomass=NULL,ObsCatch=NULL,wo
   for (isp in SpeciesNames)
   {
     outfile <- paste(isp,".dat",sep="")
-    write("#Nsp",outfile) # writes #Nsp
+    write("#Nsp",outfile) # writes #Nsp     # is this supposed to represent the identity of the species (in which case SpeciesNames should be used) or the number of species assesed in the file in which case 1 is fine but maybe Nsp shouldn't be usec
     write(1,outfile,append=TRUE) # places 1 beneath #Nsp
     write("# r phase",outfile,append=TRUE) # writes # r phase
     write(1,outfile,append=TRUE) # places 1 below # r phase
@@ -113,7 +113,7 @@ FormatSSDatfiles <- function(SpeciesNames=NULL, ObsBiomass=NULL,ObsCatch=NULL,wo
     write("# theta phase",outfile,append=TRUE) # writes # theta phase
     write(2,outfile,append=TRUE) # places 2 below # theta phase
     write("# Theta init",outfile,append=TRUE) # writes # Theta init
-    write(inits[inits[,"Species.Group"]==isp,"THETA"],outfile,append=TRUE) # places value of Theta from InitsData file in row Nsp
+    write(inits[inits[,"Species.Group"]==isp,"THETA"],outfile,append=TRUE) # places value of Theta from InitsData file in row associated with SpeciesNames
     write("# fyear",outfile,append=TRUE) # writes # fyear
     write(fyear,outfile,append=TRUE) # places fyear below #fyear
     write("# lyear",outfile,append=TRUE) # writes # lyear
