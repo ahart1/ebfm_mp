@@ -17,29 +17,26 @@
 
 #################### Actual Functions #############################
 
-########## PickIndicators ##########
+########## Status Measures ##########
 
 
-
-# PotentialStatusMeasures = indicators to be considered/picked from, this information comes from the initial information passed to the model
-# This will return a list of indicators by name to be used in the model simulation, order of indicator names does not matter   ?????THIS WORKS I TESTED IT
-
-PickStatusMeasures <- function(PickOption="Option1", PotentialStatusMeasures=ModelStatusMeasures){
+PickStatusMeasures <- function(PickOption="ALL", PotentialStatusMeasures=ModelStatusMeasures){
   # This function makes a list of indicators to be used in the simulation
   
   # Args:
        # PickOption: Indicates which option should be used (this will allow custom indicator combinations to be specified by creating a new option)
-            # PickOption = 1: uses all available status measures
-            # PickOption = 2: picks a random subset of the available status measures
+            # PickOption = ALL: uses all available status measures
+            # PickOption = RandomSubset: picks a random subset of the available status measures
+       # PotentialStatusMeasures: Vector of Status Measues to be considered/picked from, this information comes from the initial information passed to the model
   # Returns:
-       # A vector of choosen status measures by name
+       # A vector of choosen status measures by name, order of indicator names does not matter
   
   StatusMeasurePicks <- NULL
   
-  if(PickOption=="Option1"){
+  if(PickOption=="ALL"){
     StatusMeasurePicks <- sample(PotentialStatusMeasures, length(PotentialStatusMeasures), replace=FALSE) #This creates a list of all indicators being considered (samples each possible indicator)
   }
-  if(PickOption=="Option2"){
+  if(PickOption=="RandomSubset"){
     Nchoose <- sample(1:length(PotentialStatusMeasures), 1, replace=FALSE) # Pick a random number between 1 and length of PotentialStatusMeasures to determine the number of indicators that will be used in the simulation
     StatusMeasurePicks <- sample(PotentialStatusMeasures, Nchoose, replace=FALSE) # This creates a list containing Nchoose indicators randomly picked from NInds number of possible indicators
   }
