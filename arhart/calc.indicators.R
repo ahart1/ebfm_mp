@@ -110,8 +110,8 @@ get.refpts <- function(refvals,limvals,use.defaults=TRUE, RefFile=NULL){
        if (flag==1) limvals[i] <- runif(1,refvals[i],bounds[i,hi])
     }
   }
-  names(refvals) = ind.hcr[,1]
-  names(limvals) = ind.hcr[,1]
+  names(refvals) = RefFile[,1]
+  names(limvals) = RefFile[,1]
   refpts <- NULL
   refpts$refvals <- refvals
   refpts$limvals <- limvals
