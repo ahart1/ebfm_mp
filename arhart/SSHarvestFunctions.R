@@ -87,7 +87,8 @@ FormatSSDatfiles <- function(SpeciesNames=NULL, ObsBiomass=NULL,ObsCatch=NULL,wo
   
   # I need to confirm that these are number 1 and 33 for first year (basically numbers model year, may be specific year but I think it is just a number 1-end)?????? or is this the catch foor species 1 in first year and last year
   #fyear <- as.integer(ObsCatch[1,1])
-  FirstYear <- 1975 # ????????? want to set as 1 or pass as first year of historic time series/?????????
+  #FirstYear <- 1975 # ????????? want to set as 1 or pass as first year of historic time series/?????????
+  FirstYear <- 1
   #lyear <- as.integer(ObsCatch[nrow(ObsCatch),1])
   LastYear <- FirstYear + as.integer(nrow(ObsCatch)-1)
   
@@ -115,9 +116,9 @@ FormatSSDatfiles <- function(SpeciesNames=NULL, ObsBiomass=NULL,ObsCatch=NULL,wo
     write("# Theta init",outfile,append=TRUE) # writes # Theta init
     write(inits[inits[,"Species.Group"]==isp,"THETA"],outfile,append=TRUE) # places value of Theta from InitsData file in row associated with SpeciesNames
     write("# fyear",outfile,append=TRUE) # writes # fyear
-    write(fyear,outfile,append=TRUE) # places fyear below #fyear
+    write(FirstYear,outfile,append=TRUE) # places value for FirstYear below #fyear
     write("# lyear",outfile,append=TRUE) # writes # lyear
-    write(lyear,outfile,append=TRUE) # places lyear below #lyear
+    write(LastYear,outfile,append=TRUE) # places value for LastYear below #lyear
     write("# catches",outfile,append=TRUE) # writes # catches
     write.table(round(ObsCatch[,colnames(ObsCatch)==isp],digits=0),outfile,append=TRUE,row.names=FALSE,col.names=FALSE) # rounds the values of ObsCatch to whole numbers in corresponding column
     write("# nbio",outfile,append=TRUE) # writes #nbio
