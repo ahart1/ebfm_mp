@@ -23,10 +23,12 @@ dat <- fromJSON(datfilename)
     ScriptWorkDir <- "/Users/ahart2/Research/ebfm_mp/arhart"  
  # WorkDir: This is the working directory
     WorkDir <- "/Users/ahart2/Research/ebfm_mp/arhart"  
+ # TempSSDir: This is the temporary working directory where single species assessments are carried out
+    TempSSDir <- "/Users/ahart2/Research/ebfm_mp/arhart/temp"
  # OUTPUTdir: This is the working directory where the output from this function will be stored 
     OUTPUTdir <- "/Users/ahart2/Research/ebfm_mp/arhart/TryRunning"  
  # Nsim: Number of model simulations to run, default=1
-    Nsim <- 3
+    Nsim <- 1
  # Nyr: Number of years model projects forward in time, default=5
     Nyr <- 30
  # SpeciesNames: Vector of species names (strings) to be used in this analysis, can not have spaces in names  
@@ -100,7 +102,7 @@ RunMultiSpeciesProdWithCeiling(ScriptWorkDir=ScriptWorkDir, WorkDir=WorkDir, OUT
                                InitialSpeciesData=InitialSpeciesData, ChooseFMult=ChooseFMult, IncludeCatchCeilings=IncludeCatchCeilings, CeilingValues=CeilingValues)
 # The above does not use BetweenGuildComp, WithinGuildComp, r-GrowthRate, Ktot arguments ????????
 
-RunMultiSpeciesProdWithCeiling(ScriptWorkDir=ScriptWorkDir, WorkDir=WorkDir, OUTPUTdir=OUTPUTdir, Nsim=Nsim, Nyr=Nyr, SpeciesNames=SpeciesNames, alpha=alpha, Predators=Predators, Pelagics=Pelagics, Guildmembership=Guildmembership, 
+RunMultiSpeciesProdWithCeiling(ScriptWorkDir=ScriptWorkDir, WorkDir=WorkDir, TempSSDir=WorkDir, OUTPUTdir=OUTPUTdir, Nsim=Nsim, Nyr=Nyr, SpeciesNames=SpeciesNames, alpha=alpha, Predators=Predators, Pelagics=Pelagics, Guildmembership=Guildmembership, 
                                 PickStatusMeasureOption=PickStatusMeasureOption, StatusMeasures=StatusMeasures, 
                                HistoricBiomass=HistoricBiomass, HistoricCatch=HistoricCatch, KGuild=KGuild, BMSYData=BMSYData, MeanTrophicLevel=MeanTrophicLevel, DefaultRefLimVals=DefaultRefLimVals, IndicatorData=IndicatorData, 
                                InitialSpeciesData=InitialSpeciesData, ChooseFMult=ChooseFMult, IncludeCatchCeilings=IncludeCatchCeilings, CeilingValues=CeilingValues)
