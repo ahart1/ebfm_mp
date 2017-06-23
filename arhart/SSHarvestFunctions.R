@@ -36,7 +36,8 @@ SShrate.calc <- function(Nsp=NULL, SpeciesNames=NULL, ObsBiomass=NULL, ObsCatch=
   FormatSSDatfiles(SpeciesNames=SpeciesNames, ObsBiomass=ObsBiomass, ObsCatch=ObsCatch, workdir=workdir, inits=inits)
   
   # Use the doSSassess function to produce parameter values (r, k, z, theta, and sigma) which are used to update esimates of catch(EstimatedCatch) and estimated harvest rate(EstimatedExploitRate)
-  SSresults <- doSSassess(Nsp=Nsp, workdir=getwd(), plotdiag=FALSE)
+  #SSresults <- doSSassess(Nsp=Nsp, workdir=getwd(), plotdiag=FALSE)
+  SSresults <- doSSassess(workdir=workdir, plotdiag=FALSE)
   # Calculate catch at Fmsy (CatchFMSY) for each species based on SS assessments
   CatchFMSY <- rep(NA,Nsp)
   # Fill in CatchFMSY list from single species assessments (SSresults) for all ten species (Nsp=number of species)
@@ -64,7 +65,7 @@ SShrate.calc <- function(Nsp=NULL, SpeciesNames=NULL, ObsBiomass=NULL, ObsCatch=
 # This function formats file to be used in Single Species assessment calculations (required format for ADMB calculations)
           # For single species assessments a temporary working directory (workdir="C:/temp/") must be provided to run the associated functions, this may need to be reset when switching between computers
           # The working directory given indicates the storage location of ADMB ".dat" files and must be the same for ADMB scripts that call on these files
-FormatSSDatfiles <- function(SpeciesNames=NULL, ObsBiomass=NULL,ObsCatch=NULL,workdir="C:/temp/", inits=NULL){
+FormatSSDatfiles <- function(SpeciesNames=NULL, ObsBiomass=NULL,ObsCatch=NULL,workdir=NULL, inits=NULL){
   # This function produces .dat files for each species, which are passed to doSSassess() which runs single-species assessments in ADMB
   
   # Args:
@@ -76,21 +77,16 @@ FormatSSDatfiles <- function(SpeciesNames=NULL, ObsBiomass=NULL,ObsCatch=NULL,wo
   # Return:
        # A .dat file for use in SS assessment
   
-  # ????? currenlty ObsBiomass and ObsCatch arguments say only include column for each species, but currently being passed a matrix whose first column is a list of model years, if I dont need this then I can leave args as is, if this column necessary, I need to specify here
-  
   curdir <- getwd()
   setwd(workdir)
-  #Inits <- read.csv("/Users/arhart/Research/ebfm_modeltesting/data/inits.csv",header=TRUE)
-  #Inits <- read.csv("G:/NEFSC/MS_PROD/admb/single_schaef/inits.csv",header=TRUE)
   
-  # inits[isp,1] needs to be inits["SpeciesName","ColumnName"], need to loop over names not over number 1: length(SpeciesNames)
+  # First add index column to specify the year of the observation, this index is required by ADMB
+  ObsBiomass <- cbind(1:nrow(ObsBiomass), ObsBiomass)
+  ObsCatch <- cbind(1:nrow(ObsCatch), ObsCatch)
   
-  # I need to confirm that these are number 1 and 33 for first year (basically numbers model year, may be specific year but I think it is just a number 1-end)?????? or is this the catch foor species 1 in first year and last year
-  #fyear <- as.integer(ObsCatch[1,1])
-  #FirstYear <- 1975 # ????????? want to set as 1 or pass as first year of historic time series/?????????
   FirstYear <- 1
   #lyear <- as.integer(ObsCatch[nrow(ObsCatch),1])
-  LastYear <- FirstYear + as.integer(nrow(ObsCatch)-1)
+  LastYear <- FirstYear + as.integer(nrow(ObsBiomass)-1)
   
   for (isp in SpeciesNames)
   {
@@ -101,7 +97,6 @@ FormatSSDatfiles <- function(SpeciesNames=NULL, ObsBiomass=NULL,ObsCatch=NULL,wo
     write(1,outfile,append=TRUE) # places 1 below # r phase
     write("# rinit",outfile,append=TRUE) # writes # rinit
     write(inits[inits[,"Species.Group"]==isp,"R"],outfile,append=TRUE) # places the value of R for species row with Species.Group==isp from InitsData file
-    # ?????????????????????? This assumes that the first 10 species in InitsData file are the 10 species in this analysis, would be better to have species labels and refer to species by name (loop over list of names)
     write("# k phase",outfile,append=TRUE) # writes # k phase
     write(1,outfile,append=TRUE) # places 1 beneath # k phase
     write("# Kinit",outfile,append=TRUE) # writes # Kinit
@@ -124,23 +119,23 @@ FormatSSDatfiles <- function(SpeciesNames=NULL, ObsBiomass=NULL,ObsCatch=NULL,wo
     write("# nbio",outfile,append=TRUE) # writes #nbio
     write(nrow(ObsBiomass),outfile,append=TRUE) # places number of rows
     write("# obs bio",outfile,append=TRUE) # writes # obs bio
-    #????# write.table(round(ObsBiomass[,c(1,isp+1)],digits=0),outfile,append=TRUE,row.names=FALSE,col.names=FALSE) # rounds the values of ObsBiomass to whole numbers in corresponding column and colum containing model years???? why include model years, if unnecessary delete???
-    write.table(round(ObsBiomass[,colnames(ObsBiomass)==isp],digits=0), outfile, append=TRUE, row.names=False, col.names=FALSE)
+    #????# write.table(round(ObsBiomass[,c(1,isp+1)],digits=0),outfile,append=TRUE,row.names=FALSE,col.names=FALSE) # rounds the values of ObsBiomass to whole numbers in corresponding column and colum containing model years???? 
+    write.table(cbind(1:nrow(ObsBiomass), round(ObsBiomass[,colnames(ObsBiomass)==isp],digits=0)), outfile, append=TRUE, row.names=FALSE, col.names=FALSE) # BioObs[,c(1,isp+1)
     write("# obs cv",outfile,append=TRUE) # writes # obs cv
-    write.table(cbind(round(ObsBiomass[,1],digits=0),rep(0.25,nrow(ObsBiomass))),outfile,append=TRUE,row.names=FALSE,col.names=FALSE) # places rounded values for first column ObsBiomass (simulation year) in a table with obs cv=0.25 for all years
-    # ???? make the line above more general, why round years? this not necessary, why have both model year and 0.25 in columns?
+    # write.table(cbind(round(ObsBiomass[,1],digits=0),rep(0.25,nrow(ObsBiomass))),outfile,append=TRUE,row.names=FALSE,col.names=FALSE) # places rounded values for first column ObsBiomass (simulation year) in a table with obs cv=0.25 for all years
+    write.table(cbind(1:nrow(ObsBiomass),rep(0.25,nrow(ObsBiomass))),outfile,append=TRUE,row.names=FALSE,col.names=FALSE)
+    # ???? make the line above more general, why round years? this not necessary
   }
   setwd(curdir)
 }  
 
 
 ########## doSSassess ##########
-doSSassess <- function(Nsp=NULL,workdir=NULL,plotdiag=FALSE){
+doSSassess <- function(workdir=NULL,plotdiag=FALSE){
   # This function runs single-species assessments for each model species in ADMB and returns biomass estimate, harvest estimate, r, k, z, theta, and sigma 
   
   # Args:
-       # Nsp: Number of species in the model
-       # workdir: working directory where files and calculations for SS assessment should be stored and executed
+       # workdir: working directory where files and calculations for SS assessment should be stored and executed, must be the same as that used in FormatSSDatfiles  
        # plotdiag: I think I can get rid of this, if not add here and in SShrate.calc ????????? # plotdiag = gives the option to plot diagnostics (TRUE) or not (FALSE=default)
   # Return:
        # SSresults object which contains the following: ?????? check that SSresults contains a value for each species
@@ -174,29 +169,29 @@ doSSassess <- function(Nsp=NULL,workdir=NULL,plotdiag=FALSE){
   
   # This makes a call to the ADMB program 'single_schaef' for each of the species, and allows switching between different computers
   # how does this code work????? what should the output look like??????
-  for (isp in 1:Nsp) {
+  for (isp in SpeciesNames) {
     switch(Sys.info()[['sysname']],
            Windows= {
              exename <- "single_schaef";
-             command <- paste(navigate," & single_schaef -ind ",SpeciesNames[isp],".dat -nohess",sep="");
+             command <- paste(navigate," & single_schaef -ind ",SpeciesNames[SpeciesNames==isp],".dat -nohess",sep="");
              shell(command,wait=TRUE,invisible=TRUE)
            },
            Linux  = {
              exename <- "single_schaef_linux";
-             command <- paste(navigate," & ./single_schaef_linux -ind ",SpeciesNames[isp],".dat -nohess",sep="");
+             command <- paste(navigate," & ./single_schaef_linux -ind ",SpeciesNames[SpeciesNames==isp],".dat -nohess",sep="");
              system(command,wait=TRUE)
            },
            Darwin = {
              exename <- "single_schaef_mac";
-             command <- paste(navigate," & ./single_schaef_mac -ind ",SpeciesNames[isp],".dat -nohess",sep="");
+             command <- paste(navigate," & ./single_schaef_mac -ind ",SpeciesNames[SpeciesNames==isp],".dat -nohess",sep="");
              print(getwd());
              print(command);
              system(command,wait=TRUE)
            })
     
     # Take output and change name to reflect species
-    file.copy(paste0(exename,".rep"),paste(SpeciesNames[isp],".rep",sep=""),overwrite=TRUE) # copy file from exename.rep to Nsp.rep, overwrite when looping ????? returns TRUE
-    file.copy(paste0(exename,".par"),paste(SpeciesNames[isp],".par",sep=""),overwrite=TRUE) # copy file from exename.rep to Nsp.rep, overwrite when looping ????? returns TRUE
+    file.copy(paste0(exename,".rep"),paste(SpeciesNames[SpeciesNames==isp],".rep",sep=""),overwrite=TRUE) # copy file from exename.rep to SpeciesName.rep, overwrite when looping ????? returns TRUE
+    file.copy(paste0(exename,".par"),paste(SpeciesNames[SpeciesNames==isp],".par",sep=""),overwrite=TRUE) # copy file from exename.rep to SpeciesName.rep, overwrite when looping ????? returns TRUE
     
     # Plot diagnostics option ?????? I don't think this does anything, can I delete this section of code???????
     if (plotdiag==TRUE) par(mfrow=c(5,5),oma=c(4,0,0,0),mar=c(0,0,0,0))
@@ -233,7 +228,7 @@ doSSassess <- function(Nsp=NULL,workdir=NULL,plotdiag=FALSE){
 # ?????? check that this labels everything
 
 ########## CalcFMultiplier ##########
-CalcFMultiplier <- function(FMultiplier=NULL, ChooseFMultOption=1){
+CalcFMultiplier <- function(FMultiplier=NULL, ChooseFMultOption= "Median"){
   # This function calculates a final FMultiplier using the matrix of FMultipliers for each species based on every Indicator included in the ChosenStatusMeasures for this model simulation
   # Args:
        # FMultiplier: Matrix of F-Multipliers where each row indicates a different indicator and each column represents a species, may contain NA
@@ -252,8 +247,8 @@ CalcFMultiplier <- function(FMultiplier=NULL, ChooseFMultOption=1){
     FinalFMultiplier <- apply(FMultiplier, 2, FUN=median, na.rm=TRUE) # Choose median F-Multiplier for each species column
   }
   FinalFMultiplier[is.na(FinalFMultiplier)] <- 1 # Any species for which no F-Multiplier was calculated (no applicable harvest control rules) will be given an F-Multiplier of 1 so F is not adjusted
-  names(FinalFMultiplier) <- colnames(FMultiplier)
-  return(FinalFMultiplier) # This is a vector of F-Multipliers for each species
+  
+  return(FinalFMultiplier) # This is a vector of F-Multipliers for each species with species labels corresponding to those in FMultiplier
 }
 
 
