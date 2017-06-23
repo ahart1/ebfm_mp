@@ -199,7 +199,7 @@ for(maxcat in seq(50000,200000, by=25000))
     for (iyr in 2:Nyr)
     {    
       # Changed workdir=tempdir to workdir=getwd()
-      SShrate.output <- SShrate.calc(Nsp,BioObs=cbind(1:nrow(NI.obs),NI.obs),CatObs=cbind(1:nrow(CI.obs),CI.obs),workdir=getwd(), inits=InitsData, fmult=fmult, inds.use=inds.use, Nabund=Nabund)
+      SShrate.output <- SShrate.calc(Nsp,BioObs=cbind(1:nrow(NI.obs),NI.obs),CatObs=cbind(1:nrow(CI.obs),CI.obs),workdir=getwd(), inits=InitsData, fmult=fmult, inds.use=inds.use, Nabund=Nabund) # This line adds a first columns with numbers from 1-Nrow
       hrate <- SShrate.output$hrate
       SSresults <- SShrate.output$SSresults
       estu <- SShrate.output$estu
