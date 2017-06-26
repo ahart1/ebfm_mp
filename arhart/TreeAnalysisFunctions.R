@@ -372,11 +372,15 @@ RandomForestAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL, AsFactor=NU
                       importance = TRUE) 
       }
       
+      # Look at table of variable importance
+      importance(RandomTree) #?????? not tested yet
+      
       # Plot variable importance
       varImpPlot(RandomTree,  main=paste(PerformMet[i],sep=""))
       
      })
-   }
+  }
+  # Currently nothing is saved/returned for this function except graphs
 }
 
 
