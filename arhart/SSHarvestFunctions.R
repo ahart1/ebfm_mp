@@ -201,7 +201,13 @@ doSSassess <- function(workdir=NULL,plotdiag=FALSE){
     
     # Store results of SS assessments as SSresults
     SSresults$BiomassEstimate[[isp]] <- read.table(paste0(exename,".rep"),skip=6,header=FALSE) # Need to label
-    ncatobs <- scan(paste(isp,".dat",sep=""),skip=21,n=1)-scan(paste(isp,".dat",sep=""),skip=19,n=1)+1 # ????? What is this????????
+    ncatobs <- scan(paste(isp,".dat",sep=""),skip=21,n=1)-scan(paste(isp,".dat",sep=""),skip=19,n=1)+1 # ????? What is this???????? # not working(see full error below): scan(paste(isp,".dat",sep=""),skip=21,n=1) 
+    # ????????
+    #Error trying to open data input file GB_Cod.datdyld: lazy symbol binding failed: Symbol not found: __ZNKSt5ctypeIcE13_M_widen_initEv
+    #Referenced from: /Users/ahart2/Research/ebfm_mp/arhart/./single_schaef_mac
+    #Expected in: /usr/lib/libstdc++.6.dylib
+    #??????????????????????
+    
     SSresults$HarvestEstimate[[isp]] <- read.table(paste(isp,".dat",sep=""),skip=23,header=FALSE,nrow=ncatobs)
     SSresults$HarvestEstimate[[isp]] <- SSresults$HarvestEstimate[[isp]][,1]/(0.5*(SSresults$BiomassEstimate[[isp]][-(nrow(SSresults$BiomassEstimate[[isp]])),2]+SSresults$BiomassEstimate[[isp]][-1,2]))
     #  sd <- read.table(paste("C:/MS_PROD/admb/single_schaef/",isp,".std",sep=""),skip=5,header=FALSE)
