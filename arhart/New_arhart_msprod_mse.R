@@ -249,7 +249,7 @@ RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUT
       RefptsVals <- CalcRefvalLimval(use.defaults=DefaultRefLimVals, RefFile=IndicatorData, UseIndicators=ModelIndicators)
       
       ########## Update Biomass at End of Historic Timeseries: Starting Conditions for Next Year ##########
-      Nabund <- as.numeric(NI[nrow(NI),])*exp(rnorm(10,0,0.2)-0.5*0.2*0.2) # Error added to biomass at end of historic time series
+      Nabund <- as.numeric(HistoricBiomass[nrow(HistoricBiomass),])*exp(rnorm(10,0,0.2)-0.5*0.2*0.2) # Error added to biomass at end of historic time series
       
       ########## Update Status Measures at End of Historic Timeseries: Starting Conditions for Next Year ##########
       # Indicators at the end of historic time series
@@ -260,7 +260,7 @@ RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUT
       
       # ?????????????????????????? targ.u doesn't appear to be used anywhere, can I get rid of it??????????
       # Target exploitation rate(u)= Target FMSY =Growth rate divided in half
-      targ.u <- r/2
+      targ.u <- r_GrowthRate/2 
       
       ###################################################################################################
       # Begin forward projection from model year 2-Nyr
