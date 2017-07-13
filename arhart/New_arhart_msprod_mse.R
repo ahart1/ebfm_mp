@@ -24,16 +24,17 @@ dir.create(tempdir, showWarnings=FALSE)
 
 ###########################This is the start of a function (for debugging purposes) that actually runs all parts of model#########################################
 # My function makes the assumption that all R files needed to run this program are within the same working directory, these include: This file, SSHarvestFunctions.R, and NewIndicatorRefPtCalcs.R
-RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, TempSSDir=NULL, OUTPUTdir=NULL, Nsim=1, Nyr=5, SpeciesNames=NULL, alpha=NULL, Predators=NULL, 
-                                           Pelagics=NULL, Guildmembership=NULL, PickStatusMeasureOption= 1, StatusMeasures=NULL, HistoricBiomass=NULL, 
-                                           HistoricCatch=NULL, KGuild=NULL, BMSYData=NULL, MeanTrophicLevel=NULL, DefaultRefLimVals=TRUE, IndicatorData=NULL, 
+RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, TempSSDir=NULL, OUTPUTdirName=NULL, Nsim=1, Nyr=5, SpeciesNames=NULL, alpha=NULL, Predators=NULL, 
+                                           Pelagics=NULL, Guildmembership=NULL, BetweenGuildComp=NULL, WithinGuildComp=NULL, r_GrowthRate=NULL,
+                                           PickStatusMeasureOption= 1, StatusMeasures=NULL, HistoricBiomass=NULL, 
+                                           HistoricCatch=NULL, KGuild=NULL, Ktot=NULL, BMSYData=NULL, MeanTrophicLevel=NULL, DefaultRefLimVals=TRUE, IndicatorData=NULL, 
                                            InitialSpeciesData=NULL, ChooseFMult=NULL, IncludeCatchCeilings=FALSE, CeilingValues=NULL){
   
   # Args:
        # ScriptWorkDir: This is the working directory containing function scripts to source: SSHarvestFunctions.R, StatusMeasureFunctions.R,     
        # WorkDir: This is the working directory
        # TempSSDir: This is the temporary working directory where single species assessments are carried out
-       # OUTPUTdir: This is the working directory where the output from this function will be stored 
+       # OUTPUTdirName: This is the name of working directory where the output from this function will be stored (function creates this directory)
        # Nsim: Number of model simulations to run, default=1
        # Nyr: Number of years model projects forward in time, default=5
        # SpeciesNames: Vector of species names (strings) to be used in this analysis, can not have spaces in names
@@ -101,67 +102,67 @@ RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, Tem
        # div.cv.bio: # 1/(CV biomass) for last ten years (current model year and previous 9 years), no values for the first 9 years of the timeseries
   
   
-  Nsim <- 3
-  # Nyr: Number of years model projects forward in time, default=5
-  Nyr <- 30
-  # SpeciesNames: Vector of species names (strings) to be used in this analysis, can not have spaces in names  
-  SpeciesNames <- as.character(BMSYData[c(4,5,21,22,14,23,24,6,3,7),"Species.Group"]) 
-  # alpha: A predation matrix, each species in a column
-  alpha <- as.matrix(dat$alpha)
-  colnames(alpha) <- SpeciesNames
-  spatial.overlap <- dat$spatial.overlap
-  alpha <- alpha*spatial.overlap
-  # Predators: Vector of species names (strings) for predatory species
-  Predators <- names(which(colSums(alpha)>0))
-  # Pelagics: Vector of species names (strings) for pelagic species
-  # Define functional groups
-  FunctionalGroups <- c(1,1,2,2,1,3,3,1,1,1)  ##### ???????????????? this is very error prone, is there a way to get this information from BMSY above or one of the other documents, if yes then change the code for Pelagics below
-  # Identify columns containing pelagic species
-  Pelagics <- which(FunctionalGroups==2)
-  # Guildmembership: Vector specifying guild for each species (in this case each guild is a single species)
-  Guildmembership <- dat$Guildmembership
-  # BetweenGuildComp: Matrix of competition between guilds, each species in a column
-  BetweenGuildComp <- dat$BetweenGuildComp
-  # WithinGuildComp: Matrix of competiton within guilds, each species in a column
-  WithinGuildComp <- dat$WithinGuildComp
-  WithinGuildComp <- WithinGuildComp*spatial.overlap
-  # r_GrowthRate: Vector of growth rates for each species
-  r_GrowthRate <- dat$r 
-  # PickStatusMeasureOption: Indicates how status measures are chosen, default=1
-  PickStatusMeasureOption <- 1
-  # StatusMeasures: Vector of status measures (strings) to be considered in the model simulation 
-  StatusMeasures <- c("TL.survey", "TL.landings", "High.prop.pelagic", "Low.prop.pelagic", "High.prop.predators", "Low.prop.predators", "prop.overfished", "div.cv.bio", "tot.bio", "tot.cat", "exprate", "pd.ratio")
-  # HistoricBiomass: Matrix of historic biomass, each species should be in a single column
-  HistoricBiomass <- dat$NI
-  HistoricBiomass <- HistoricBiomass[,-1]
-  colnames(HistoricBiomass) <- SpeciesNames
-  # HistoricCatch: Matrix of historic catch, each species should be in a single column, there should not be a year column  
-  HistoricCatch <- dat$CI
-  colnames(HistoricCatch) <- SpeciesNames
-  # KGuild: Vector of carrying capacity for each guild, each species is its own guild
-  KGuild <- dat$KGuild 
-  names(KGuild) <- SpeciesNames
-  # Ktot: Total carrying capacity is sum of guild carrying capacity
-  Ktot <- sum(KGuild)
-  # BMSYData: Vector containing BMSY for each species
-  BMSY <- KGuild/2 # Set values for BMSY
-  names(BMSY) <- SpeciesNames
-  # MeanTrophicLevel: vector containing the trophic level of each species
-  MeanTrophicLevel <- BMSYData[c(4,5,21,22,14,23,24,6,3,7),"MTL"] # ID mean trophic level for chosen species, could also ID by species
-  names(MeanTrophicLevel) <- SpeciesNames
-  # DefaultRefLimVals: If TRUE then default refvals and limvals are used, if FALSE these values are calculated by this function, default=TRUE
-  DefaultRefLimVals <- FALSE
-  # IndicatorData: Data.frame containing columns containing the following information: Indicator, Threshold, Limit, and a column for each species in the model, may also contain IndC and T.L columns
-  IndicatorData <- IndicatorRefVals
-  # InitialSpeciesData: Data.frame containing columns with the following: Species (names, should match format of SpeciesNames), R, K, THETA
-  InitialSpeciesData <- InitsData
-  # ChooseFMult: Indicates how final F-multiplier should be chosen from the list of possible F-multipliers (one for each indicator)
-  # ChooseFMult = 4   Choose median F-Multiplier for each species column
-  ChooseFMult <- 4   # Choose median F-Multiplier for each species column
-  # IncludeCatchCeilings: If TRUE then catch ceilings are implemented and dNbydt_max solved by ode(), if FALSE then no catch ceilings are implemented and dNbydt function solved by ode(), default=FALSE
-  IncludeCatchCeilings <- TRUE
-  # CeilingValues: A list or sequence of ceiling values
-  CeilingValues <- seq(50000,200000, by=25000)
+  # Nsim <- 1
+  # # Nyr: Number of years model projects forward in time, default=5
+  # Nyr <- 30
+  # # SpeciesNames: Vector of species names (strings) to be used in this analysis, can not have spaces in names  
+  # SpeciesNames <- as.character(BMSYData[c(4,5,21,22,14,23,24,6,3,7),"Species.Group"]) 
+  # # alpha: A predation matrix, each species in a column
+  # alpha <- as.matrix(dat$alpha)
+  # colnames(alpha) <- SpeciesNames
+  # spatial.overlap <- dat$spatial.overlap
+  # alpha <- alpha*spatial.overlap
+  # # Predators: Vector of species names (strings) for predatory species
+  # Predators <- names(which(colSums(alpha)>0))
+  # # Pelagics: Vector of species names (strings) for pelagic species
+  # # Define functional groups
+  # FunctionalGroups <- c(1,1,2,2,1,3,3,1,1,1)  ##### ???????????????? this is very error prone, is there a way to get this information from BMSY above or one of the other documents, if yes then change the code for Pelagics below
+  # # Identify columns containing pelagic species
+  # Pelagics <- which(FunctionalGroups==2)
+  # # Guildmembership: Vector specifying guild for each species (in this case each guild is a single species)
+  # Guildmembership <- dat$Guildmembership
+  # # BetweenGuildComp: Matrix of competition between guilds, each species in a column
+  # BetweenGuildComp <- dat$BetweenGuildComp
+  # # WithinGuildComp: Matrix of competiton within guilds, each species in a column
+  # WithinGuildComp <- dat$WithinGuildComp
+  # WithinGuildComp <- WithinGuildComp*spatial.overlap
+  # # r_GrowthRate: Vector of growth rates for each species
+  # r_GrowthRate <- dat$r 
+  # # PickStatusMeasureOption: Indicates how status measures are chosen, default=1
+  # PickStatusMeasureOption <- 1
+  # # StatusMeasures: Vector of status measures (strings) to be considered in the model simulation 
+  # StatusMeasures <- c("TL.survey", "TL.landings", "High.prop.pelagic", "Low.prop.pelagic", "High.prop.predators", "Low.prop.predators", "prop.overfished", "div.cv.bio", "tot.bio", "tot.cat", "exprate", "pd.ratio")
+  # # HistoricBiomass: Matrix of historic biomass, each species should be in a single column
+  # HistoricBiomass <- dat$NI
+  # HistoricBiomass <- HistoricBiomass[,-1]
+  # colnames(HistoricBiomass) <- SpeciesNames
+  # # HistoricCatch: Matrix of historic catch, each species should be in a single column, there should not be a year column  
+  # HistoricCatch <- dat$CI
+  # colnames(HistoricCatch) <- SpeciesNames
+  # # KGuild: Vector of carrying capacity for each guild, each species is its own guild
+  # KGuild <- dat$KGuild 
+  # names(KGuild) <- SpeciesNames
+  # # Ktot: Total carrying capacity is sum of guild carrying capacity
+  # Ktot <- sum(KGuild)
+  # # BMSYData: Vector containing BMSY for each species
+  # BMSY <- KGuild/2 # Set values for BMSY
+  # names(BMSY) <- SpeciesNames
+  # # MeanTrophicLevel: vector containing the trophic level of each species
+  # MeanTrophicLevel <- BMSYData[c(4,5,21,22,14,23,24,6,3,7),"MTL"] # ID mean trophic level for chosen species, could also ID by species
+  # names(MeanTrophicLevel) <- SpeciesNames
+  # # DefaultRefLimVals: If TRUE then default refvals and limvals are used, if FALSE these values are calculated by this function, default=TRUE
+  # DefaultRefLimVals <- FALSE
+  # # IndicatorData: Data.frame containing columns containing the following information: Indicator, Threshold, Limit, and a column for each species in the model, may also contain IndC and T.L columns
+  # IndicatorData <- IndicatorRefVals
+  # # InitialSpeciesData: Data.frame containing columns with the following: Species (names, should match format of SpeciesNames), R, K, THETA
+  # InitialSpeciesData <- InitsData
+  # # ChooseFMult: Indicates how final F-multiplier should be chosen from the list of possible F-multipliers (one for each indicator)
+  # # ChooseFMult = 4   Choose median F-Multiplier for each species column
+  # ChooseFMult <- "Median"   # Choose median F-Multiplier for each species column
+  # # IncludeCatchCeilings: If TRUE then catch ceilings are implemented and dNbydt_max solved by ode(), if FALSE then no catch ceilings are implemented and dNbydt function solved by ode(), default=FALSE
+  # IncludeCatchCeilings <- TRUE
+  # # CeilingValues: A list or sequence of ceiling values
+  # CeilingValues <- seq(50000,200000, by=25000)
   
   
   
@@ -272,7 +273,7 @@ RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, Tem
         ########## Single Species Assessments ##########
         # Format data for and runs single species (SS) assessments, use the resulting catch at FMSY to calculate estimated and actual (used) harvest rate for each species
         # ???????? fix ObsBiomass and ObsCatch, no calculations here, why add a first column with model year (initially 1-33 then add simulated years) see also questions in SSHarvestFunctions: format SS datfile
-        SSHarvestInfo <- SShrate.calc(Nsp=Nsp,ObsBiomass=NI.obs,ObsCatch=CI.obs,workdir=TempSSDir, inits=InitialSpeciesData, FMultiplier=fmult, inds.use=ChosenStatusMeasures, Nabund=Nabund, ChooseFMultOption=ChooseFMult) # ??????? Changed workdir=tempdir to workdir=getwd()
+        SSHarvestInfo <- SShrate.calc(SpeciesNames=SpeciesNames, Nsp=Nsp, ObsBiomass=NI.obs,ObsCatch=CI.obs,workdir=WorkDir, inits=InitialSpeciesData, FMultiplier=fmult, inds.use=ChosenStatusMeasures, Nabund=Nabund, ChooseFMultOption=ChooseFMult) # ??????? Changed workdir=tempdir to workdir=getwd()
         # Append new exploitation rates (estimated and used) 
         EstimatedExploitationRateTimeseries <- rbind(EstimatedExploitationRateTimeseries,SSHarvestInfo$EstimatedExploitRate)  # Check that there are no rownames or they are model year ???????
         UsedExploitationRateTimeseries <- rbind(UsedExploitationRateTimeseries,SSHarvestInfo$UseExploitRate)  # Check that there are no rownames or they are model year ???????
@@ -383,7 +384,7 @@ RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, Tem
     ##################################################################################
     ALL.OUTPUT <- toJSON(ALL.results)
     # This creates a file name that includes datfile (which has info on the location of the original file) so the new file will be saved to the same location when file=filename in write() funciton below
-    location <- paste(getwd(), "arhart",OUTPUTdir, sep="/")
+    location <- paste(getwd(),OUTPUTdirName, sep="/")
     dir.create(location, showWarnings=TRUE) # makes sure that OUTPUTdir exists (actually makes directory)
     # sprintf() replaces the %d with an integer maxcatch, this is called a c-style string formating function
     filename <- paste(location, sprintf("results%d.json", maxcatch), sep="/")
