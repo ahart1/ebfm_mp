@@ -33,41 +33,41 @@ tempdir <- paste(getwd(), "arhart/temp", sep="/")
 dir.create(tempdir, showWarnings=FALSE)
 
 # Create directory to store output files
-OUTPUTdir <- "OutputDirectory" 
+OUTPUTdir <- "OutputDirectoryTest" 
 
 # Install packages used by scripts
 library(deSolve)
 library(jsonlite)
 
 # Set working directory to R folder so .R files(scripts) can be sourced in next line
-setwd("/Users/ahart2/Research/ebfm_mp/R")
+setwd("/Users/arhart/Research/ebfm_modeltesting/R")
 # Source all the *.R files in the main ebfm '/R' directory, this defines all functions included in these files but does not run them(they are not called)
 lapply(list.files(pattern = "[.]R$", recursive = TRUE), source)
 
 # Set working directory to allow sourcing of R scripts contained in arhart
-setwd("/Users/ahart2/Research/ebfm_mp/arhart/")
+setwd("/Users/arhart/Research/ebfm_modeltesting/arhart/")
 # This sources the file contining R scripts that will be regularly used when running arhart_msprod_mse.R contained in arhart folder
 source("UtilityFunctions.R")
 source("calc.indicators.R")
 
 # Set working directory so R scripts previously loaded and all data files are in directory
-setwd("/Users/ahart2/Research/ebfm_mp")
+setwd("/Users/arhart/Research/ebfm_modeltesting")
 
 
 ###########################This is the start of a function (for debugging purposes) that actually runs all parts of model#########################################
 Run <- function()
   {
 # Read in data files, this location must be changed when running on a new device, values from data file assigned to parameters below
-# Read in BMSY and inits data
-BMSYData <- read.csv("/Users/ahart2/Research/ebfm_mp/data/Bmsy.csv", header=TRUE)
-InitsData <- read.csv("/Users/ahart2/Research/ebfm_mp/data/inits.csv", header=TRUE)
-IndicatorRefVals <- read.csv("/Users/ahart2/Research/ebfm_mp/data/indicator_refvals.csv", header=TRUE)
+# Read in BMSY and inits data /Users/arhart/Research/ebfm_modeltesting
+BMSYData <- read.csv("/Users/arhart/Research/ebfm_modeltesting/data/Bmsy.csv", header=TRUE)
+InitsData <- read.csv("/Users/arhart/Research/ebfm_modeltesting/data/inits.csv", header=TRUE)
+IndicatorRefVals <- read.csv("/Users/arhart/Research/ebfm_modeltesting/data/indicator_refvals.csv", header=TRUE)
 # datfile variable contains the file name, reads from json file
-datfilename <- "/Users/ahart2/Research/ebfm_mp/data/Georges.dat.json"
+datfilename <- "/Users/arhart/Research/ebfm_modeltesting/data/Georges.dat.json"
 dat <- fromJSON(datfilename)
 
 #Set number of simulations
-Nsim <- 1000
+Nsim <- 5
 ##############################################################################
 # Define parameters for use in the model
 ##############################################################################
