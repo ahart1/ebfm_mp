@@ -37,9 +37,9 @@ SShrate.calc <- function(Nsp=NULL, SpeciesNames=NULL, ObsBiomass=NULL, ObsCatch=
   
   # Use the doSSassess function to produce parameter values (r, k, z, theta, and sigma) which are used to update esimates of catch(EstimatedCatch) and estimated harvest rate(EstimatedExploitRate)
   #SSresults <- doSSassess(Nsp=Nsp, workdir=getwd(), plotdiag=FALSE)
-  SSresults <- doSSassess(workdir=workdir, plotdiag=FALSE)
+  SSresults <- doSSassess(workdir=workdir, plotdiag=FALSE, SpeciesNames=SpeciesNames)
   # Calculate catch at Fmsy (CatchFMSY) for each species based on SS assessments
-  CatchFMSY <- rep(NA,Nsp)
+  CatchFMSY <- rep(NA, Nsp)
   # Fill in CatchFMSY list from single species assessments (SSresults) for all ten species (Nsp=number of species)
   #  ?????? may be able to eliminate the for loop by doing vector calculations
   for (isp in 1:Nsp) {
@@ -137,7 +137,7 @@ FormatSSDatfiles <- function(SpeciesNames=NULL, ObsBiomass=NULL,ObsCatch=NULL,wo
 
 
 ########## doSSassess ##########
-doSSassess <- function(workdir=NULL,plotdiag=FALSE){
+doSSassess <- function(workdir=NULL,plotdiag=FALSE, SpeciesNames=SpeciesNames){
   # This function runs single-species assessments for each model species in ADMB and returns biomass estimate, harvest estimate, r, k, z, theta, and sigma 
   
   # Args:
@@ -251,11 +251,15 @@ CalcFMultiplier <- function(FMultiplier=NULL, ChooseFMultOption= "Median"){
   # Return:
        # A vector containing final F-Multiplier values for each species, any species for shich no F-Multiplier was calculated is given a value of 1 so F is not adjusted
   
-  if("ChooseFMultOption"=="Min"){
+  FMultiplier <- as.matrix(FMultiplier)
+  
+  FinalFMultiplier <- NULL
+  
+  if(ChooseFMultOption=="Min"){
     FinalFMultiplier <- apply(FMultiplier, 2, FUN=min, na.rm=TRUE) # Choose minimum F-Multiplier for each species column
-  } else if ("ChooseFMultOption"=="Mean"){
+  } else if (ChooseFMultOption=="Mean"){
     FinalFMultiplier <- apply(FMultiplier, 2, FUN=mean, na.rm=TRUE) # Choose mean F-Multiplier for each species column
-  } else if ("ChooseFMultOption"=="Median"){
+  } else if (ChooseFMultOption== "Median"){
     FinalFMultiplier <- apply(FMultiplier, 2, FUN=median, na.rm=TRUE) # Choose median F-Multiplier for each species column
   }
   FinalFMultiplier[is.na(FinalFMultiplier)] <- 1 # Any species for which no F-Multiplier was calculated (no applicable harvest control rules) will be given an F-Multiplier of 1 so F is not adjusted
