@@ -24,7 +24,7 @@ dir.create(tempdir, showWarnings=FALSE)
 
 ###########################This is the start of a function (for debugging purposes) that actually runs all parts of model#########################################
 # My function makes the assumption that all R files needed to run this program are within the same working directory, these include: This file, SSHarvestFunctions.R, and NewIndicatorRefPtCalcs.R
-RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUTPUTdir=NULL, Nsim=1, Nyr=5, SpeciesNames=NULL, alpha=NULL, Predators=NULL, 
+RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, TempSSDir=NULL, OUTPUTdir=NULL, Nsim=1, Nyr=5, SpeciesNames=NULL, alpha=NULL, Predators=NULL, 
                                            Pelagics=NULL, Guildmembership=NULL, PickStatusMeasureOption= 1, StatusMeasures=NULL, HistoricBiomass=NULL, 
                                            HistoricCatch=NULL, KGuild=NULL, BMSYData=NULL, MeanTrophicLevel=NULL, DefaultRefLimVals=TRUE, IndicatorData=NULL, 
                                            InitialSpeciesData=NULL, ChooseFMult=NULL, IncludeCatchCeilings=FALSE, CeilingValues=NULL){
@@ -32,6 +32,7 @@ RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUT
   # Args:
        # ScriptWorkDir: This is the working directory containing function scripts to source: SSHarvestFunctions.R, StatusMeasureFunctions.R,     
        # WorkDir: This is the working directory
+       # TempSSDir: This is the temporary working directory where single species assessments are carried out
        # OUTPUTdir: This is the working directory where the output from this function will be stored 
        # Nsim: Number of model simulations to run, default=1
        # Nyr: Number of years model projects forward in time, default=5
@@ -271,7 +272,7 @@ RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUT
         ########## Single Species Assessments ##########
         # Format data for and runs single species (SS) assessments, use the resulting catch at FMSY to calculate estimated and actual (used) harvest rate for each species
         # ???????? fix ObsBiomass and ObsCatch, no calculations here, why add a first column with model year (initially 1-33 then add simulated years) see also questions in SSHarvestFunctions: format SS datfile
-        SSHarvestInfo <- SShrate.calc(Nsp=Nsp,ObsBiomass=cbind(1:nrow(NI.obs),NI.obs),ObsCatch=cbind(1:nrow(CI.obs),CI.obs),workdir=getwd(), inits=InitialSpeciesData, FMultiplier=fmult, inds.use=ChosenStatusMeasures, Nabund=Nabund, ChooseFMultOption=ChooseFMult) # ??????? Changed workdir=tempdir to workdir=getwd()
+        SSHarvestInfo <- SShrate.calc(Nsp=Nsp,ObsBiomass=NI.obs,ObsCatch=CI.obs,workdir=TempSSDir, inits=InitialSpeciesData, FMultiplier=fmult, inds.use=ChosenStatusMeasures, Nabund=Nabund, ChooseFMultOption=ChooseFMult) # ??????? Changed workdir=tempdir to workdir=getwd()
         # Append new exploitation rates (estimated and used) 
         EstimatedExploitationRateTimeseries <- rbind(EstimatedExploitationRateTimeseries,SSHarvestInfo$EstimatedExploitRate)  # Check that there are no rownames or they are model year ???????
         UsedExploitationRateTimeseries <- rbind(UsedExploitationRateTimeseries,SSHarvestInfo$UseExploitRate)  # Check that there are no rownames or they are model year ???????
@@ -368,7 +369,7 @@ RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUT
                                   ObservedBiomass=NI.obs,
                                   ObservedCatch=CI.obs,
                                   IndicatorTimeSeries=IndicatorTimeSeries,
-                                  maxcat=maxcat, # maxcat ?????? where
+                                  maxcat=maxcatch, # Store value of ceiling on total system removals
                                   TrueBiomassResult=BiomassResult, 
                                   TrueCatchResult=CatchResult, 
                                   PredlossResult=PredlossResult, 
