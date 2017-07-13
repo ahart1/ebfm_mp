@@ -87,7 +87,8 @@ FormatSSDatfiles <- function(SpeciesNames=NULL, ObsBiomass=NULL,ObsCatch=NULL,wo
   
   # I need to confirm that these are number 1 and 33 for first year (basically numbers model year, may be specific year but I think it is just a number 1-end)?????? or is this the catch foor species 1 in first year and last year
   #fyear <- as.integer(ObsCatch[1,1])
-  FirstYear <- 1975 # ????????? want to set as 1 or pass as first year of historic time series/?????????
+  #FirstYear <- 1975 # ????????? want to set as 1 or pass as first year of historic time series/?????????
+  FirstYear <- 1
   #lyear <- as.integer(ObsCatch[nrow(ObsCatch),1])
   LastYear <- FirstYear + as.integer(nrow(ObsCatch)-1)
   
@@ -127,7 +128,7 @@ FormatSSDatfiles <- function(SpeciesNames=NULL, ObsBiomass=NULL,ObsCatch=NULL,wo
     write.table(round(ObsBiomass[,colnames(ObsBiomass)==isp],digits=0), outfile, append=TRUE, row.names=False, col.names=FALSE)
     write("# obs cv",outfile,append=TRUE) # writes # obs cv
     write.table(cbind(round(ObsBiomass[,1],digits=0),rep(0.25,nrow(ObsBiomass))),outfile,append=TRUE,row.names=FALSE,col.names=FALSE) # places rounded values for first column ObsBiomass (simulation year) in a table with obs cv=0.25 for all years
-    # ???? make the line above more general, why round years? this not necessary, why have both model year and 0.25 in columns?
+    # ???? make the line above more general, why round years? this not necessary, why have both model year and 0.25 in columns= it is required by ADMB
   }
   setwd(curdir)
 }  
