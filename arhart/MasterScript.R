@@ -7,11 +7,11 @@
 
 
 # Read in data files
-BMSYData <- read.csv("/Users/ahart2/Research/ebfm_mp/arhart/DataFiles/FormattedSpeciesBmsy.csv", header=TRUE) # column1 is species name, column2 is Bmsy, column3 is mean trophic level
-InitsData <- read.csv("/Users/ahart2/Research/ebfm_mp/arhart/DataFiles/FormattedInitialSpeciesParameters.csv", header=TRUE)
-IndicatorRefVals <- read.csv("/Users/ahart2/Research/ebfm_mp/arhart/DataFiles/FormattedIndicatorRefLimVals.csv", header=TRUE) # Must contain the following columns: Indicator, IndC, Threshold, Limit, T.L, column for each species
+BMSYData <- read.csv("/Users/arhart/Research/ebfm_modeltesting/arhart/DataFiles/FormattedSpeciesBmsy.csv", header=TRUE) # column1 is species name, column2 is Bmsy, column3 is mean trophic level
+InitsData <- read.csv("/Users/arhart/Research/ebfm_modeltesting/arhart/DataFiles/FormattedInitialSpeciesParameters.csv", header=TRUE)
+IndicatorRefVals <- read.csv("/Users/arhart/Research/ebfm_modeltesting/arhart/DataFiles/FormattedIndicatorRefLimVals.csv", header=TRUE) # Must contain the following columns: Indicator, IndC, Threshold, Limit, T.L, column for each species
 # datfile variable contains the file name, reads from json file
-datfilename <- "/Users/ahart2/Research/ebfm_mp/data/Georges.dat.json"
+datfilename <- "/Users/arhart/Research/ebfm_modeltesting/data/Georges.dat.json"
 dat <- fromJSON(datfilename)
 
 # Define BMSY and pick the species to include in the model
@@ -20,11 +20,11 @@ dat <- fromJSON(datfilename)
 
 # Arguments required by RunMultiSpeciesProdWithCeiling() function
  # ScriptWorkDir: This is the working directory containing function scripts to source: SSHarvestFunctions.R, StatusMeasureFunctions.R,  
-    ScriptWorkDir <- "/Users/ahart2/Research/ebfm_mp/arhart"  
+    ScriptWorkDir <- "/Users/arhart/Research/ebfm_modeltesting/arhart"  
  # WorkDir: This is the working directory
-    WorkDir <- "/Users/ahart2/Research/ebfm_mp/arhart"  
+    WorkDir <- "/Users/arhart/Research/ebfm_modeltesting/arhart"  
  # OUTPUTdir: This is the working directory where the output from this function will be stored 
-    OUTPUTdir <- "/Users/ahart2/Research/ebfm_mp/arhart/TryRunning"  
+    OUTPUTdir <- "/Users/arhart/Research/ebfm_modeltesting/arhart/TryRunning"  
  # Nsim: Number of model simulations to run, default=1
     Nsim <- 3
  # Nyr: Number of years model projects forward in time, default=5
