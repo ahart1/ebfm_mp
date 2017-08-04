@@ -9,6 +9,8 @@ source("/Users/ahart2/Research/ebfm_mp/arhart/SSHarvestFunctions.R")
 source("/Users/ahart2/Research/ebfm_mp/arhart/StatusMeasureFunctions.R")
 source("/Users/ahart2/Research/ebfm_mp/arhart/ModelFunctions/MSProductionFunctions.R")
 
+library(jsonlite)
+
 # Read in data files
 MSE_BMSYData <- read.csv("/Users/ahart2/Research/ebfm_mp/arhart/DataFiles/FormattedSpeciesBmsy.csv", header=TRUE) # column1 is species name, column2 is Bmsy, column3 is mean trophic level
 MSE_InitsData <- read.csv("/Users/ahart2/Research/ebfm_mp/arhart/DataFiles/FormattedInitialSpeciesParameters.csv", header=TRUE)
