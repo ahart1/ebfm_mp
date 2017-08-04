@@ -59,11 +59,11 @@ Run <- function()
   {
 # Read in data files, this location must be changed when running on a new device, values from data file assigned to parameters below
 # Read in BMSY and inits data /Users/arhart/Research/ebfm_modeltesting
-BMSYData <- read.csv("/Users/arhart/Research/ebfm_modeltesting/data/Bmsy.csv", header=TRUE)
-InitsData <- read.csv("/Users/arhart/Research/ebfm_modeltesting/data/inits.csv", header=TRUE)
-IndicatorRefVals <- read.csv("/Users/arhart/Research/ebfm_modeltesting/data/indicator_refvals.csv", header=TRUE)
+BMSYData <- read.csv("/Users/ahart2/Research/ebfm_mp/data/Bmsy.csv", header=TRUE)
+InitsData <- read.csv("/Users/ahart2/Research/ebfm_mp/data/inits.csv", header=TRUE)
+IndicatorRefVals <- read.csv("/Users/ahart2/Research/ebfm_mp/data/indicator_refvals.csv", header=TRUE)
 # datfile variable contains the file name, reads from json file
-datfilename <- "/Users/arhart/Research/ebfm_modeltesting/data/Georges.dat.json"
+datfilename <- "/Users/ahart2/Research/ebfm_mp/data/Georges.dat.json"
 dat <- fromJSON(datfilename)
 
 #Set number of simulations

@@ -26,7 +26,7 @@ dir.create(tempdir, showWarnings=FALSE)
 # My function makes the assumption that all R files needed to run this program are within the same working directory, these include: This file, SSHarvestFunctions.R, and NewIndicatorRefPtCalcs.R
 RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUTPUTdirName=NULL, Nsim=1, Nyr=5, SpeciesNames=NULL, alpha=NULL, Predators=NULL, 
                                            Pelagics=NULL, Guildmembership=NULL, BetweenGuildComp=NULL, WithinGuildComp=NULL, r_GrowthRate=NULL,
-                                           PickStatusMeasureOption= 1, StatusMeasures=NULL, HistoricBiomass=NULL, 
+                                           PickStatusMeasureOption= "ALL", StatusMeasures=NULL, HistoricBiomass=NULL, 
                                            HistoricCatch=NULL, KGuild=NULL, Ktot=NULL, BMSYData=NULL, MeanTrophicLevel=NULL, DefaultRefLimVals=TRUE, IndicatorData=NULL, 
                                            InitialSpeciesData=NULL, ChooseFMult=NULL, IncludeCatchCeilings=FALSE, CeilingValues=NULL){
   
@@ -44,10 +44,11 @@ RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUT
        # BetweenGuildComp: Matrix of competition between guilds, each species in a column
        # WithinGuildComp: Matrix of competiton within guilds, each species in a column
        # r_GrowthRate: Vector of growth rates for each species
-       # PickStatusMeasureOption: Indicates how status measures are chosen, default=ALL
-            # PickStatusMeasureOption = ALL: uses all available status measures
-            # PickStatusMeasureOption = RandomSubset: picks a random subset of the available status measures
-       # PotentialStatusMeasures: Vector of status measures (strings) to be considered in the model simulation
+       # PickStatusMeasureOption: Indicates how status measures are chosen, default="ALL"
+            # PickStatusMeasureOption = "ALL": uses all available status measures
+            # PickStatusMeasureOption = "RandomSubset": picks a random subset of the available status measures
+       # PotentialStatusMeasures: Vector of status measures (strings) to be considered in the model simulation, default is ModelStatusMeasures, only provide if different than defaults
+            # if Predators vector is empty (NULL) "Low.prop.predator" and "High.prop.predator" should not be included in the list of PotentialStatusMeasures (default should not be used)
        # HistoricBiomass: Matrix of historic biomass, each species should be in a single column
        # HistoricCatch: Matrix of historic catch, each species should be in a single column, there should not be a year column
        # KGuild: Vector of carrying capacity for each guild, each species may be its own guild
@@ -128,7 +129,7 @@ RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUT
   # # r_GrowthRate: Vector of growth rates for each species
   # r_GrowthRate <- dat$r 
   # # PickStatusMeasureOption: Indicates how status measures are chosen, default=1
-  # PickStatusMeasureOption <- 1
+  # PickStatusMeasureOption <- "ALL"
   # # StatusMeasures: Vector of status measures (strings) to be considered in the model simulation 
   # StatusMeasures <- c("TL.survey", "TL.landings", "High.prop.pelagic", "Low.prop.pelagic", "High.prop.predators", "Low.prop.predators", "prop.overfished", "div.cv.bio", "tot.bio", "tot.cat", "exprate", "pd.ratio")
   # # HistoricBiomass: Matrix of historic biomass, each species should be in a single column
@@ -200,7 +201,7 @@ RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUT
   ##############################################################################
   ChosenStatusMeasureList <- NULL
   for(isim in 1: Nsim){
-    ChosenStatusMeasureList[[isim]] <- PickStatusMeasures(PickOption=PickStatusMeasureOption, PotentialStatusMeasures=PotentialStatusMeasures)
+    ChosenStatusMeasureList[[isim]] <- PickStatusMeasures(PickOption=PickStatusMeasureOption)
   }
   
   

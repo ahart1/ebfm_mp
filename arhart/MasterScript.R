@@ -1,41 +1,40 @@
 
-
 # Working directory and datfile source location for "Georges.dat", and "BMSYData", "InitsData", and "IndicatorRefVals" must be changed before running code on new device, these commands rely on directory location of files 
 # For single species assessments a temporary working directory must be provided to run the associated functions, this may need to be reset when switching between computers
 
-   
-
+# Check everything is sourced!
+source("/Users/ahart2/Research/ebfm_mp/arhart/InitialConditionsFunctions.R")
+source("/Users/ahart2/Research/ebfm_mp/arhart/New_arhart_msprod_mse.R")
+source("/Users/ahart2/Research/ebfm_mp/arhart/SSHarvestFunctions.R")
+source("/Users/ahart2/Research/ebfm_mp/arhart/StatusMeasureFunctions.R")
+source("/Users/ahart2/Research/ebfm_mp/arhart/ModelFunctions/MSProductionFunctions.R")
 
 # Read in data files
-MSE_BMSYData <- read.csv("/Users/arhart/Research/ebfm_modeltesting/arhart/DataFiles/FormattedSpeciesBmsy.csv", header=TRUE) # column1 is species name, column2 is Bmsy, column3 is mean trophic level
-MSE_InitsData <- read.csv("/Users/arhart/Research/ebfm_modeltesting/arhart/DataFiles/FormattedInitialSpeciesParameters.csv", header=TRUE)
-MSE_IndicatorRefVals <- read.csv("/Users/arhart/Research/ebfm_modeltesting/arhart/DataFiles/FormattedIndicatorRefLimVals.csv", header=TRUE) # Must contain the following columns: Indicator, IndC, Threshold, Limit, T.L, column for each species
+MSE_BMSYData <- read.csv("/Users/ahart2/Research/ebfm_mp/arhart/DataFiles/FormattedSpeciesBmsy.csv", header=TRUE) # column1 is species name, column2 is Bmsy, column3 is mean trophic level
+MSE_InitsData <- read.csv("/Users/ahart2/Research/ebfm_mp/arhart/DataFiles/FormattedInitialSpeciesParameters.csv", header=TRUE)
+MSE_IndicatorRefVals <- read.csv("/Users/ahart2/Research/ebfm_mp/arhart/DataFiles/FormattedIndicatorRefLimVals.csv", header=TRUE) # Must contain the following columns: Indicator, IndC, Threshold, Limit, T.L, column for each species
 # datfile variable contains the file name, reads from json file
-datfilename <- "/Users/arhart/Research/ebfm_modeltesting/data/Georges.dat.json"
+datfilename <- "/Users/ahart2/Research/ebfm_mp/data/Georges.dat.json"
 dat <- fromJSON(datfilename)
-
-# Define BMSY and pick the species to include in the model
-
-
 
 # Arguments required by RunMultiSpeciesProdWithCeiling() function
  # ScriptWorkDir: This is the working directory containing function scripts to source: SSHarvestFunctions.R, StatusMeasureFunctions.R,  
-    MSE_ScriptWorkDir <- "/Users/arhart/Research/ebfm_modeltesting/arhart"  
+    MSE_ScriptWorkDir <- "/Users/ahart2/Research/ebfm_mp/arhart"  
  # WorkDir: This is the working directory
-    MSE_WorkDir <- "/Users/arhart/Research/ebfm_modeltesting/arhart"  
+    MSE_WorkDir <- "/Users/ahart2/Research/ebfm_mp/arhart"  
  # TempSSDir: This is the temporary working directory where single species assessments are carried out
-    MSE_TempSSDir <- "/Users/arhart/Research/ebfm_modeltesting/arhart/temp"
+    MSE_TempSSDir <- "/Users/ahart2/Research/ebfm_mp/arhart/temp"
  # OUTPUTdirName: This is the working directory where the output from this function will be stored 
-    MSE_OUTPUTdirName <- "TryRunning"  
+    MSE_OUTPUTdirName <- "UpdatedModel_Sim1000_AllInds_Run1"  
  # Nsim: Number of model simulations to run, default=1
-    MSE_Nsim <- 1
+    MSE_Nsim <- 1#000
  # Nyr: Number of years model projects forward in time, default=5
     MSE_Nyr <- 30
  # SpeciesNames: Vector of species names (strings) to be used in this analysis, can not have spaces in names  
     MSE_SpeciesNames <- as.character(MSE_BMSYData[c(4,5,21,22,14,23,24,6,3,7),"Species.Group"]) 
  # alpha: A predation matrix, each species in a column
     MSE_alpha <- as.matrix(dat$alpha)
-    colnames(alpha) <- SpeciesNames
+    colnames(MSE_alpha) <- MSE_SpeciesNames
     MSE_spatial.overlap <- dat$spatial.overlap
     MSE_alpha <- MSE_alpha*MSE_spatial.overlap
  # Predators: Vector of species names (strings) for predatory species
@@ -55,7 +54,7 @@ dat <- fromJSON(datfilename)
  # r_GrowthRate: Vector of growth rates for each species
     MSE_r_GrowthRate <- dat$r 
  # PickStatusMeasureOption: Indicates how status measures are chosen, default=1
-    MSE_PickStatusMeasureOption <- 1
+    MSE_PickStatusMeasureOption <- "ALL"
  # StatusMeasures: Vector of status measures (strings) to be considered in the model simulation 
     MSE_StatusMeasures <- c("TL.survey", "TL.landings", "High.prop.pelagic", "Low.prop.pelagic", "High.prop.predators", "Low.prop.predators", "prop.overfished", "div.cv.bio", "tot.bio", "tot.cat", "exprate", "pd.ratio")
 # HistoricBiomass: Matrix of historic biomass, each species should be in a single column
@@ -100,12 +99,11 @@ RunMultiSpeciesProdWithCeiling(ScriptWorkDir=MSE_ScriptWorkDir, WorkDir=MSE_Work
                                BetweenGuildComp=MSE_BetweenGuildComp, WithinGuildComp=MSE_WithinGuildComp, r_GrowthRate=MSE_r_GrowthRate, PickStatusMeasureOption=MSE_PickStatusMeasureOption, StatusMeasures=MSE_StatusMeasures, 
                                HistoricBiomass=MSE_HistoricBiomass, HistoricCatch=MSE_HistoricCatch, KGuild=MSE_KGuild, Ktot=MSE_Ktot, BMSYData=MSE_BMSYData, MeanTrophicLevel=MSE_MeanTrophicLevel, DefaultRefLimVals=MSE_DefaultRefLimVals, IndicatorData=MSE_IndicatorData, 
                                InitialSpeciesData=MSE_InitialSpeciesData, ChooseFMult=MSE_ChooseFMult, IncludeCatchCeilings=MSE_IncludeCatchCeilings, CeilingValues=MSE_CeilingValues)
-# The above does not use BetweenGuildComp, WithinGuildComp, r-GrowthRate, Ktot arguments ????????
 
-RunMultiSpeciesProdWithCeiling(ScriptWorkDir=MSE_ScriptWorkDir, WorkDir=MSE_WorkDir, , r_GrowthRate=MSE_r_GrowthRate, OUTPUTdirName=MSE_OUTPUTdirName, Nsim=MSE_Nsim, Nyr=MSE_Nyr, SpeciesNames=MSE_SpeciesNames, alpha=MSE_alpha, Predators=MSE_Predators, Pelagics=MSE_Pelagics, Guildmembership=MSE_Guildmembership, 
-                               PickStatusMeasureOption=MSE_PickStatusMeasureOption, StatusMeasures=MSE_StatusMeasures, 
-                               HistoricBiomass=MSE_HistoricBiomass, HistoricCatch=MSE_HistoricCatch, KGuild=MSE_KGuild, BMSYData=MSE_BMSYData, MeanTrophicLevel=MSE_MeanTrophicLevel, DefaultRefLimVals=MSE_DefaultRefLimVals, IndicatorData=MSE_IndicatorData, 
-                               InitialSpeciesData=MSE_InitialSpeciesData, ChooseFMult=MSE_ChooseFMult, IncludeCatchCeilings=MSE_IncludeCatchCeilings, CeilingValues=MSE_CeilingValues)
+# RunMultiSpeciesProdWithCeiling(ScriptWorkDir=MSE_ScriptWorkDir, WorkDir=MSE_WorkDir, , r_GrowthRate=MSE_r_GrowthRate, OUTPUTdirName=MSE_OUTPUTdirName, Nsim=MSE_Nsim, Nyr=MSE_Nyr, SpeciesNames=MSE_SpeciesNames, alpha=MSE_alpha, Predators=MSE_Predators, Pelagics=MSE_Pelagics, Guildmembership=MSE_Guildmembership, 
+#                                PickStatusMeasureOption=MSE_PickStatusMeasureOption, StatusMeasures=MSE_StatusMeasures, 
+#                                HistoricBiomass=MSE_HistoricBiomass, HistoricCatch=MSE_HistoricCatch, KGuild=MSE_KGuild, BMSYData=MSE_BMSYData, MeanTrophicLevel=MSE_MeanTrophicLevel, DefaultRefLimVals=MSE_DefaultRefLimVals, IndicatorData=MSE_IndicatorData, 
+#                                InitialSpeciesData=MSE_InitialSpeciesData, ChooseFMult=MSE_ChooseFMult, IncludeCatchCeilings=MSE_IncludeCatchCeilings, CeilingValues=MSE_CeilingValues)
 
 
 ########## The following doesnt appear to be used by the model but perhaps I should double check where this information is coming from to ensure that these aren't set as defaults without my knowledge ??????

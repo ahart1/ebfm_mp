@@ -25,7 +25,7 @@ PickStatusMeasures <- function(PickOption="ALL", PotentialStatusMeasures=ModelSt
   
   # Args:
        # PickOption: Indicates which option should be used (this will allow custom indicator combinations to be specified by creating a new option)
-            # PickOption = ALL: uses all available status measures
+            # PickOption = ALL: uses all available status measures given in Potential Status Measures
             # PickOption = RandomSubset: picks a random subset of the available status measures
        # PotentialStatusMeasures: Vector of Status Measues to be considered/picked from, this information comes from the initial information passed to the model
   # Returns:
