@@ -356,7 +356,20 @@ IndStatusAdjustFMultiplier <- function(refvals=NULL,limvals=NULL, RefFile=NULL, 
 print(temp)
   temp[IndicatorValues[c(UseLimvalsLarger)]>limvals[c(UseLimvalsLarger)]] <- 0 # Assigns 0 to indicators with values greater than limvals
 print(temp)
-  temp[IndicatorValues[colnames(IndicatorValues)==c(UseLimvalsLarger)]>refvals[c(UseLimvalsLarger)] & IndicatorValues[colnames(IndicatorValues)==c(UseLimvalsLarger)]<=limvals[c(UseLimvalsLarger)]] <- (IndicatorValues[colnames(IndicatorValues)==c(UseLimvalsLarger)]-limvals[c(UseLimvalsLarger)])/(refvals[c(UseLimvalsLarger)]-limvals[c(UseLimvalsLarger)]) # indicator less than/=limval or greater than refval
+  temp[IndicatorValues[c(UseLimvalsLarger)]>refvals[c(UseLimvalsLarger)] & IndicatorValues[c(UseLimvalsLarger)]<=limvals[c(UseLimvalsLarger)]] <- (IndicatorValues[c(UseLimvalsLarger)]-limvals[c(UseLimvalsLarger)])/(refvals[c(UseLimvalsLarger)]-limvals[c(UseLimvalsLarger)]) # indicator less than/=limval or greater than refval
+  
+  # ??????????? I think the error is being generated when no value meets the third condition (everything should be replaced with zero or one, so there is no value in temp to be replaced)
+  # error is not generated earlier since there is always an NA in the list for UseRefValsLarger
+  # This is definitely the error, when the third temp is commented out there is no error returned, still don't know what the other warning means
+  
+  print(IndicatorValues[c(UseLimvalsLarger)])
+  print(refvals[c(UseLimvalsLarger)])
+  print(limvals[c(UseLimvalsLarger)])
+  
+  print("Batman")
+  
+  print(which(IndicatorValues[c(UseLimvalsLarger)]>refvals[c(UseLimvalsLarger)] & IndicatorValues[c(UseLimvalsLarger)]<=limvals[c(UseLimvalsLarger)]))
+  #print(IndicatorValues[c(UseLimvalsLarger)]-limvals[c(UseLimvalsLarger)])/(refvals[c(UseLimvalsLarger)]-limvals[c(UseLimvalsLarger)]) # indicator less than/=limval or greater than refval
   
   # The next two lines are not the same but they should be, also I don't need to use the colnames(IndicatorValues)==c(UseLimvalsLarger) in previous lines or for the last temp[] for RefvalsLarger ???????
   print(IndicatorValues[c(UseLimvalsLarger)]) # when this is used for IndicatorValues the NAs don't get replaced, but when printed it returns a value
@@ -365,6 +378,8 @@ print(temp)
    print(temp)
   #print(IndicatorValues[c(UseLimvalsLarger)]-limvals[c(UseLimvalsLarger)])
   
+   #stop()
+   
   Position <- which(RefFile[,"Indicator"] %in% UseLimvalsLarger)
   names(Position) <- RefFile[Position, "Indicator"]
   fmult[UseLimvalsLarger,] <- as.matrix(-1*temp[UseLimvalsLarger]*RefFile[Position[UseLimvalsLarger],UseSpecies]) # Values from RefFile are multiplied by temp based on the names of temp (items with matching names are multiplied)
