@@ -35,7 +35,7 @@ dat <- fromJSON(datfilename)
     MSE_SpeciesNames <- as.character(MSE_BMSYData[c(4,5,21,22,14,23,24,6,3,7),"Species.Group"]) 
  # alpha: A predation matrix, each species in a column
     MSE_alpha <- as.matrix(dat$alpha)
-    colnames(alpha) <- SpeciesNames
+    colnames(MSE_alpha) <- MSE_SpeciesNames
     MSE_spatial.overlap <- dat$spatial.overlap
     MSE_alpha <- MSE_alpha*MSE_spatial.overlap
  # Predators: Vector of species names (strings) for predatory species
