@@ -41,10 +41,14 @@ FormatTreeAnalysisData <- function(FileName=NULL, Nsim=NULL, CeilingValue=NULL, 
   ######### Calculate and store performance metrics for each model simulation
   for(i in 1:Nsim){
     
+    # For the BioStats_Sim1000_AllInds Biomass and Catch should be calculated using:
+    # Biomass <- dat["BiomassResult"][[1]][[i]]  # This should give the first item (matrix of biomass),  for the ith simulation
+    # Catch <- dat["CatchResult"][[1]][[i]]  # This should give the first item (matrix of catch) for the ith simulation
+    
     # Biomass and Catch series for simulation i
-    Biomass <- dat["BiomassResult"][[1]][[i]]  # This should give the first item (matrix of biomass),  for the ith simulation
+    Biomass <- dat["TrueBiomassResult"][[1]][[i]]  # This should give the first item (matrix of biomass),  for the ith simulation
     #Biomass <- do.call(rbind,Biomass) # This takes the list of lists (JSON format) from the ith simulation run and turns it into a matrix
-    Catch <- dat["CatchResult"][[1]][[i]]  # This should give the first item (matrix of catch) for the ith simulation
+    Catch <- dat["TrueCatchResult"][[1]][[i]]  # This should give the first item (matrix of catch) for the ith simulation
     #Catch <- do.call(rbind,Catch) # This takes the list of lists (JSON format) from the ith simulation run and turns it into a matrix
     
     
@@ -227,7 +231,7 @@ TreeAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL, AsFactor=NULL, Seed
       # Produce tree graphic
       par(xpd = NA, mar = c(2.5, 5, 2.5, 5)) # sets up graphing space so no labels are cut off
       plot(Tree,  main=paste(PerformMet[i],sep=""))
-      text(Tree, cex = 1)
+      text(Tree, cex = 1, pretty=FALSE)
       par(xpd = F, mar = c(4.5, 4.5, 0.5, 0.5)) # restricts plot to space it is in
       
       # Store Tree
@@ -286,7 +290,7 @@ TreeAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL, AsFactor=NULL, Seed
       # Produce tree graphic
       par(xpd = NA, mar = c(2.5, 5, 2.5, 5))
       plot(OptimalTree, main=paste("Optimal", PerformMet[i],sep=""))
-      text(OptimalTree, cex = 1)
+      text(OptimalTree, cex = 1, pretty=FALSE)
       par(xpd = F, mar = c(4.5, 4.5, 0.5, 0.5))
     },
     error=function(e){
