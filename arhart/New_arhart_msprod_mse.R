@@ -376,6 +376,8 @@ RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUT
                                   PredlossResult=PredlossResult, 
                                   WithinlossResult=WithinlossResult, 
                                   BetweenlossResult=BetweenlossResult)
+      
+      print(paste("Ceiling", maxcatch, "Simulation", isim, sep="_"))
     }
     # This is where simulation loop (total number of simulations we want to run) ends
     
