@@ -27,7 +27,7 @@ dat <- fromJSON(datfilename)
  # TempSSDir: This is the temporary working directory where single species assessments are carried out
     MSE_TempSSDir <- "/Users/ahart2/Research/ebfm_mp/arhart/temp"
  # OUTPUTdirName: This is the working directory where the output from this function will be stored 
-    MSE_OUTPUTdirName <- "UpdatedModel_Sim1000_AllInds_Run1"  
+    MSE_OUTPUTdirName <- "UpdatedModel_Sim1000_AllInds_Test"  
  # Nsim: Number of model simulations to run, default=1
     MSE_Nsim <- 1#000
  # Nyr: Number of years model projects forward in time, default=5
@@ -97,15 +97,12 @@ dat <- fromJSON(datfilename)
 # 1 Double check the return values from the function
 # 2 source new script
 # 3 try running the next line
+    system.time(
 RunMultiSpeciesProdWithCeiling(ScriptWorkDir=MSE_ScriptWorkDir, WorkDir=MSE_WorkDir, OUTPUTdirName=MSE_OUTPUTdirName, Nsim=MSE_Nsim, Nyr=MSE_Nyr, SpeciesNames=MSE_SpeciesNames, alpha=MSE_alpha, Predators=MSE_Predators, Pelagics=MSE_Pelagics, Guildmembership=MSE_Guildmembership, 
                                BetweenGuildComp=MSE_BetweenGuildComp, WithinGuildComp=MSE_WithinGuildComp, r_GrowthRate=MSE_r_GrowthRate, PickStatusMeasureOption=MSE_PickStatusMeasureOption, StatusMeasures=MSE_StatusMeasures, 
-                               HistoricBiomass=MSE_HistoricBiomass, HistoricCatch=MSE_HistoricCatch, KGuild=MSE_KGuild, Ktot=MSE_Ktot, BMSYData=MSE_BMSYData, MeanTrophicLevel=MSE_MeanTrophicLevel, DefaultRefLimVals=MSE_DefaultRefLimVals, IndicatorData=MSE_IndicatorData, 
+                               HistoricBiomass=MSE_HistoricBiomass, HistoricCatch=MSE_HistoricCatch, KGuild=MSE_KGuild, Ktot=MSE_Ktot, BMSYData=MSE_BMSY, MeanTrophicLevel=MSE_MeanTrophicLevel, DefaultRefLimVals=MSE_DefaultRefLimVals, IndicatorData=MSE_IndicatorData, 
                                InitialSpeciesData=MSE_InitialSpeciesData, ChooseFMult=MSE_ChooseFMult, IncludeCatchCeilings=MSE_IncludeCatchCeilings, CeilingValues=MSE_CeilingValues)
-
-# RunMultiSpeciesProdWithCeiling(ScriptWorkDir=MSE_ScriptWorkDir, WorkDir=MSE_WorkDir, , r_GrowthRate=MSE_r_GrowthRate, OUTPUTdirName=MSE_OUTPUTdirName, Nsim=MSE_Nsim, Nyr=MSE_Nyr, SpeciesNames=MSE_SpeciesNames, alpha=MSE_alpha, Predators=MSE_Predators, Pelagics=MSE_Pelagics, Guildmembership=MSE_Guildmembership, 
-#                                PickStatusMeasureOption=MSE_PickStatusMeasureOption, StatusMeasures=MSE_StatusMeasures, 
-#                                HistoricBiomass=MSE_HistoricBiomass, HistoricCatch=MSE_HistoricCatch, KGuild=MSE_KGuild, BMSYData=MSE_BMSYData, MeanTrophicLevel=MSE_MeanTrophicLevel, DefaultRefLimVals=MSE_DefaultRefLimVals, IndicatorData=MSE_IndicatorData, 
-#                                InitialSpeciesData=MSE_InitialSpeciesData, ChooseFMult=MSE_ChooseFMult, IncludeCatchCeilings=MSE_IncludeCatchCeilings, CeilingValues=MSE_CeilingValues)
+)
 
 
 ########## The following doesnt appear to be used by the model but perhaps I should double check where this information is coming from to ensure that these aren't set as defaults without my knowledge ??????
