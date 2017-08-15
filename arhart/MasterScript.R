@@ -27,9 +27,9 @@ dat <- fromJSON(datfilename)
  # TempSSDir: This is the temporary working directory where single species assessments are carried out
     MSE_TempSSDir <- "/Users/ahart2/Research/ebfm_mp/arhart/temp"
  # OUTPUTdirName: This is the working directory where the output from this function will be stored 
-    MSE_OUTPUTdirName <- "UpdatedModel_Sim1000_AllInds_Test"  
+    MSE_OUTPUTdirName <- "UpdatedModel_Sim100_AllInds_AFSData_Run1"  
  # Nsim: Number of model simulations to run, default=1
-    MSE_Nsim <- 1#000
+    MSE_Nsim <- 100
  # Nyr: Number of years model projects forward in time, default=5
     MSE_Nyr <- 30
  # SpeciesNames: Vector of species names (strings) to be used in this analysis, can not have spaces in names  
