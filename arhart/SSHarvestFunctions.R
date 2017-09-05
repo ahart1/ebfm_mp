@@ -4,7 +4,7 @@
 # doSSassess() performs the SS assessments
 # CalcFMultiplier() calculates the final F-multiplier for each species
 ########## SShrate.calc ##########
-SShrate.calc <- function(Nsp=NULL, SpeciesNames=NULL, ObsBiomass=NULL, ObsCatch=NULL, workdir=NULL, inits=NULL, inds.use=NULL, Nabund=NULL, ChosenStatusMeasure=ModelStatusMeasures, FMultiplier=NULL, ChooseFMultOption=1) {
+SShrate.calc <- function(Nsp=NULL, SpeciesNames=NULL, ObsBiomass=NULL, ObsCatch=NULL, workdir=NULL, inits=NULL, inds.use=NULL, Nabund=NULL, PercentFmsy=1, ChosenStatusMeasure=ModelStatusMeasures, FMultiplier=NULL, ChooseFMultOption=1) {
   # This function formats data for and runs single species (SS) assessments and uses the resulting catch at FMSY to calculate estimated and actual (used) harvest rate for each species
   
   # Args:
@@ -15,6 +15,7 @@ SShrate.calc <- function(Nsp=NULL, SpeciesNames=NULL, ObsBiomass=NULL, ObsCatch=
        # workdir: working directory where files and calculations for SS assessment should be stored and executed
        # inits: Data.frame containing columns with the following: Species (names, should match format of SpeciesNames), R, K, THETA
        # Nabund: Biomass for each species at the end of the last model year
+       # PercentFmsy: Value between 0 and 1 which determines percent of Fmsy to be applied, default=1
        # ChosenStatusMeasure: Vector of status measures chosen for inclusion in the model simulation run
        # FMultiplier: Matrix of F-Multipliers where each row indicates a different indicator and each column represents a species, may contain NA
        # ChooseFMultOption: Indicates how final F-multiplier should be chosen from the list of possible F-multipliers (one for each indicator)
@@ -41,9 +42,9 @@ SShrate.calc <- function(Nsp=NULL, SpeciesNames=NULL, ObsBiomass=NULL, ObsCatch=
   # Calculate catch at Fmsy (CatchFMSY) for each species based on SS assessments
   CatchFMSY <- rep(NA, Nsp)
   # Fill in CatchFMSY list from single species assessments (SSresults) for all ten species (Nsp=number of species)
-  #  ?????? may be able to eliminate the for loop by doing vector calculations
+  # PercentFmsy determines the percent of Fmsy that is applied, the default is 1 (fished at Fmsy = 1* R/2 = 1* Fmsy)
   for (isp in 1:Nsp) {
-    CatchFMSY[isp] <- SSresults$BiomassEstimate[[isp]][nrow(SSresults$BiomassEstimate[[isp]]), 2]*SSresults$r[isp]/2 # ?????? what is the second column in SSresults$BiomassEstimate??????
+    CatchFMSY[isp] <- SSresults$BiomassEstimate[[isp]][nrow(SSresults$BiomassEstimate[[isp]]), 2]*PercentFmsy*SSresults$r[isp]/2 
   }
   
   # Calculate final FMultiplier using the matrix of FMultipliers for each species based on every Indicator included in the ChosenStatusMeasures for this model simulation
