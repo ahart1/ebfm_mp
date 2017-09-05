@@ -114,11 +114,17 @@ FormatTreeAnalysisData <- function(FileName=NULL, Nsim=NULL, CeilingValue=NULL, 
     #########
     
     ## Reference Value Data
+    # for(isim in 1:length(dat["refvals"][[1]][[1]])){
+    #   Results[i, paste("RefVal", IndicatorNames[isim], sep="_")] <- dat["refvals"][[1]][[i]][[isim]]
+    # }
     for(isim in 1:length(dat["refvals"][[1]][[1]])){
       Results[i,paste("RefVal", isim, sep="")] <- dat["refvals"][[1]][[i]][[isim]]
     }
     
     # Limit Value Data
+    # for(isim in 1:length(dat["limvals"][[1]][[1]])){
+    #   Results[i,paste("Limval", IndicatorNames[isim], sep="_")] <- dat["limvals"][[1]][[i]][[isim]]
+    # }
     for(isim in 1:length(dat["limvals"][[1]][[1]])){
       Results[i,paste("LimVal", isim, sep="")] <- dat["limvals"][[1]][[i]][[isim]]
     }
@@ -210,7 +216,7 @@ TreeAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL, AsFactor=NULL, Seed
       ####################### Produce Initial Tree ###########################################################################
       if(AsFactor[[i]]==TRUE){
         Tree <- rpart(as.factor(Data[,i]) ~ as.factor(CatchCeiling) + # response is treated as.factor when data is true/false, or categorical rather than continuous
-                        RefVal1 + RefVal2 + RefVal3 + RefVal4 + 
+                        RefVal1 + RefVal2 + RefVal3 + RefVal4 +
                         RefVal5 + RefVal6 + RefVal7 + RefVal8 +
                         LimVal1 + LimVal2 + LimVal3 + LimVal4 +
                         LimVal5 + LimVal6 + LimVal7 + LimVal8,
@@ -218,8 +224,8 @@ TreeAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL, AsFactor=NULL, Seed
                       method="class",
                       control = rpart.control(cp=0.001))
       } else{
-        Tree <- rpart(Data[,i] ~ as.factor(CatchCeiling) + 
-                        RefVal1 + RefVal2 + RefVal3 + RefVal4 + 
+        Tree <- rpart(Data[,i] ~ as.factor(CatchCeiling) +
+                        RefVal1 + RefVal2 + RefVal3 + RefVal4 +
                         RefVal5 + RefVal6 + RefVal7 + RefVal8 +
                         LimVal1 + LimVal2 + LimVal3 + LimVal4 +
                         LimVal5 + LimVal6 + LimVal7 + LimVal8,
@@ -253,23 +259,23 @@ TreeAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL, AsFactor=NULL, Seed
       ############# Update to produce Optimal Tree (optimal complexity)############################
       # Add minsplit to rpart() to force optimal number of splits
       if(AsFactor[[i]]==TRUE){
-        OptimalTree <- rpart(as.factor(Data[,i]) ~ as.factor(CatchCeiling) + 
-                               RefVal1 + RefVal2 + RefVal3 + RefVal4 + 
-                               RefVal5 + RefVal6 + RefVal7 + RefVal8 + 
+        OptimalTree <- rpart(as.factor(Data[,i]) ~ as.factor(CatchCeiling) +
+                               RefVal1 + RefVal2 + RefVal3 + RefVal4 +
+                               RefVal5 + RefVal6 + RefVal7 + RefVal8 +
                                LimVal1 + LimVal2 + LimVal3 + LimVal4 +
                                LimVal5 + LimVal6 + LimVal7 + LimVal8,
                              data = Data,
                              method = "class",
-                             control = rpart.control(cp=OptimalCP[[i]])) 
+                             control = rpart.control(cp=OptimalCP[[i]]))
       } else{
-        OptimalTree <- rpart(Data[,i] ~ as.factor(CatchCeiling) + 
-                               RefVal1 + RefVal2 + RefVal3 + RefVal4 + 
-                               RefVal5 + RefVal6 + RefVal7 + RefVal8 + 
+        OptimalTree <- rpart(Data[,i] ~ as.factor(CatchCeiling) +
+                               RefVal1 + RefVal2 + RefVal3 + RefVal4 +
+                               RefVal5 + RefVal6 + RefVal7 + RefVal8 +
                                LimVal1 + LimVal2 + LimVal3 + LimVal4 +
                                LimVal5 + LimVal6 + LimVal7 + LimVal8,
                              data = Data,
                              method = "anova",
-                             control = rpart.control(cp=OptimalCP[[i]])) 
+                             control = rpart.control(cp=OptimalCP[[i]]))
       }
       
       # cp=complexity parameter, splits that don't decrease lack of fit by 0.001 not attempted
@@ -290,7 +296,7 @@ TreeAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL, AsFactor=NULL, Seed
       # Produce tree graphic
       par(xpd = NA, mar = c(2.5, 5, 2.5, 5))
       plot(OptimalTree, main=paste("Optimal", PerformMet[i],sep=""))
-      text(OptimalTree, cex = 1, pretty=FALSE)
+      #text(OptimalTree, cex = 1, pretty=FALSE)
       par(xpd = F, mar = c(4.5, 4.5, 0.5, 0.5))
     },
     error=function(e){
