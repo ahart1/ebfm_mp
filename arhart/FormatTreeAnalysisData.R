@@ -9,7 +9,7 @@
 FormatTreeAnalysisData <- function(FileName=NULL, Nsim=NULL, CeilingValue=NULL, BMSY=NULL){
   # FileName should be in ""
   # CeilingValue should match file name
-  # BMSYData is data for each species BMSY
+  # BMSY is data for each species BMSY
   # Nsim is number of simulation runs stored in FileName 
   
   ######## Set up storage 
@@ -124,7 +124,7 @@ dat <- fromJSON("/Users/ahart2/Research/ebfm_mp/data/Georges.dat.json")         
 KGuild <- dat$KGuild                                                                  # Extract carrying capacity
 SpeciesBMSY <- BMSYDataInit[c(4,5,21,22,14,23,24,6,3,7),]                             # Pick species to include
 SpeciesBMSY <- KGuild/2                                                               # Update BMSY to be carrying capacity/2
-# SpeciesBMSY should be passed to the function for the BMSYData argument
+# SpeciesBMSY should be passed to the function for the BMSY argument
 
 Result_Ceiling50000 <- FormatTreeAnalysisData(FileName="results50000.json", Nsim=1000, CeilingValue=50000, BMSY=SpeciesBMSY)
 Result_Ceiling75000 <- FormatTreeAnalysisData(FileName="results75000.json", Nsim=1000, CeilingValue=75000, BMSY=SpeciesBMSY)
