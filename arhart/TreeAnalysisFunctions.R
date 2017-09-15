@@ -220,7 +220,7 @@ TreeAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL, AsFactor=NULL, Seed
                         RefVal5 + RefVal6 + RefVal7 + RefVal8 +
                         LimVal1 + LimVal2 + LimVal3 + LimVal4 +
                         LimVal5 + LimVal6 + LimVal7 + LimVal8 +
-                        PercentFmsy + Indicator_On_Off,
+                        as.factor(PercentFmsy) + as.factor(Indicator_On_Off),
                       data = Data,
                       method="class",
                       control = rpart.control(cp=0.001))
@@ -230,7 +230,7 @@ TreeAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL, AsFactor=NULL, Seed
                         RefVal5 + RefVal6 + RefVal7 + RefVal8 +
                         LimVal1 + LimVal2 + LimVal3 + LimVal4 +
                         LimVal5 + LimVal6 + LimVal7 + LimVal8 +
-                        PercentFmsy + Indicator_On_Off,
+                        as.factor(PercentFmsy) + as.factor(Indicator_On_Off),
                       data = Data,
                       method="anova",
                       control = rpart.control(cp=0.001)) # cp=complexity parameter, splits that don't decrease lack of fit by 0.001 not attempted
@@ -266,7 +266,7 @@ TreeAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL, AsFactor=NULL, Seed
                                RefVal5 + RefVal6 + RefVal7 + RefVal8 +
                                LimVal1 + LimVal2 + LimVal3 + LimVal4 +
                                LimVal5 + LimVal6 + LimVal7 + LimVal8 + 
-                               PercentFmsy + Indicator_On_Off,
+                               as.factor(PercentFmsy) + as.factor(Indicator_On_Off),
                              data = Data,
                              method = "class",
                              control = rpart.control(cp=OptimalCP[[i]]))
@@ -276,7 +276,7 @@ TreeAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL, AsFactor=NULL, Seed
                                RefVal5 + RefVal6 + RefVal7 + RefVal8 +
                                LimVal1 + LimVal2 + LimVal3 + LimVal4 +
                                LimVal5 + LimVal6 + LimVal7 + LimVal8 + 
-                               PercentFmsy + Indicator_On_Off,
+                               as.factor(PercentFmsy) + as.factor(Indicator_On_Off),
                              data = Data,
                              method = "anova",
                              control = rpart.control(cp=OptimalCP[[i]]))
