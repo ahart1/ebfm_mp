@@ -324,6 +324,13 @@ IndStatusAdjustFMultiplier <- function(refvals=NULL,limvals=NULL, RefFile=NULL, 
   rownames(fmult) <- names(refvals)
   colnames(fmult) <- UseSpecies
   
+  # Require that IndicatorValues is a vector, not a matrix
+  if(is.matrix(IndicatorValues)){
+    tempIndicatorValues <- c(IndicatorValues)
+    names(tempIndicatorValues) <- colnames(IndicatorValues)
+    IndicatorValues <- tempIndicatorValues
+  } 
+  
   #### Indicators with refvals greater than limvals ####
   RefvalsLarger <- names(which(refvals>=limvals)) 
   # ??? Confirm ???UseRefvalsLarger <- RefvalsLarger[RefvalsLarger!="NAMEOFROWNUMBER5"] # ??????? NAMEOFROWNUMBER5 needs to be replaced with whatever this indicator is since it is treated differently
@@ -332,12 +339,12 @@ IndStatusAdjustFMultiplier <- function(refvals=NULL,limvals=NULL, RefFile=NULL, 
   names(temp) <- UseRefvalsLarger
 
   temp[IndicatorValues[c(UseRefvalsLarger)]>=refvals[c(UseRefvalsLarger)]] <- 1 # This assigns the value 1 to indicators that meet the condition (return TRUE, indicator greater than or equal to refvals)
-  
+  print(temp)
   temp[IndicatorValues[c(UseRefvalsLarger)]<limvals[c(UseRefvalsLarger)]] <- 0 # This assigns 0 to indicators whose value is less than limvals
-
+  print(temp)
   BetweenRefLimvals <- which((IndicatorValues[c(UseRefvalsLarger)]<refvals[c(UseRefvalsLarger)] & IndicatorValues[c(UseRefvalsLarger)]>=limvals[c(UseRefvalsLarger)])==TRUE) # gives names of indicators in UseRefvalsLarger with values between refvals and limvals
   temp[BetweenRefLimvals] <- (IndicatorValues[c(BetweenRefLimvals)]-limvals[c(BetweenRefLimvals)])/(refvals[c(BetweenRefLimvals)]-limvals[c(BetweenRefLimvals)]) # ???? can these values be greater than 1, can they be negative????
-  
+  print(temp)
   Position <- which(RefFile[,"Indicator"] %in% UseRefvalsLarger)
   names(Position) <- RefFile[Position, "Indicator"]
   fmult[UseRefvalsLarger,] <- as.matrix(-1*temp[UseRefvalsLarger]*RefFile[Position[UseRefvalsLarger],UseSpecies]) # This calculates an fmultiplier across all species, Values from RefFile are multiplied by temp based on the names of temp (items with matching names are multiplied)
@@ -348,37 +355,63 @@ IndStatusAdjustFMultiplier <- function(refvals=NULL,limvals=NULL, RefFile=NULL, 
   temp <- rep(NA, times=length(UseLimvalsLarger))
   names(temp) <- UseLimvalsLarger
   
-  # temp[IndicatorValues[colnames(IndicatorValues)==c(UseLimvalsLarger)]<=refvals[c(UseLimvalsLarger)]] <- 1 # Assigns 1 to indicators with values less than or equal to refvals
+  
+  #print("Start")
+  #print(dim(IndicatorValues))
+  #print(colnames(IndicatorValues))
+  #print(IndicatorValues)
+  #print(UseLimvalsLarger)
+  #print(dim(IndicatorValues))
+  #print(is.matrix(IndicatorValues))
+  #print(is.array(IndicatorValues))
+  #print(is.vector(tempIndicatorValues))
+  #print("End")
+#print(typeof(UseLimvalsLarger[1]))
+  
+  # print(tempIndicatorValues[UseLimvalsLarger])
+  # print(tempIndicatorValues[1])
+  # print(tempIndicatorValues["prop.overfished"])
+  # print(names(tempIndicatorValues))
+  # print(tempIndicatorValues[names(tempIndicatorValues)=="prop.overfished"])
+  # #print(IndicatorValues[])
+  # print(refvals[UseLimvalsLarger])
+  # print(limvals[UseLimvalsLarger])
+   #temp[IndicatorValues[names(IndicatorValues)==c(UseLimvalsLarger)]<=refvals[c(UseLimvalsLarger)]] <- 1 # Assigns 1 to indicators with values less than or equal to refvals
   # 
-  # temp[IndicatorValues[colnames(IndicatorValues)==c(UseLimvalsLarger)]>limvals[c(UseLimvalsLarger)]] <- 0 # Assigns 0 to indicators with values greater than limvals
+   #temp[IndicatorValues[names(IndicatorValues)==c(UseLimvalsLarger)]>limvals[c(UseLimvalsLarger)]] <- 0 # Assigns 0 to indicators with values greater than limvals
   # 
-  temp[IndicatorValues[c(UseLimvalsLarger)]<=refvals[c(UseLimvalsLarger)]] <- 1 # Assigns 1 to indicators with values less than or equal to refvals
-print(temp)
-  temp[IndicatorValues[c(UseLimvalsLarger)]>limvals[c(UseLimvalsLarger)]] <- 0 # Assigns 0 to indicators with values greater than limvals
-print(temp)
-  temp[IndicatorValues[c(UseLimvalsLarger)]>refvals[c(UseLimvalsLarger)] & IndicatorValues[c(UseLimvalsLarger)]<=limvals[c(UseLimvalsLarger)]] <- (IndicatorValues[c(UseLimvalsLarger)]-limvals[c(UseLimvalsLarger)])/(refvals[c(UseLimvalsLarger)]-limvals[c(UseLimvalsLarger)]) # indicator less than/=limval or greater than refval
+   temp[IndicatorValues[UseLimvalsLarger]<=refvals[UseLimvalsLarger]] <- 1 # Assigns 1 to indicators with values less than or equal to refvals
+#print(temp)
+#print("apple")
+#print(IndicatorValues[UseLimvalsLarger]<=refvals[UseLimvalsLarger])
+  temp[IndicatorValues[UseLimvalsLarger]>limvals[UseLimvalsLarger]] <- 0 # Assigns 0 to indicators with values greater than limvals
+#print(temp)
+  print("Here")
+  OtherwiseCondition <- which((IndicatorValues[UseLimvalsLarger]>refvals[UseLimvalsLarger] ) & (IndicatorValues[UseLimvalsLarger]<=limvals[UseLimvalsLarger]))
+
+#print(IndicatorValues[c(UseLimvalsLarger)]>refvals[c(UseLimvalsLarger)] & IndicatorValues[c(UseLimvalsLarger)]<=limvals[c(UseLimvalsLarger)]) # should all be false
+  temp[OtherwiseCondition] <-   (IndicatorValues[OtherwiseCondition]-limvals[OtherwiseCondition])/(refvals[OtherwiseCondition]-limvals[OtherwiseCondition]) # indicator less than/=limval or greater than refval
+
+  # ADD if statement, if no NA then don't run line 360 (if statement before 360), return error if NA
   
   # ??????????? I think the error is being generated when no value meets the third condition (everything should be replaced with zero or one, so there is no value in temp to be replaced)
   # error is not generated earlier since there is always an NA in the list for UseRefValsLarger
   # This is definitely the error, when the third temp is commented out there is no error returned, still don't know what the other warning means
+
   
-  print(IndicatorValues[c(UseLimvalsLarger)])
-  print(refvals[c(UseLimvalsLarger)])
-  print(limvals[c(UseLimvalsLarger)])
+
   
-  print("Batman")
-  
-  print(which(IndicatorValues[c(UseLimvalsLarger)]>refvals[c(UseLimvalsLarger)] & IndicatorValues[c(UseLimvalsLarger)]<=limvals[c(UseLimvalsLarger)]))
+  #print(which(IndicatorValues[c(UseLimvalsLarger)]>refvals[c(UseLimvalsLarger)] & IndicatorValues[c(UseLimvalsLarger)]<=limvals[c(UseLimvalsLarger)]))
   #print(IndicatorValues[c(UseLimvalsLarger)]-limvals[c(UseLimvalsLarger)])/(refvals[c(UseLimvalsLarger)]-limvals[c(UseLimvalsLarger)]) # indicator less than/=limval or greater than refval
   
   # The next two lines are not the same but they should be, also I don't need to use the colnames(IndicatorValues)==c(UseLimvalsLarger) in previous lines or for the last temp[] for RefvalsLarger ???????
-  print(IndicatorValues[c(UseLimvalsLarger)]) # when this is used for IndicatorValues the NAs don't get replaced, but when printed it returns a value
-   print(IndicatorValues[colnames(IndicatorValues)==c(UseLimvalsLarger)]) # when this is used for IndicatorValues it processes things correctly, when printed it doesn't return a value
+  #print(IndicatorValues[c(UseLimvalsLarger)]) # when this is used for IndicatorValues the NAs don't get replaced, but when printed it returns a value
+   #print(IndicatorValues[colnames(IndicatorValues)==c(UseLimvalsLarger)]) # when this is used for IndicatorValues it processes things correctly, when printed it doesn't return a value
   # print(limvals[c(UseLimvalsLarger)])
-   print(temp)
+   #print(temp)
   #print(IndicatorValues[c(UseLimvalsLarger)]-limvals[c(UseLimvalsLarger)])
   
-   #stop()
+   # stop()
    
   Position <- which(RefFile[,"Indicator"] %in% UseLimvalsLarger)
   names(Position) <- RefFile[Position, "Indicator"]
