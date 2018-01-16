@@ -275,7 +275,7 @@ RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUT
         ########## Single Species Assessments ##########
         # Format data for and runs single species (SS) assessments, use the resulting catch at FMSY to calculate estimated and actual (used) harvest rate for each species
         # ???????? fix ObsBiomass and ObsCatch, no calculations here, why add a first column with model year (initially 1-33 then add simulated years) see also questions in SSHarvestFunctions: format SS datfile
-        SSHarvestInfo <- SShrate.calc(SpeciesNames=SpeciesNames, Nsp=Nsp, ObsBiomass=NI.obs,ObsCatch=CI.obs,workdir=WorkDir, inits=InitialSpeciesData, FMultiplier=fmult, inds.use=ChosenStatusMeasures, Nabund=Nabund, ChooseFMultOption=ChooseFMult) # ??????? Changed workdir=tempdir to workdir=getwd()
+        SSHarvestInfo <- SShrate.calc(SpeciesNames=SpeciesNames, Nsp=Nsp, ObsBiomass=NI.obs,ObsCatch=CI.obs,workdir=WorkDir, inits=InitialSpeciesData, FMultiplier=fmult, inds.use=ChosenStatusMeasures, Nabund=Nabund, PercentFmsy=PercentFmsy, ChooseFMultOption=ChooseFMult) # ??????? Changed workdir=tempdir to workdir=getwd()
         # Append new exploitation rates (estimated and used) 
         EstimatedExploitationRateTimeseries <- rbind(EstimatedExploitationRateTimeseries,SSHarvestInfo$EstimatedExploitRate)  # Check that there are no rownames or they are model year ???????
         UsedExploitationRateTimeseries <- rbind(UsedExploitationRateTimeseries,SSHarvestInfo$UseExploitRate)  # Check that there are no rownames or they are model year ???????
@@ -389,7 +389,7 @@ RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUT
     ##################################################################################
     ALL.OUTPUT <- toJSON(ALL.results)
     # This creates a file name that includes datfile (which has info on the location of the original file) so the new file will be saved to the same location when file=filename in write() funciton below
-    location <- paste(getwd(),OUTPUTdirName, sep="/")
+    location <- paste(WorkDir,OUTPUTdirName, sep="/")
     dir.create(location, showWarnings=TRUE) # makes sure that OUTPUTdir exists (actually makes directory)
     # sprintf() replaces the %d with an integer maxcatch, this is called a c-style string formating function
     filename <- paste(location, sprintf("results%d.json", maxcatch), sep="/")
