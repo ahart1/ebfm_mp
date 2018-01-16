@@ -446,6 +446,7 @@ NCNI100_WorkDir <- "/Users/ahart2/Research/ebfm_mp/arhart"
 NCNI100_OUTPUTdirName <- "CatchCeilingPaper/UpdatedModel_Sim1000_NoCeiling_NoInds_100PercentFmsy"  
 # Nsim: Number of model simulations to run, default=1
 NCNI100_Nsim <- 7000 # since no ceilings were imposed, this simulation was run in full more times so the results have the same number of simulations (all together rather than spread amongst 7 ceilings)
+     # Although 7000 simulations were run, in reality we only need 1000 so only the first 1000 simulations in the resulting file will be used
 # Nyr: Number of years model projects forward in time, default=5
 NCNI100_Nyr <- 30
 # SpeciesNames: Vector of species names (strings) to be used in this analysis, can not have spaces in names  
