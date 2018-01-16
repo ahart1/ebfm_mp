@@ -5,10 +5,10 @@
 # This script processes the output from arhart_msprod_mse.R 
 # Calculates 8 performance metrics for each of 7 catch ceilings 
 # Saves in a table format for use in TreeAnalysis
-# Nsim and CeilingValue and BMSY arguments should match source file production
+# Nsim and CeilingValue, BMSY, PercentFmsy, and Indicator_On_or_Off arguments should match source file production
 
 
-FormatTreeAnalysisData <- function(FileName=NULL, Nsim=NULL, CeilingValue=NULL, BMSY=NULL){
+FormatTreeAnalysisData <- function(FileName=NULL, Nsim=NULL, CeilingValue=NULL, BMSY=NULL, PercentFmsy=NULL, Indicator_On_or_Off=NULL){
   # This function uses the output from arhart_msprod_mse.R to calculate 8 performance metrics and saves as a table
      # The resulting tables may be bound together using rbind() after this function is called if more than one catch ceiling was used
      # This function formats the data as required by TreeAnalysis and RandomForestAnalysis
@@ -18,6 +18,8 @@ FormatTreeAnalysisData <- function(FileName=NULL, Nsim=NULL, CeilingValue=NULL, 
        # Nsim: Number of simulation runs stored in FileName
        # CeilingValue: Ceiling value for simulations stored in FileName
        # BMSY: Vector containing BMSY data for each species considered in FileName
+       # PercentFmsy: String containing percent of Fmsy used in simulation (eg. "100Fmsy" or "75Fmsy")
+       # Indicator_On_or_Off: String containing "Indicator_On" or "Indicator_Off" to reflect whether or not indicator-based harvest control rules were implemented
   # Return:
        # A matrix with columns containing the following:
           # Each performance metric has its own column
@@ -113,20 +115,45 @@ FormatTreeAnalysisData <- function(FileName=NULL, Nsim=NULL, CeilingValue=NULL, 
     Results[i,"CatchCeiling"] <- CeilingValue
     #########
     
-    ## Reference Value Data
-    # for(isim in 1:length(dat["refvals"][[1]][[1]])){
-    #   Results[i, paste("RefVal", IndicatorNames[isim], sep="_")] <- dat["refvals"][[1]][[i]][[isim]]
-    # }
-    for(isim in 1:length(dat["refvals"][[1]][[1]])){
-      Results[i,paste("RefVal", isim, sep="")] <- dat["refvals"][[1]][[i]][[isim]]
-    }
+    ## Percent Fmsy
+    Results[i, "PercentFmsy"] <- PercentFmsy
+    #########
     
-    # Limit Value Data
-    # for(isim in 1:length(dat["limvals"][[1]][[1]])){
-    #   Results[i,paste("Limval", IndicatorNames[isim], sep="_")] <- dat["limvals"][[1]][[i]][[isim]]
-    # }
-    for(isim in 1:length(dat["limvals"][[1]][[1]])){
-      Results[i,paste("LimVal", isim, sep="")] <- dat["limvals"][[1]][[i]][[isim]]
+    ## Indicator_On_or_Off
+    Results[i,"Indicator_On_or_Off"] <- Indicator_On_or_Off
+    #########
+    
+    ## Reference Value Data
+    if(Indicator_On_or_Off == "Indicator_On"){
+      # for(isim in 1:length(dat["refvals"][[1]][[1]])){
+      #   Results[i, paste("RefVal", IndicatorNames[isim], sep="_")] <- dat["refvals"][[1]][[i]][[isim]]
+      # }
+      for(isim in 1:length(dat["refvals"][[1]][[1]])){
+        Results[i,paste("RefVal", isim, sep="")] <- dat["refvals"][[1]][[i]][[isim]]
+      }
+      
+      ## Limit Value Data
+      # for(isim in 1:length(dat["limvals"][[1]][[1]])){
+      #   Results[i,paste("Limval", IndicatorNames[isim], sep="_")] <- dat["limvals"][[1]][[i]][[isim]]
+      # }
+      for(isim in 1:length(dat["limvals"][[1]][[1]])){
+        Results[i,paste("LimVal", isim, sep="")] <- dat["limvals"][[1]][[i]][[isim]]
+      }
+    } else if(Indicator_On_or_Off == "Indicator_Off"){
+      # for(isim in 1:length(dat["refvals"][[1]][[1]])){
+      #   Results[i, paste("RefVal", IndicatorNames[isim], sep="_")] <- NA
+      # }
+      for(isim in 1:length(dat["refvals"][[1]][[1]])){
+        Results[i,paste("RefVal", isim, sep="")] <- NA
+      }
+      
+      ## Limit Value Data
+      # for(isim in 1:length(dat["limvals"][[1]][[1]])){
+      #   Results[i,paste("Limval", IndicatorNames[isim], sep="_")] <- NA
+      # }
+      for(isim in 1:length(dat["limvals"][[1]][[1]])){
+        Results[i,paste("LimVal", isim, sep="")] <- NA
+      }
     }
     #########
   }
@@ -220,7 +247,7 @@ TreeAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL, AsFactor=NULL, Seed
                         RefVal5 + RefVal6 + RefVal7 + RefVal8 +
                         LimVal1 + LimVal2 + LimVal3 + LimVal4 +
                         LimVal5 + LimVal6 + LimVal7 + LimVal8 +
-                        as.factor(PercentFmsy) + as.factor(Indicator_On_Off),
+                        as.factor(PercentFmsy) + as.factor(Indicator_On_or_Off),
                       data = Data,
                       method="class",
                       control = rpart.control(cp=0.001))
@@ -230,7 +257,7 @@ TreeAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL, AsFactor=NULL, Seed
                         RefVal5 + RefVal6 + RefVal7 + RefVal8 +
                         LimVal1 + LimVal2 + LimVal3 + LimVal4 +
                         LimVal5 + LimVal6 + LimVal7 + LimVal8 +
-                        as.factor(PercentFmsy) + as.factor(Indicator_On_Off),
+                        as.factor(PercentFmsy) + as.factor(Indicator_On_or_Off),
                       data = Data,
                       method="anova",
                       control = rpart.control(cp=0.001)) # cp=complexity parameter, splits that don't decrease lack of fit by 0.001 not attempted
@@ -266,7 +293,7 @@ TreeAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL, AsFactor=NULL, Seed
                                RefVal5 + RefVal6 + RefVal7 + RefVal8 +
                                LimVal1 + LimVal2 + LimVal3 + LimVal4 +
                                LimVal5 + LimVal6 + LimVal7 + LimVal8 + 
-                               as.factor(PercentFmsy) + as.factor(Indicator_On_Off),
+                               as.factor(PercentFmsy) + as.factor(Indicator_On_or_Off),
                              data = Data,
                              method = "class",
                              control = rpart.control(cp=OptimalCP[[i]]))
@@ -276,7 +303,7 @@ TreeAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL, AsFactor=NULL, Seed
                                RefVal5 + RefVal6 + RefVal7 + RefVal8 +
                                LimVal1 + LimVal2 + LimVal3 + LimVal4 +
                                LimVal5 + LimVal6 + LimVal7 + LimVal8 + 
-                               as.factor(PercentFmsy) + as.factor(Indicator_On_Off),
+                               as.factor(PercentFmsy) + as.factor(Indicator_On_or_Off),
                              data = Data,
                              method = "anova",
                              control = rpart.control(cp=OptimalCP[[i]]))
