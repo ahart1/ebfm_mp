@@ -5,6 +5,7 @@
 
 ### MSPROD equation
 ## Solves the multsipecies operating model dynamics for a single time step given parameters, a set of harvest rates, and the current biomass
+## Not given a maximum catch limit on the system
 dNbydt_Default <- function(t,N=1,parms=list(r_GrowthRate=rep(0.4,length(N)),
                                             KGuild=rep(1,1),
                                             Ktot=10,

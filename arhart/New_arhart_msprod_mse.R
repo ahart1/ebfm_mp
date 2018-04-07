@@ -24,7 +24,7 @@ dir.create(tempdir, showWarnings=FALSE)
 
 ###########################This is the start of a function (for debugging purposes) that actually runs all parts of model#########################################
 # My function makes the assumption that all R files needed to run this program are within the same working directory, these include: This file, SSHarvestFunctions.R, and NewIndicatorRefPtCalcs.R
-RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUTPUTdirName=NULL, Nsim=1, Nyr=5, SpeciesNames=NULL, alpha=NULL, Predators=NULL, 
+RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUTPUTdirName=NULL, Nsim=1, Nyr=5, SpeciesNames=NULL, PercentFmsy=1, alpha=NULL, Predators=NULL, 
                                            Pelagics=NULL, Guildmembership=NULL, BetweenGuildComp=NULL, WithinGuildComp=NULL, r_GrowthRate=NULL,
                                            PickStatusMeasureOption= "ALL", StatusMeasures=NULL, HistoricBiomass=NULL, 
                                            HistoricCatch=NULL, KGuild=NULL, Ktot=NULL, BMSYData=NULL, MeanTrophicLevel=NULL, DefaultRefLimVals=TRUE, IndicatorData=NULL, 
@@ -37,6 +37,7 @@ RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUT
        # Nsim: Number of model simulations to run, default=1
        # Nyr: Number of years model projects forward in time, default=5
        # SpeciesNames: Vector of species names (strings) to be used in this analysis, can not have spaces in names
+       # PercentFmsy: Value between 0 and 1 which determines percent of Fmsy to be applied, default=1
        # alpha: A predation matrix, each species in a column
        # Predators: Vector of species names (strings) for predatory species
        # Pelagics: Vector of species names (strings) for pelagic species
@@ -47,7 +48,7 @@ RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUT
        # PickStatusMeasureOption: Indicates how status measures are chosen, default="ALL"
             # PickStatusMeasureOption = "ALL": uses all available status measures
             # PickStatusMeasureOption = "RandomSubset": picks a random subset of the available status measures
-       # PotentialStatusMeasures: Vector of status measures (strings) to be considered in the model simulation, default is ModelStatusMeasures, only provide if different than defaults
+       # StatusMeasures: Vector of status measures (strings) to be considered (use all or subset based on PickStatusMeasureOption setting) in the model simulation, default is ModelStatusMeasures, only provide if different than defaults
             # if Predators vector is empty (NULL) "Low.prop.predator" and "High.prop.predator" should not be included in the list of PotentialStatusMeasures (default should not be used)
        # HistoricBiomass: Matrix of historic biomass, each species should be in a single column
        # HistoricCatch: Matrix of historic catch, each species should be in a single column, there should not be a year column
@@ -69,6 +70,7 @@ RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUT
   # Return:
      # List containing the following:
        # targ.u: Target exploitation rate
+       # PercentFmsy: percent of Fmsy used in the simulations
        # ChosenStatusMeasures: A vector containing the names of Status Measures chosen for this simulation (only chosen indicators inform indicator-based control rules)
        # refvals: A vector of calculated reference values for all model indicators, not all may be used
        # limvals: A vector of calculated limit values for all model indicators, not all may be used
@@ -189,9 +191,9 @@ RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUT
   ###################################################################################################
   # Model Options (Subset may be chosen for model simulations executed below)
   ###################################################################################################
-  # These are the possible indicators which may be chosen as StatusMeasures in the model simulations
+  # These are the possible indicators (to inform indicator-based harvest control rules) which may be chosen as StatusMeasures in the model simulations
   ModelIndicators <- c("TL.survey", "TL.landings", "High.prop.pelagic", "Low.prop.pelagic", "High.prop.predators", "Low.prop.predators", "prop.overfished", "div.cv.bio")
-  # These are the possible performance metrics which may be chosen as StatusMeasures in the model simulations
+  # These are the possible performance metrics (do not inform indicator-based harvest control rules) which may be chosen as StatusMeasures in the model simulations
   ModelPerformanceMetrics <- c("tot.bio", "tot.cat", "exprate", "pd.ratio")
   # This is the list of all StatusMeasures available to evaluate ecosystem status for this model
   ModelStatusMeasures <- c(ModelIndicators, ModelPerformanceMetrics)
@@ -201,7 +203,7 @@ RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUT
   ##############################################################################
   ChosenStatusMeasureList <- NULL
   for(isim in 1: Nsim){
-    ChosenStatusMeasureList[[isim]] <- PickStatusMeasures(PickOption=PickStatusMeasureOption)
+    ChosenStatusMeasureList[[isim]] <- PickStatusMeasures(PickOption=PickStatusMeasureOption, PotentialStatusMeasures = StatusMeasures)
   }
   
   
@@ -362,6 +364,7 @@ RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUT
       # This is where projection 2:Nyr ends
       # Save results for this simulation, [isim] adds the most recent results to the list
       ALL.results[[isim]] <- list(targ.u=targ.u,
+                                  PercentFmsy=PercentFmsy,
                                   ChosenStatusMeasures=ChosenStatusMeasures,
                                   refvals=RefptsVals$refvals,
                                   limvals=RefptsVals$limvals,
@@ -376,6 +379,8 @@ RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUT
                                   PredlossResult=PredlossResult, 
                                   WithinlossResult=WithinlossResult, 
                                   BetweenlossResult=BetweenlossResult)
+      
+      print(paste("Ceiling", maxcatch, "Simulation", isim, sep="_"))
     }
     # This is where simulation loop (total number of simulations we want to run) ends
     
