@@ -5,10 +5,10 @@
 # This script processes the output from arhart_msprod_mse.R 
 # Calculates 8 performance metrics for each of 7 catch ceilings 
 # Saves in a table format for use in TreeAnalysis
-# Nsim and CeilingValue and BMSY arguments should match source file production
+# Nsim and CeilingValue, BMSY, PercentFmsy, and Indicator_On_or_Off arguments should match source file production
 
 
-FormatTreeAnalysisData <- function(FileName=NULL, Nsim=NULL, CeilingValue=NULL, BMSY=NULL){
+FormatTreeAnalysisData <- function(FileName=NULL, Nsim=NULL, CeilingValue=NULL, BMSY=NULL, PercentFmsy=NULL, Indicator_On_or_Off=NULL){
   # This function uses the output from arhart_msprod_mse.R to calculate 8 performance metrics and saves as a table
      # The resulting tables may be bound together using rbind() after this function is called if more than one catch ceiling was used
      # This function formats the data as required by TreeAnalysis and RandomForestAnalysis
@@ -18,6 +18,8 @@ FormatTreeAnalysisData <- function(FileName=NULL, Nsim=NULL, CeilingValue=NULL, 
        # Nsim: Number of simulation runs stored in FileName
        # CeilingValue: Ceiling value for simulations stored in FileName
        # BMSY: Vector containing BMSY data for each species considered in FileName
+       # PercentFmsy: String containing percent of Fmsy used in simulation (eg. "100Fmsy" or "75Fmsy")
+       # Indicator_On_or_Off: String containing "Indicator_On" or "Indicator_Off" to reflect whether or not indicator-based harvest control rules were implemented
   # Return:
        # A matrix with columns containing the following:
           # Each performance metric has its own column
@@ -55,25 +57,33 @@ FormatTreeAnalysisData <- function(FileName=NULL, Nsim=NULL, CeilingValue=NULL, 
     #### Calculate performance metrics (Response Variables) for simulation i
     
     # Calculate frequency of any single species collapse (below 0.5 BMSY) in the last model year
-    Results[i,"FrequencySSOverfished"] <- length(which((Biomass[nrow(Biomass),] < BMSY*0.5)==TRUE))
+    Results[i,"NumberSSOverfished"] <- length(which((Biomass[nrow(Biomass),] < BMSY*0.5)==TRUE)) # Previously FrequencySSOverfished
+    Results[i,"FrequencySSOverfished"] <- length(which((Biomass[nrow(Biomass),] < BMSY*0.5)==TRUE))/length(Biomass[nrow(Biomass),])
     ###########
     
     ## Calculate frequency of aggregate group collapse (below 100 metric tons) in the last model year
     # Calculate biomass of aggregate groups for last model year
     PiscivoresBio <- sum(Biomass[nrow(Biomass),c(1,5)])
-    BenthivoresBio <- sum(Biomass[nrow(Biomass),c(2,8,9)])
+    BenthivoresBio <- sum(Biomass[nrow(Biomass),c(2,8,9,10)])
     PlanktivoresBio <- sum(Biomass[nrow(Biomass),c(3,4)])
     ElasmobranchsBio <- sum(Biomass[nrow(Biomass),c(6,7)])
     
     AggregateBios <- list(PiscivoresBio,BenthivoresBio,PlanktivoresBio,ElasmobranchsBio)
     
+    # Below is only for diagnostics or if you want to track biomass by aggregate group
+    # Results[i,"PiscivoresBio"] <- PiscivoresBio
+    # Results[i, "BenthivoresBio"] <- BenthivoresBio
+    # Results[i, "PlanktivoresBio"] <- PlanktivoresBio
+    # Results[i, "ElasmobranchsBio"] <- ElasmobranchsBio
+    
     ## Frequency of aggregate group collapse (below 100mt) in last model year
-    Results[i, "FrequencyAggregateCollapse"] <- length(which((AggregateBios < 100)==TRUE))
+    Results[i, "NumberAggregateCollapse"] <- length(which((AggregateBios < 100)==TRUE)) # Previously FrequencyAggregateCollapse
+    Results[i, "FrequencyAggregateCollapse"] <- length(which((AggregateBios < 100)==TRUE))/length(AggregateBios)
     ###########
     
     ## Calculate Total Aggregate Catch for last model year 
     PiscivoresCat <- sum(Catch[nrow(Catch),c(1,5)])
-    BenthivoresCat <- sum(Catch[nrow(Catch),c(2,8,9)])
+    BenthivoresCat <- sum(Catch[nrow(Catch),c(2,8,9,10)])
     PlanktivoresCat <- sum(Catch[nrow(Catch),c(3,4)])
     ElasmobranchsCat <- sum(Catch[nrow(Catch),c(6,7)])
     
@@ -113,20 +123,45 @@ FormatTreeAnalysisData <- function(FileName=NULL, Nsim=NULL, CeilingValue=NULL, 
     Results[i,"CatchCeiling"] <- CeilingValue
     #########
     
-    ## Reference Value Data
-    # for(isim in 1:length(dat["refvals"][[1]][[1]])){
-    #   Results[i, paste("RefVal", IndicatorNames[isim], sep="_")] <- dat["refvals"][[1]][[i]][[isim]]
-    # }
-    for(isim in 1:length(dat["refvals"][[1]][[1]])){
-      Results[i,paste("RefVal", isim, sep="")] <- dat["refvals"][[1]][[i]][[isim]]
-    }
+    ## Percent Fmsy
+    Results[i, "PercentFmsy"] <- PercentFmsy
+    #########
     
-    # Limit Value Data
-    # for(isim in 1:length(dat["limvals"][[1]][[1]])){
-    #   Results[i,paste("Limval", IndicatorNames[isim], sep="_")] <- dat["limvals"][[1]][[i]][[isim]]
-    # }
-    for(isim in 1:length(dat["limvals"][[1]][[1]])){
-      Results[i,paste("LimVal", isim, sep="")] <- dat["limvals"][[1]][[i]][[isim]]
+    ## Indicator_On_or_Off
+    Results[i,"Indicator_On_or_Off"] <- Indicator_On_or_Off
+    #########
+    
+    ## Reference Value Data
+    if(Indicator_On_or_Off == "Indicator_On"){
+      # for(isim in 1:length(dat["refvals"][[1]][[1]])){
+      #   Results[i, paste("RefVal", IndicatorNames[isim], sep="_")] <- dat["refvals"][[1]][[i]][[isim]]
+      # }
+      for(isim in 1:length(dat["refvals"][[1]][[1]])){
+        Results[i,paste("RefVal", isim, sep="")] <- dat["refvals"][[1]][[i]][[isim]]
+      }
+      
+      ## Limit Value Data
+      # for(isim in 1:length(dat["limvals"][[1]][[1]])){
+      #   Results[i,paste("Limval", IndicatorNames[isim], sep="_")] <- dat["limvals"][[1]][[i]][[isim]]
+      # }
+      for(isim in 1:length(dat["limvals"][[1]][[1]])){
+        Results[i,paste("LimVal", isim, sep="")] <- dat["limvals"][[1]][[i]][[isim]]
+      }
+    } else if(Indicator_On_or_Off == "Indicator_Off"){
+      # for(isim in 1:length(dat["refvals"][[1]][[1]])){
+      #   Results[i, paste("RefVal", IndicatorNames[isim], sep="_")] <- NA
+      # }
+      for(isim in 1:length(dat["refvals"][[1]][[1]])){
+        Results[i,paste("RefVal", isim, sep="")] <- NA
+      }
+      
+      ## Limit Value Data
+      # for(isim in 1:length(dat["limvals"][[1]][[1]])){
+      #   Results[i,paste("Limval", IndicatorNames[isim], sep="_")] <- NA
+      # }
+      for(isim in 1:length(dat["limvals"][[1]][[1]])){
+        Results[i,paste("LimVal", isim, sep="")] <- NA
+      }
     }
     #########
   }
@@ -220,7 +255,7 @@ TreeAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL, AsFactor=NULL, Seed
                         RefVal5 + RefVal6 + RefVal7 + RefVal8 +
                         LimVal1 + LimVal2 + LimVal3 + LimVal4 +
                         LimVal5 + LimVal6 + LimVal7 + LimVal8 +
-                        as.factor(PercentFmsy) + as.factor(Indicator_On_Off),
+                        as.factor(PercentFmsy) + as.factor(Indicator_On_or_Off),
                       data = Data,
                       method="class",
                       control = rpart.control(cp=0.001))
@@ -230,7 +265,7 @@ TreeAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL, AsFactor=NULL, Seed
                         RefVal5 + RefVal6 + RefVal7 + RefVal8 +
                         LimVal1 + LimVal2 + LimVal3 + LimVal4 +
                         LimVal5 + LimVal6 + LimVal7 + LimVal8 +
-                        as.factor(PercentFmsy) + as.factor(Indicator_On_Off),
+                        as.factor(PercentFmsy) + as.factor(Indicator_On_or_Off),
                       data = Data,
                       method="anova",
                       control = rpart.control(cp=0.001)) # cp=complexity parameter, splits that don't decrease lack of fit by 0.001 not attempted
@@ -266,7 +301,7 @@ TreeAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL, AsFactor=NULL, Seed
                                RefVal5 + RefVal6 + RefVal7 + RefVal8 +
                                LimVal1 + LimVal2 + LimVal3 + LimVal4 +
                                LimVal5 + LimVal6 + LimVal7 + LimVal8 + 
-                               as.factor(PercentFmsy) + as.factor(Indicator_On_Off),
+                               as.factor(PercentFmsy) + as.factor(Indicator_On_or_Off),
                              data = Data,
                              method = "class",
                              control = rpart.control(cp=OptimalCP[[i]]))
@@ -276,7 +311,7 @@ TreeAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL, AsFactor=NULL, Seed
                                RefVal5 + RefVal6 + RefVal7 + RefVal8 +
                                LimVal1 + LimVal2 + LimVal3 + LimVal4 +
                                LimVal5 + LimVal6 + LimVal7 + LimVal8 + 
-                               as.factor(PercentFmsy) + as.factor(Indicator_On_Off),
+                               as.factor(PercentFmsy) + as.factor(Indicator_On_or_Off),
                              data = Data,
                              method = "anova",
                              control = rpart.control(cp=OptimalCP[[i]]))
@@ -412,22 +447,59 @@ RandomForestAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL, AsFactor=NU
 # DataFile should be the same as that used by TreeAnalysis (Produced by FormatTreeAnalysisData)
 # PlotMatrix provides the details of how plots should be ordered graphically
 
-PlotPerfMet <- function(DataFile=NULL, NPerformMetrics=NULL, PlotMatrix=matrix(1,1,byrow=TRUE)){
+PlotPerfMet <- function(DataFile=NULL, NPerformMetrics=NULL, PlotMatrix=matrix(data=1,nrow=1,ncol=1,byrow=TRUE), MultiPanelPlot = FALSE, XAxis=NULL){
+  # Args
+     # MultiPanelPlot: defaults to FALSE, if TRUE plots multiple box plots with same x-axis label/scale
+     # XAxis: string containing label for X-Axis, only required if MultiPanelPlot = TRUE
+  
   # Read in data
   Data <- read.table(DataFile)
   
   # Define list of Performance Metrics
   PerformMet <- colnames(Data[1:NPerformMetrics])
+
+  # Next three lines are specific labels that needed to be changed for the CatchCeilingPaper but are not generally applicable/necessary
+  # PerformMet <- c("Frequency sinlge \n species overfished", "Frequency aggregate \n collapse", "Piscivore catch (mt)",
+  #                         "Benthivore catch \n (thousand mt)", "Planktivore catch \n (thousand mt)", "Elasmobranch catch \n (thousand mt)", "System collapse",
+  #                         "System biomass \n (thousand mt)", "System catch \n (thousand mt)", "Biomass diversity", "Catch diversity")
   print(PerformMet)
-  # Determine layout for plots, this is passed to the function as PlotMatrix
-  layout(PlotMatrix)
   
-  for(i in 1:NPerformMetrics){
-    Plots <- boxplot(formula=(Data[,i]~as.factor(CatchCeiling)), data=Data, ylab=paste(PerformMet[i],sep=""), xlab="Catch ceiling (mt)", cex.lab=1.5, cex.axis=1.5, boxwex=0.75)
+  if(MultiPanelPlot ==TRUE){
+    
+    # Add row to PlotMatrix for whole figure x-axis label
+    XAxisLabel <- rep(length(PlotMatrix)+1, ncol(PlotMatrix))
+    PlotMatrix <- rbind(PlotMatrix, XAxisLabel)
+    
+    # Determine layout for plots, this is passed to the function as PlotMatrix
+    GraphicLayout <- layout(PlotMatrix, heights = c(rep(1,nrow(PlotMatrix)-1), 0.35))
+    layout.show(GraphicLayout)
+    
+    for(i in 1:NPerformMetrics){
+      par(mar=c(3.5,6,0.5,0.1), xpd=TRUE)
+      #par(oma=c(0,0,3,0))
+      Plots <- boxplot(formula=(Data[,i]~as.factor(CatchCeiling)), data=Data, ylab="", cex.lab=1.5, cex.axis=1.5, boxwex=0.75)
+      mtext(paste(PerformMet[i],sep=""), side=2, line=3, adj=0.5, cex=1.1) # May use this to plot ylabel instead
+    }
+    # Fill empty plots appropriately
+    if(NPerformMetrics < length(PlotMatrix)){
+      for(i in 1:(length(PlotMatrix)-NPerformMetrics-ncol(PlotMatrix))){ # Plot empty space in each column except the last row which is for the x-axis label
+        plot(1,1,type="n", axes=FALSE, ann=FALSE)
+      }
+    }
+    # Label X-Axis
+    plot(1,1,type = "n", axes = FALSE, ann = FALSE)
+    text(1,1, labels = XAxis, cex=2)
+    
+  } else{ # Plot non-multipanel option
+    # Determine layout for plots, this is passed to the function as PlotMatrix
+    GraphicLayout <- layout(PlotMatrix)
+    layout.show(GraphicLayout)
+    
+    for(i in 1:NPerformMetrics){
+      Plots <- boxplot(formula=(Data[,i]~as.factor(CatchCeiling)), data=Data, ylab=paste(PerformMet[i],sep=""), xlab="Catch ceiling (mt)", cex.lab=1.5, cex.axis=1.5, boxwex=0.75)
+    }
   }
 }
-
-
 
 
 
