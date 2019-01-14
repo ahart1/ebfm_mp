@@ -40,7 +40,7 @@ FormatTreeAnalysisData <- function(FileName=NULL, Nsim=NULL, CeilingValue=NULL, 
   # datfile variable contains the file name, reads from json file
   dat <- fromJSON(FileName)
   
-  ######### Calculate and store performance metrics for each model simulation
+  ######### Calculate and store performance metrics for each model simulation as an average over the last 6 years (calculate metric for each year and take average over last 6)
   for(i in 1:Nsim){
     
     # For the BioStats_Sim1000_AllInds Biomass and Catch should be calculated using:
@@ -57,64 +57,92 @@ FormatTreeAnalysisData <- function(FileName=NULL, Nsim=NULL, CeilingValue=NULL, 
     #### Calculate performance metrics (Response Variables) for simulation i
     
     # Calculate frequency of any single species collapse (below 0.5 BMSY) in the last model year
-    Results[i,"NumberSSOverfished"] <- length(which((Biomass[nrow(Biomass),] < BMSY*0.5)==TRUE)) # Previously FrequencySSOverfished
-    Results[i,"FrequencySSOverfished"] <- length(which((Biomass[nrow(Biomass),] < BMSY*0.5)==TRUE))/length(Biomass[nrow(Biomass),])
+    SSOverfishedTemp <- NULL
+    for(irow in (nrow(Biomass)-5):nrow(Biomass)){
+      SSOverfishedTemp <- c(SSOverfishedTemp, length(which((Biomass[irow,] < BMSY*0.5)==TRUE)))
+    }
+    Results[i,"NumberSSOverfished"] <- mean(SSOverfishedTemp) # Previously FrequencySSOverfished
+    Results[i,"FrequencySSOverfished"] <- mean(SSOverfishedTemp/10)
     ###########
     
-    ## Calculate frequency of aggregate group collapse (below 100 metric tons) in the last model year
-    # Calculate biomass of aggregate groups for last model year
-    PiscivoresBio <- sum(Biomass[nrow(Biomass),c(1,5)])
-    BenthivoresBio <- sum(Biomass[nrow(Biomass),c(2,8,9,10)])
-    PlanktivoresBio <- sum(Biomass[nrow(Biomass),c(3,4)])
-    ElasmobranchsBio <- sum(Biomass[nrow(Biomass),c(6,7)])
+    # Calculate mean frequency of aggregate group collapse (below 100 metric tons) over the last 6 model years
+    PiscivoresBioTemp <- NULL
+    BenthivoresBioTemp <- NULL
+    PlanktivoresBioTemp <- NULL
+    ElasmobranchsBioTemp <- NULL
+    NumAggCollapseTemp <- NULL
+    for(irow in (nrow(Biomass)-5):nrow(Biomass)){
+      # Calculate biomass of aggregate groups in each of the last 6 model years
+      PiscivoresBioTemp <- c(PiscivoresBioTemp, sum(Biomass[irow,c(1,5)]))
+      BenthivoresBioTemp <- c(BenthivoresBioTemp, sum(Biomass[nrow(Biomass),c(2,8,9,10)]))
+      PlanktivoresBioTemp <- c(PlanktivoresBioTemp, sum(Biomass[nrow(Biomass),c(3,4)]))
+      ElasmobranchsBioTemp <- c(ElasmobranchsBioTemp, sum(Biomass[nrow(Biomass),c(6,7)]))
+      
+      AggregateBioTemp <- list(PiscivoresBioTemp[irow-24],BenthivoresBioTemp[irow-24],PlanktivoresBioTemp[irow-24],ElasmobranchsBioTemp[irow-24])
+      NumAggCollapseTemp <- c(NumAggCollapseTemp, length(which((AggregateBioTemp < 100) == TRUE)))
+    }
     
-    AggregateBios <- list(PiscivoresBio,BenthivoresBio,PlanktivoresBio,ElasmobranchsBio)
-    
-    # Below is only for diagnostics or if you want to track biomass by aggregate group
-    # Results[i,"PiscivoresBio"] <- PiscivoresBio
-    # Results[i, "BenthivoresBio"] <- BenthivoresBio
-    # Results[i, "PlanktivoresBio"] <- PlanktivoresBio
-    # Results[i, "ElasmobranchsBio"] <- ElasmobranchsBio
-    
-    ## Frequency of aggregate group collapse (below 100mt) in last model year
-    Results[i, "NumberAggregateCollapse"] <- length(which((AggregateBios < 100)==TRUE)) # Previously FrequencyAggregateCollapse
-    Results[i, "FrequencyAggregateCollapse"] <- length(which((AggregateBios < 100)==TRUE))/length(AggregateBios)
+    ## Average frequency of aggregate group collapse (below 100mt) over last 6 model years
+    Results[i, "NumberAggregateCollapse"] <- mean(NumAggCollapseTemp) # Previously FrequencyAggregateCollapse
+    Results[i, "FrequencyAggregateCollapse"] <- mean(NumAggCollapseTemp/length(AggregateBioTemp))
     ###########
     
     ## Calculate Total Aggregate Catch for last model year 
-    PiscivoresCat <- sum(Catch[nrow(Catch),c(1,5)])
-    BenthivoresCat <- sum(Catch[nrow(Catch),c(2,8,9,10)])
-    PlanktivoresCat <- sum(Catch[nrow(Catch),c(3,4)])
-    ElasmobranchsCat <- sum(Catch[nrow(Catch),c(6,7)])
-    
-    Results[i,"PiscivoreCatch"] <- PiscivoresCat
-    Results[i,"BenthivoreCatch"] <- BenthivoresCat
-    Results[i,"PlanktivoreCatch"] <- PlanktivoresCat
-    Results[i,"ElasmobranchCatch"] <- ElasmobranchsCat
+    PiscivoresCatTemp <- NULL
+    BenthivoresCatTemp <- NULL
+    PlanktivoresCatTemp <- NULL
+    ElasmobranchsCatTemp <- NULL
+    for(irow in (nrow(Catch)-5):nrow(Catch)){
+      PiscivoresCatTemp <- c(PiscivoresCatTemp, sum(Catch[irow,c(1,5)]))
+      BenthivoresCatTemp <- c(BenthivoresCatTemp, sum(Catch[irow,c(2,8,9,10)]))
+      PlanktivoresCatTemp <- c(PlanktivoresCatTemp, sum(Catch[irow,c(3,4)]))
+      ElasmobranchsCatTemp <- c(ElasmobranchsCatTemp, sum(Catch[irow,c(6,7)]))
+    }
+
+    Results[i,"PiscivoreCatch"] <- mean(PiscivoresCatTemp)
+    Results[i,"BenthivoreCatch"] <- mean(BenthivoresCatTemp)
+    Results[i,"PlanktivoreCatch"] <- mean(PlanktivoresCatTemp)
+    Results[i,"ElasmobranchCatch"] <- mean(ElasmobranchsCatTemp)
     #############
     
-    ## Calculate frequency of total system biomass collapse (below 100 metric tons) in last model year
-    Results[i, "SystemCollapse"] <- sum(Biomass[nrow(Biomass),]) < 100
+    ## Calculate frequency of total system biomass collapse (below 100 metric tons) as average over last 6 model years
+    SystemBioTemp <- NULL
+    for(irow in (nrow(Biomass)-5):nrow(Biomass)){
+      SystemBioTemp <- c(SystemBioTemp, sum(Biomass[irow,]))
+    }
+    Results[i, "SystemCollapse"] <- length(which(SystemBioTemp < 113011))/length(SystemBioTemp) # (113011.6 *0.5) # 0.5 * Ecosystem MSY calculated in CalculateEcosystemRefPts_FinalSimulations.R
     ############
     
-    ##  Total System Biomass in last model year
-    AnnualTotSystemBio <- sum(Biomass[nrow(Biomass),])
-    Results[i,"SystemBiomass"] <- AnnualTotSystemBio
+    ##  Total System Biomass average over last 6 model years
+    TotSystemBioTemp <- NULL
+    for(irow in (nrow(Biomass)-5):nrow(Biomass)){
+      TotSystemBioTemp <- c(TotSystemBioTemp, sum(Biomass[irow,]))
+    }
+    Results[i,"SystemBiomass"] <- mean(TotSystemBioTemp)
     ############
     
-    ## Total System Catch Removal in last model year
-    AnnualTotSystemCat <- sum(Catch[nrow(Catch),])
-    Results[i,"SystemCatch"] <- AnnualTotSystemCat
+    ## Total System Catch Removal average over last 6 model years
+    TotSystemCatTemp <- NULL
+    for(irow in (nrow(Catch)-5):nrow(Catch)){
+      TotSystemCatTemp <- c(TotSystemCatTemp, sum(Catch[irow,]))
+    }
+    Results[i,"SystemCatch"] <- mean(TotSystemCatTemp)
     ############
     
     ## Biomass diversity in last model year
-    BiomassDiversity <- diversity(Biomass[nrow(Biomass),], index="shannon")
-    Results[i,"BiomassDiversity"] <- BiomassDiversity
+    BiomassDiversityTemp <- NULL
+    for(irow in (nrow(Biomass)-5):nrow(Biomass)){
+      BiomassDiversityTemp <- c(BiomassDiversityTemp, diversity(Biomass[irow,], index="shannon"))
+    }
+    Results[i,"BiomassDiversity"] <- mean(BiomassDiversityTemp)
     ############
     
     ## Catch diversity in last model year
-    CatchDiversity <-  diversity(Catch[nrow(Catch),], index="shannon")
-    Results[i,"CatchDiversity"] <- CatchDiversity
+    CatchDiversityTemp <- NULL
+    for(irow in (nrow(Catch)-5):nrow(Catch)){
+      CatchDiversityTemp <-  c(CatchDiversityTemp, diversity(Catch[nrow(Catch),], index="shannon"))
+    }
+    Results[i,"CatchDiversity"] <- mean(CatchDiversityTemp)
     ###########
     
     #### Format Explanatory Variable Data for simulation i
@@ -133,39 +161,28 @@ FormatTreeAnalysisData <- function(FileName=NULL, Nsim=NULL, CeilingValue=NULL, 
     
     ## Reference Value Data
     if(Indicator_On_or_Off == "Indicator_On"){
-      # for(isim in 1:length(dat["refvals"][[1]][[1]])){
-      #   Results[i, paste("RefVal", IndicatorNames[isim], sep="_")] <- dat["refvals"][[1]][[i]][[isim]]
-      # }
       for(isim in 1:length(dat["refvals"][[1]][[1]])){
         Results[i,paste("RefVal", isim, sep="")] <- dat["refvals"][[1]][[i]][[isim]]
       }
       
       ## Limit Value Data
-      # for(isim in 1:length(dat["limvals"][[1]][[1]])){
-      #   Results[i,paste("Limval", IndicatorNames[isim], sep="_")] <- dat["limvals"][[1]][[i]][[isim]]
-      # }
       for(isim in 1:length(dat["limvals"][[1]][[1]])){
         Results[i,paste("LimVal", isim, sep="")] <- dat["limvals"][[1]][[i]][[isim]]
       }
     } else if(Indicator_On_or_Off == "Indicator_Off"){
-      # for(isim in 1:length(dat["refvals"][[1]][[1]])){
-      #   Results[i, paste("RefVal", IndicatorNames[isim], sep="_")] <- NA
-      # }
       for(isim in 1:length(dat["refvals"][[1]][[1]])){
         Results[i,paste("RefVal", isim, sep="")] <- NA
       }
       
       ## Limit Value Data
-      # for(isim in 1:length(dat["limvals"][[1]][[1]])){
-      #   Results[i,paste("Limval", IndicatorNames[isim], sep="_")] <- NA
-      # }
       for(isim in 1:length(dat["limvals"][[1]][[1]])){
         Results[i,paste("LimVal", isim, sep="")] <- NA
       }
     }
     #########
-  }
-  return(Results=Results)
+  } # End loop over simulations
+  
+  return(Results=Results) # Specify what is returned by function
 }
 
 ########## Example use of FormatTreeAnalysisData() which binds simulations under multiple catch ceilings ##########
