@@ -1,15 +1,24 @@
 # Optimize catch in simulations multiple times with different starting biomass (sample from historic timeseries)
-   # Numerically calculate ref points
+   # Numerically calculate ecosystem and aggregate species group reference points
+
+# !!!!!!!!!!!!!!!!!!!!!!! CAUTION !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# This code utilizes and manipulates global variables to store and later manipulate estimated biomass and catch 
+# associated with MSY and used for ref point calculations
+# !!!!!!!!!!!!!!!!!!!!!!! THIS SHOULD BE AVOIDED IN CODING WHENEVER POSSIBLE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# !!!!!!!!!!!!!!!!!!!!!!! DO NOT MESS WITH GLOBAL VARIABLES UNLESS YOUR CODE IS INDEPENDENT (ONLY DOES 1 THING WHICH IS NOT CONNECTED TO OTHER CODE/SCRIPTS/FUNCITONS) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+# FileLocation <- "/Users/arhart/Research/CatchCeilingPaperCode/arhart" # My laptop
+FileLocation <- "/Users/ahart2/Research/ebfm_mp/arhart" # School laptop
 
 ########################################################################
 ########## Data
 ########################################################################
 library(jsonlite)
-RefPts_BMSYData <- read.csv("/Users/arhart/Research/CatchCeilingPaperCode/arhart/CatchCeilingPaper/DataFiles/FormattedSpeciesBmsy.csv", header=TRUE) # column1 is species name, column2 is Bmsy, column3 is mean trophic level
-RefPts_InitsData <- read.csv("/Users/arhart/Research/CatchCeilingPaperCode/arhart/CatchCeilingPaper/DataFiles/FormattedInitialSpeciesParameters.csv", header=TRUE)
-RefPts_IndicatorRefVals <- read.csv("/Users/arhart/Research/CatchCeilingPaperCode/arhart/CatchCeilingPaper/DataFiles/FormattedIndicatorRefLimVals.csv", header=TRUE) # Must contain the following columns: Indicator, IndC, Threshold, Limit, T.L, column for each species
+RefPts_BMSYData <- read.csv(paste(FileLocation,"CatchCeilingPaper/DataFiles/FormattedSpeciesBmsy.csv",sep="/"), header=TRUE) # column1 is species name, column2 is Bmsy, column3 is mean trophic level
+RefPts_InitsData <- read.csv(paste(FileLocation,"CatchCeilingPaper/DataFiles/FormattedInitialSpeciesParameters.csv",sep="/"), header=TRUE)
+RefPts_IndicatorRefVals <- read.csv(paste(FileLocation,"CatchCeilingPaper/DataFiles/FormattedIndicatorRefLimVals.csv",sep="/"), header=TRUE) # Must contain the following columns: Indicator, IndC, Threshold, Limit, T.L, column for each species
 # datfile variable contains the file name, reads from json file
-datfilename <- "/Users/arhart/Research/CatchCeilingPaperCode/arhart/CatchCeilingPaper/DataFiles/Georges.dat.json"
+datfilename <- paste(FileLocation,"CatchCeilingPaper/DataFiles/Georges.dat.json", sep="/")
 dat <- fromJSON(datfilename)
 
 # SpeciesNames: Vector of species names (strings) to be used in this analysis, can not have spaces in names  
@@ -56,7 +65,7 @@ colnames(RefPts_HistoricCatch) <- RefPts_SpeciesNames
 ######### Ecosystem MSY 
 ########################################################################
 
-# Do Projection function
+# Do Projection function (project into the future and adjust harvest rates to maximize yield = hrate at MSY)
 DoProjection <- function(hrate_params, 
                          ProjectionLength = 1, 
                          HistoricAbundanceTimeseries=NULL, 
@@ -84,9 +93,16 @@ DoProjection <- function(hrate_params,
   # alpha: A predation matrix, each species in a column
   # BzeroVector: A vector of Bzero values for each species (should be near carrying capacity (K) or calculated from projections under F=0)
   # BmsyVector: A vector of Bmsy vallues for each species
+  # GlobeCount: Storage index for values tested by optimizer
   
-  library(boot)
+  # Need the following line if not package isn't already sourced
+  # library(boot)
   
+  # Counter for global storage object used to ID catch & biomass associated with optimal hrate results (increases count each time optimizer calls function)
+  get("GlobeCount")
+  assign("GlobeCount", GlobeCount+1, envir = .GlobalEnv)
+  print(GlobeCount)
+
   objfunction <- NULL
   # logit transform so hrate between 0:1
   hrate_params <- c(inv.logit(hrate_params)) # !!! maybe warning is bad?????? maybe don't want logit transform, inverse logit?
@@ -113,17 +129,32 @@ DoProjection <- function(hrate_params,
     CatchTimeseries <- rbind(CatchTimeseries, OdeResult[2,12:21])
   }
   
-  # Once projection complete, take average over the last 5 years and report those values
+  # Once projection complete, take average over the last 6 years and report those values
   EquilibriumBiomass <- colMeans(tail(AbundanceTimeseries))
+  print(EquilibriumBiomass)
   EquilibriumCatch <- colMeans(tail(CatchTimeseries))
+  print(EquilibriumCatch)
+  
+  # Store equilibrium biomass, catch, and MSY in GlobStorageTemp so values associated with optimal values can be IDed later
+  get("GlobeStoreTemp")
+  #assign("GlobeStoreTemp[GlobeCount,1:10]", EquilibriumCatch, envir = .GlobalEnv)
+  #assign("GlobeStoreTemp[GlobeCount,11:20]", EquilibriumBiomass, envir = .GlobalEnv)
+  #assign("GlobeStoreTemp[GlobeCount,21]", sum(EquilibriumCatch), envir = .GlobalEnv)
+  
+  GlobeStoreTemp[GlobeCount,1:10] <- EquilibriumCatch # Store catch
+  assign("GlobeStoreTemp", GlobeStoreTemp, envir = .GlobalEnv)
+  GlobeStoreTemp[GlobeCount,11:20] <- EquilibriumBiomass # Store biomass
+  assign("GlobeStoreTemp", GlobeStoreTemp, envir = .GlobalEnv)
+  GlobeStoreTemp[GlobeCount,21] <- sum(EquilibriumCatch) # Store MSY
+  assign("GlobeStoreTemp", GlobeStoreTemp, envir = .GlobalEnv)
   
   # For ecosystem MSY: minimize 1/sum catch of all species
   objfunction <- 1/sum(EquilibriumCatch)
   
-  return(objfunction)
+  return(objfunction) 
 }
 
-# Function to solve, we want to vary hrate, but have it fixed in each simulation
+# Function to solve, we want to vary hrate between simulations, but have it fixed in each simulation
 dNbydt_Default <- function(t,N=1,parms=list(r_GrowthRate=rep(0.4,length(N)),
                                             KGuild=rep(1,1),
                                             Ktot=10,
@@ -171,15 +202,22 @@ ProjectionLength <- 100
 HistoricCatchTimeseries <- RefPts_HistoricCatch
 HistoricAbundanceTimeseries <- RefPts_HistoricBiomass
 
-NumberSim <- 1 # number of simulations to run
+NumberSim <- 100 # number of simulations to run
 
 library(boot)
 library(deSolve)
 
-Ecosystem_ResultingOptimalHRates <- matrix(NA, ncol=ncol(HistoricAbundanceTimeseries), nrow = NumberSim)
-colnames(Ecosystem_ResultingOptimalHRates) <- RefPts_SpeciesNames
+### Storage for optimal harvest rates
+Ecosystem_ResultingOptimalHRates <- matrix(NA, ncol=ncol(HistoricAbundanceTimeseries)+1, nrow = NumberSim)
+colnames(Ecosystem_ResultingOptimalHRates) <- c(paste("Hrate", RefPts_SpeciesNames, sep="_"), "MSY")
+
+### Storage for catch and biomass by species
+Ecosystem_CatBio_UnderOptimalHRates <- matrix(NA, ncol=ncol(HistoricAbundanceTimeseries)*2+1, nrow = NumberSim)
+colnames(Ecosystem_CatBio_UnderOptimalHRates) <- c(paste("Catch", RefPts_SpeciesNames, sep="_"),paste("Biomass", RefPts_SpeciesNames, sep="_"),"MSY")
+
+##### Run simulations #####
 for(isim in 1:NumberSim){
-  # First Sample biomass from historic timeseries
+  # First Sample biomass from historic timeseries for starting biomass conditions by species
   HistoricBioTimeseries <- c(sample(c(HistoricAbundanceTimeseries[,1]), 1), sample(HistoricAbundanceTimeseries[,2], 1), sample(HistoricAbundanceTimeseries[,3], 1),
                                    sample(HistoricAbundanceTimeseries[,4], 1), sample(HistoricAbundanceTimeseries[,5], 1), sample(HistoricAbundanceTimeseries[,6], 1),
                                    sample(HistoricAbundanceTimeseries[,7], 1), sample(HistoricAbundanceTimeseries[,8], 1), sample(HistoricAbundanceTimeseries[,9], 1),
@@ -189,7 +227,17 @@ for(isim in 1:NumberSim){
 
   # Sample starting values for hrate
   calc_initHrate <- c(sample(c(seq(0.1,0.99,by=0.1)), 10, replace=TRUE))
-  hrate_init <- logit(calc_initHrate)
+  hrate_init <- logit(calc_initHrate) # logit transformed so this is restricted between 0 and 1
+  
+  # Global storage object used to ID catch & biomass associated with optimal hrate results
+    # This stores all values for catch and biomass observed during optimization, those associated with the optimal MSY can be matched by searching the MSY column
+  GlobeStoreTempFormat <- matrix(NA, ncol = ncol(HistoricAbundanceTimeseries)*2+1, nrow = 1000)
+  colnames(GlobeStoreTempFormat) <- c(paste("Catch", RefPts_SpeciesNames, sep="_"), paste("Biomass", RefPts_SpeciesNames, sep="_"), "MSY")
+  assign("GlobeStoreTemp", GlobeStoreTempFormat, envir = .GlobalEnv)
+  
+  # Counter for global storage object used to ID catch & biomass associated with optimal hrate results
+  GlobeCountTemp <- 0
+  assign("GlobeCount", GlobeCountTemp, envir = .GlobalEnv)
   
   # Optimize hrate
   OptimalHRates <- optim(par=hrate_init, fn=DoProjection, 
@@ -206,18 +254,78 @@ for(isim in 1:NumberSim){
                          BmsyVector = BmsyVector,
                          ProjectionLength = ProjectionLength)
   
-  Ecosystem_ResultingOptimalHRates[isim,] <- inv.logit(OptimalHRates$par)
+    ## Save optimized hrate parameters and MSY from optimizer
+  Ecosystem_ResultingOptimalHRates[isim,] <- c(inv.logit(OptimalHRates$par), (1/OptimalHRates$value))
+  
+  ### Save catch and biomass associated with optimal hrate (not reported directly by optimizer, stored in GlobeStoreTemp object)
+  CatBioRow <- which(GlobeStoreTemp[,"MSY"]==Ecosystem_ResultingOptimalHRates[,"MSY"])
+  Ecosystem_CatBio_UnderOptimalHRates[isim,] <- GlobeStoreTemp[CatBioRow,]
 }
 
 
+# user  system elapsed 
+# 273.358   0.740 274.762 per run
+# 7.632278 hours
+
+# # For timing
+
+# Ecosystem_ResultingOptimalHRates <- matrix(NA, ncol=ncol(HistoricAbundanceTimeseries), nrow = NumberSim)
+# colnames(Ecosystem_ResultingOptimalHRates) <- RefPts_SpeciesNames
+# 
+# system.time(
+#   for(isim in 1:NumberSim){
+#     # First Sample biomass from historic timeseries
+#     HistoricBioTimeseries <- c(sample(c(HistoricAbundanceTimeseries[,1]), 1), sample(HistoricAbundanceTimeseries[,2], 1), sample(HistoricAbundanceTimeseries[,3], 1),
+#                                sample(HistoricAbundanceTimeseries[,4], 1), sample(HistoricAbundanceTimeseries[,5], 1), sample(HistoricAbundanceTimeseries[,6], 1),
+#                                sample(HistoricAbundanceTimeseries[,7], 1), sample(HistoricAbundanceTimeseries[,8], 1), sample(HistoricAbundanceTimeseries[,9], 1),
+#                                sample(HistoricAbundanceTimeseries[,10], 1))
+#     # Remove last row of Historic Abundance Timeseries and replace with HistoricBioTimeseries above (never plot historic series for these simulations)
+#     HistoricBioTimeseries <- rbind(HistoricAbundanceTimeseries[-nrow(HistoricAbundanceTimeseries),], HistoricBioTimeseries)
+#     
+#     # Sample starting values for hrate
+#     calc_initHrate <- c(sample(c(seq(0.1,0.99,by=0.1)), 10, replace=TRUE))
+#     hrate_init <- logit(calc_initHrate)
+#     
+#     # Optimize hrate
+#     OptimalHRates <- optim(par=hrate_init, fn=DoProjection, 
+#                            HistoricAbundanceTimeseries=HistoricBioTimeseries,
+#                            HistoricCatchTimeseries=HistoricCatchTimeseries,
+#                            r_GrowthRate=r_GrowthRate,
+#                            KGuild=KGuild,
+#                            Ktot=Ktot,
+#                            Guildmembership=Guildmembership,
+#                            BetweenGuildComp=BetweenGuildComp,
+#                            WithinGuildComp=WithinGuildComp,
+#                            alpha=alpha,
+#                            BzeroVector = BzeroVector,
+#                            BmsyVector = BmsyVector,
+#                            ProjectionLength = ProjectionLength)
+#     
+#     Ecosystem_ResultingOptimalHRates[isim,] <- inv.logit(OptimalHRates$par)
+#   }
+# )
 
 
 
+# Calculate Ecosystem MSY
+EcoMSYdat <- read.csv(paste(FileLocation, "CatchCeilingPaper/HRate_Produce_EcosystemMSY.csv", sep="/"))
+
+EcoMSY <- median(EcoMSYdat[1:100,"MSY"])
+MSY <- EcoMSYdat[1:100,"MSY"]
+
+reso<-4
+png("SystemMSY", width=800*reso, height=500*reso)
+par(mar=c(10,14,10,2.1))
+hist(MSY, main = "Histogram of System MSY", cex.lab=2*reso, cex.main=2*reso, cex.axis=2*reso, cex.sub=2*reso, axes = FALSE, col="steelblue3", xlab="", ylab="")
+axis(1,at=c(50000,100000,150000),labels=c("50000","100000","150000"), cex.axis=2*reso)
+mtext("MSY", side=1, line=8, cex=2*reso, col="black")
+axis(2,at=seq(0,30,5),labels=seq(0,30,5), cex.axis=2*reso)
+mtext("Frequency", side=2, line=8, cex=2*reso, col="black")
+abline(v=EcoMSY, col="black", lwd=4*reso)
+dev.off()
 
 
-
-
-
+hist(MSY)
 
 
 
