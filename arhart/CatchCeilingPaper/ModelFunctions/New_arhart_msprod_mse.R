@@ -335,7 +335,7 @@ RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUT
         
         # Generate and append observed biomass and catch data for this timestep (observed values recorded half way through model year)
         ObservedBiomass <- OdeResult[2,2:(Nsp+1)]*exp(rnorm(10,0,0.2)-0.5*0.2*0.2) # Observed biomass based on biomass half way through model year
-        NI.obs <- rbind(NI.obs, ObservedBiomass)
+        NI.obs <- rbind(NI.obs, ObservedBiomass) # Matrix of observed biomass 
         
         # ?????????????????????????????????????????????
         # ???????? where is this catch actually used, where is the Rem used????????? I don't think either is actually, Cat used to generate observed data
@@ -343,7 +343,7 @@ RunMultiSpeciesProdWithCeiling <- function(ScriptWorkDir=NULL, WorkDir=NULL, OUT
         Cat <- 1.e-07+ OdeResult[2,(Nsp+2):(Nsp+11)] # ?????????? why add very small number (1.e-7) when the next line does effectively the same thing?
         Cat[Cat<=0] <- 0.01 # Catch values less than or equal to 0 replaced with 0.01 (Catch can't be less than or equal to 0)
         ObservedCatch <- Cat*exp(rnorm(10,0,0.2)-0.5*0.2*0.2) # Observed catch based on catch half way through model year
-        CI.obs <- rbind(CI.obs, ObservedCatch) 
+        CI.obs <- rbind(CI.obs, ObservedCatch) # Matrix of observed catch
         
         
         ########## Update Biomass at End of Model Year: Starting Conditions for Next Year ##########
