@@ -8,10 +8,11 @@
 # Nsim and CeilingValue, BMSY, PercentFmsy, and Indicator_On_or_Off arguments should match source file production
 
 
-FormatTreeAnalysisData <- function(FileName=NULL, Nsim=NULL, CeilingValue=NULL, BMSY=NULL, PercentFmsy=NULL, Indicator_On_or_Off=NULL){
+FormatTreeAnalysisData <- function(FileName=NULL, Nsim=NULL, CeilingValue=NULL, BMSY=NULL, PercentFmsy=NULL, Indicator_On_or_Off=NULL, FishPrices=NULL){
   # This function uses the output from arhart_msprod_mse.R to calculate 8 performance metrics and saves as a table
      # The resulting tables may be bound together using rbind() after this function is called if more than one catch ceiling was used
      # This function formats the data as required by TreeAnalysis and RandomForestAnalysis
+  # also outputs info for use in reference point estimation (see Agg_Ecosystem_MSY.R)
   
   # Args:
        # FileName: Name of data file produced by arhart_msprod_mse.R
@@ -20,6 +21,7 @@ FormatTreeAnalysisData <- function(FileName=NULL, Nsim=NULL, CeilingValue=NULL, 
        # BMSY: Vector containing BMSY data for each species considered in FileName
        # PercentFmsy: String containing percent of Fmsy used in simulation (eg. "100Fmsy" or "75Fmsy")
        # Indicator_On_or_Off: String containing "Indicator_On" or "Indicator_Off" to reflect whether or not indicator-based harvest control rules were implemented
+       # FishPrices: Vector of fish prices with species labels matching those for biomass and catch in FileName data (may confirm by looking at lines 53 and 56 below)
   # Return:
        # A matrix with columns containing the following:
           # Each performance metric has its own column
@@ -33,6 +35,7 @@ FormatTreeAnalysisData <- function(FileName=NULL, Nsim=NULL, CeilingValue=NULL, 
   TotSystemCat <- NULL
   CatchDiversity <- NULL
   BiomassDiversity <- NULL
+  RefPtData <- data.frame()
   
   ######## Load Data and packages
   library(vegan)
@@ -49,8 +52,10 @@ FormatTreeAnalysisData <- function(FileName=NULL, Nsim=NULL, CeilingValue=NULL, 
     
     # Biomass and Catch series for simulation i
     Biomass <- dat["TrueBiomassResult"][[1]][[i]]  # This should give the first item (matrix of biomass),  for the ith simulation
+    colnames(Biomass) <- c("GB_Cod", "GB_Haddock", "Herring", "Mackerel", "Redfish", "Skates", "Spiny_dogfish","GB_WinterFlounder", "GB_YellowtailFlounder","GOM_GB_WindowpaneFlounder")
     #Biomass <- do.call(rbind,Biomass) # This takes the list of lists (JSON format) from the ith simulation run and turns it into a matrix
     Catch <- dat["TrueCatchResult"][[1]][[i]]  # This should give the first item (matrix of catch) for the ith simulation
+    colnames(Catch) <- c("GB_Cod", "GB_Haddock", "Herring", "Mackerel", "Redfish", "Skates", "Spiny_dogfish","GB_WinterFlounder", "GB_YellowtailFlounder","GOM_GB_WindowpaneFlounder")
     #Catch <- do.call(rbind,Catch) # This takes the list of lists (JSON format) from the ith simulation run and turns it into a matrix
     
     
@@ -64,6 +69,17 @@ FormatTreeAnalysisData <- function(FileName=NULL, Nsim=NULL, CeilingValue=NULL, 
     Results[i,"NumberSSOverfished"] <- mean(SSOverfishedTemp) # Previously FrequencySSOverfished
     Results[i,"FrequencySSOverfished"] <- mean(SSOverfishedTemp/10)
     ###########
+    RefPtData[i,"GB_Cod"] <- colMeans(tail(Biomass))["GB_Cod"]
+    RefPtData[i,"GB_Haddock"] <- colMeans(tail(Biomass))["GB_Haddock"]
+    RefPtData[i,"Herring"] <- colMeans(tail(Biomass))["Herring"]
+    RefPtData[i,"Mackerel"] <- colMeans(tail(Biomass))["Mackerel"]
+    RefPtData[i,"Redfish"] <- colMeans(tail(Biomass))["Redfish"]
+    RefPtData[i,"Skates"] <- colMeans(tail(Biomass))["Skates"]
+    RefPtData[i,"Spiny_dogfish"] <- colMeans(tail(Biomass))["Spiny_dogfish"]
+    RefPtData[i,"GB_WinterFlounder"] <- colMeans(tail(Biomass))["GB_WinterFlounder"]
+    RefPtData[i,"GB_YellowtailFlounder"] <- colMeans(tail(Biomass))["GB_YellowtailFlounder"]
+    RefPtData[i,"GOM_GB_WindowpaneFlounder"] <- colMeans(tail(Biomass))["GOM_GB_WindowpaneFlounder"]
+    
     
     # Calculate mean frequency of aggregate group collapse (below 100 metric tons) over the last 6 model years
     PiscivoresBioTemp <- NULL
@@ -71,23 +87,31 @@ FormatTreeAnalysisData <- function(FileName=NULL, Nsim=NULL, CeilingValue=NULL, 
     PlanktivoresBioTemp <- NULL
     ElasmobranchsBioTemp <- NULL
     NumAggCollapseTemp <- NULL
-    for(irow in (nrow(Biomass)-5):nrow(Biomass)){
+    AggRefPt <- c(61608.21, 82107.91, 54158.58, 69006.88) # as calculated in Agg_Ecosystem_MSY.R, in order: 0.5PiscivoresBmsy, 0.5BenthivoresBmsy, 0.5PlanktivoresBmsy, 0.5ElasmobranchBmsy
+    for(irow in 1:nrow(Biomass)){
       # Calculate biomass of aggregate groups in each of the last 6 model years
-      PiscivoresBioTemp <- c(PiscivoresBioTemp, sum(Biomass[irow,c(1,5)]))
-      BenthivoresBioTemp <- c(BenthivoresBioTemp, sum(Biomass[nrow(Biomass),c(2,8,9,10)]))
-      PlanktivoresBioTemp <- c(PlanktivoresBioTemp, sum(Biomass[nrow(Biomass),c(3,4)]))
-      ElasmobranchsBioTemp <- c(ElasmobranchsBioTemp, sum(Biomass[nrow(Biomass),c(6,7)]))
-      
-      AggregateBioTemp <- list(PiscivoresBioTemp[irow-24],BenthivoresBioTemp[irow-24],PlanktivoresBioTemp[irow-24],ElasmobranchsBioTemp[irow-24])
-      NumAggCollapseTemp <- c(NumAggCollapseTemp, length(which((AggregateBioTemp < 100) == TRUE)))
+      PiscivoresBioTemp <- c(PiscivoresBioTemp, sum(Biomass[irow,c("GB_Cod","Redfish")])) # c(PiscivoresBioTemp, sum(Biomass[irow,c(1,5)]))
+      BenthivoresBioTemp <- c(BenthivoresBioTemp, sum(Biomass[irow,c("GB_Haddock","GB_WinterFlounder","GB_YellowtailFlounder","GOM_GB_WindowpaneFlounder")])) # c(BenthivoresBioTemp, sum(Biomass[nrow(Biomass),c(2,8,9,10)]))
+      PlanktivoresBioTemp <- c(PlanktivoresBioTemp, sum(Biomass[irow,c("Herring","Mackerel")])) # c(PlanktivoresBioTemp, sum(Biomass[nrow(Biomass),c(3,4)]))
+      ElasmobranchsBioTemp <- c(ElasmobranchsBioTemp, sum(Biomass[irow,c("Skates","Spiny_dogfish")])) # c(ElasmobranchsBioTemp, sum(Biomass[nrow(Biomass),c(6,7)]))
     }
     
-    ## Average frequency of aggregate group collapse (below 100mt) over last 6 model years
-    Results[i, "NumberAggregateCollapse"] <- mean(NumAggCollapseTemp) # Previously FrequencyAggregateCollapse
-    Results[i, "FrequencyAggregateCollapse"] <- mean(NumAggCollapseTemp/length(AggregateBioTemp))
-    ###########
+    TempAggBio <- cbind(tail(PiscivoresBioTemp), tail(BenthivoresBioTemp), tail(PlanktivoresBioTemp), tail(ElasmobranchsBioTemp))
+    NumAggCollapseTemp <- NULL
+    for(irow in 1:nrow(TempAggBio)){
+      NumAggCollapseTemp <- c(NumAggCollapseTemp, length(which(TempAggBio[irow,] < AggRefPt))) # compare observed biomass with reference points
+    }
     
-    ## Calculate Total Aggregate Catch for last model year 
+    ## Average frequency of aggregate group collapse (below AggRefPt) over last 6 model years
+    Results[i, "NumberAggregateCollapse"] <- mean(NumAggCollapseTemp) # Previously FrequencyAggregateCollapse
+    Results[i, "FrequencyAggregateCollapse"] <- mean(NumAggCollapseTemp/length(AggRefPt))
+    ###########
+    RefPtData[i, "PiscivoresBio"] <- mean(tail(PiscivoresBioTemp))
+    RefPtData[i, "BenthivoresBio"] <- mean(tail(BenthivoresBioTemp))
+    RefPtData[i, "PlanktivoresBio"] <- mean(tail(PlanktivoresBioTemp))
+    RefPtData[i,"ElasmobranchsBio"] <- mean(tail(ElasmobranchsBioTemp))
+    
+    ## Calculate Total Aggregate Catch and average over last 6 model years
     PiscivoresCatTemp <- NULL
     BenthivoresCatTemp <- NULL
     PlanktivoresCatTemp <- NULL
@@ -105,13 +129,14 @@ FormatTreeAnalysisData <- function(FileName=NULL, Nsim=NULL, CeilingValue=NULL, 
     Results[i,"ElasmobranchCatch"] <- mean(ElasmobranchsCatTemp)
     #############
     
-    ## Calculate frequency of total system biomass collapse (below 100 metric tons) as average over last 6 model years
+    ## Calculate frequency of total system biomass collapse (261536.04 mt) in the last 6 model years, 0.5Bmsy reference point as calculated in Agg_Ecosystem_MSY.R and .cpp
     SystemBioTemp <- NULL
     for(irow in (nrow(Biomass)-5):nrow(Biomass)){
       SystemBioTemp <- c(SystemBioTemp, sum(Biomass[irow,]))
     }
-    Results[i, "SystemCollapse"] <- length(which(SystemBioTemp < 113011))/length(SystemBioTemp) # (113011.6 *0.5) # 0.5 * Ecosystem MSY calculated in CalculateEcosystemRefPts_FinalSimulations.R
+    Results[i, "SystemCollapse"] <- length(which(SystemBioTemp < 261536.04))/length(SystemBioTemp) 
     ############
+    RefPtData[i, "SystemBio"] <- mean(SystemBioTemp)
     
     ##  Total System Biomass average over last 6 model years
     TotSystemBioTemp <- NULL
@@ -129,7 +154,7 @@ FormatTreeAnalysisData <- function(FileName=NULL, Nsim=NULL, CeilingValue=NULL, 
     Results[i,"SystemCatch"] <- mean(TotSystemCatTemp)
     ############
     
-    ## Biomass diversity in last model year
+    ## Biomass diversity averaged over last 6 model years
     BiomassDiversityTemp <- NULL
     for(irow in (nrow(Biomass)-5):nrow(Biomass)){
       BiomassDiversityTemp <- c(BiomassDiversityTemp, diversity(Biomass[irow,], index="shannon"))
@@ -137,13 +162,24 @@ FormatTreeAnalysisData <- function(FileName=NULL, Nsim=NULL, CeilingValue=NULL, 
     Results[i,"BiomassDiversity"] <- mean(BiomassDiversityTemp)
     ############
     
-    ## Catch diversity in last model year
+    ## Catch diversity averaged over last 6 model years
     CatchDiversityTemp <- NULL
     for(irow in (nrow(Catch)-5):nrow(Catch)){
       CatchDiversityTemp <-  c(CatchDiversityTemp, diversity(Catch[nrow(Catch),], index="shannon"))
     }
     Results[i,"CatchDiversity"] <- mean(CatchDiversityTemp)
     ###########
+    
+    ## Total Revenue based on provided prices, averaged over last 6 model years
+    # First calculate revenue using FishPrices for all species/model years
+    RevenueTemp <- matrix(NA,ncol=ncol(Catch), nrow=nrow(Catch))
+    for(icol in 1:ncol(Catch)){
+      RevenueTemp[,icol] <- Catch[,which(colnames(Catch)==names(FishPrices[icol]))]*FishPrices[icol]
+    }
+    # Calculate total revenue 
+    TotalRevenueTemp <- rowSums(RevenueTemp)
+    # Save average total revenue over last 6 model years
+    Results[i,"TotalRevenue"] <- mean(tail(TotalRevenueTemp))
     
     #### Format Explanatory Variable Data for simulation i
     
@@ -182,7 +218,7 @@ FormatTreeAnalysisData <- function(FileName=NULL, Nsim=NULL, CeilingValue=NULL, 
     #########
   } # End loop over simulations
   
-  return(Results=Results) # Specify what is returned by function
+  return(list(Results=Results, RefPtData=RefPtData)) # Specify what is returned by function
 }
 
 ########## Example use of FormatTreeAnalysisData() which binds simulations under multiple catch ceilings ##########
@@ -464,59 +500,84 @@ RandomForestAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL, AsFactor=NU
 # DataFile should be the same as that used by TreeAnalysis (Produced by FormatTreeAnalysisData)
 # PlotMatrix provides the details of how plots should be ordered graphically
 
-PlotPerfMet <- function(DataFile=NULL, NPerformMetrics=NULL, PlotMatrix=matrix(data=1,nrow=1,ncol=1,byrow=TRUE), MultiPanelPlot = FALSE, XAxis=NULL){
+PlotPerfMet <- function(DataFile=NULL, NPerformMetrics=NULL, PlotMatrix=matrix(data=1,nrow=1,ncol=1,byrow=TRUE), MultiPanelPlot = FALSE, XAxis=NULL, FileName = "boxplot"){
   # Args
      # MultiPanelPlot: defaults to FALSE, if TRUE plots multiple box plots with same x-axis label/scale
-     # XAxis: string containing label for X-Axis, only required if MultiPanelPlot = TRUE
-  
+     # XAxis: string containing label for X-Axis, only required if MultiPanelPlot = TRUE,
+     # FileName: string containing name of file, will automatically be saved in current working directory, default = "boxplot"
+
   # Read in data
   Data <- read.table(DataFile)
-  
+
   # Define list of Performance Metrics
   PerformMet <- colnames(Data[1:NPerformMetrics])
 
-  # Next three lines are specific labels that needed to be changed for the CatchCeilingPaper but are not generally applicable/necessary
-  # PerformMet <- c("Frequency sinlge \n species overfished", "Frequency aggregate \n collapse", "Piscivore catch (mt)",
-  #                         "Benthivore catch \n (thousand mt)", "Planktivore catch \n (thousand mt)", "Elasmobranch catch \n (thousand mt)", "System collapse",
-  #                         "System biomass \n (thousand mt)", "System catch \n (thousand mt)", "Biomass diversity", "Catch diversity")
+  # Next three lines are specific labels that needed to be changed for the CatchCeilingPaper but are not generally applicable/necessary for other projects
+  PerformMet <- c("Frequency species \n overfished", "Frequency aggregate \n collapse", "Piscivore \n catch (kt)",
+                  "Benthivore  \n catch (kt)", "Planktivore   \n catch (kt)", "Elasmobranch \n catch (kt)", "System collapse",
+                  "System \n biomass (kt)", "System \n catch (kt)", "Biomass \n diversity", "Catch \n diversity", "Catch revenue \n (dollars)")
   print(PerformMet)
-  
+
   if(MultiPanelPlot ==TRUE){
     
-    # Add row to PlotMatrix for whole figure x-axis label
-    XAxisLabel <- rep(length(PlotMatrix)+1, ncol(PlotMatrix))
-    PlotMatrix <- rbind(PlotMatrix, XAxisLabel)
-    
+    png(filename = FileName, width = 500, height = 650)
+    PlotMatrix <- PlotMatrix+1 # Add 1 so empty space at top of plot may be added
+    XAxisLabel <- rep(length(PlotMatrix)+2, ncol(PlotMatrix)) # Add row to PlotMatrix for whole figure x-axis label
+    PlotMatrix <- rbind(rep(1,ncol(PlotMatrix)),PlotMatrix, XAxisLabel)
+
     # Determine layout for plots, this is passed to the function as PlotMatrix
-    GraphicLayout <- layout(PlotMatrix, heights = c(rep(1,nrow(PlotMatrix)-1), 0.35))
+    GraphicLayout <- layout(PlotMatrix, heights = c(0.35, rep(1,nrow(PlotMatrix)-2), 0.35))
     layout.show(GraphicLayout)
+
+    # XAxisTickLabel <- unique(Data[,"CatchCeiling"])
+    # XAxisTickLabel <- XAxisTickLabel[-length(XAxisTickLabel)]
+    # XAxisTickLabel <- c(as.character(XAxisTickLabel), "None")
+
+    # Plot empty bar at top of graphic
+    par(mar=c(1,1,1,1))
+    plot(1,1,type = "n", axes = FALSE, ann = FALSE)
     
+
+    # Plot bar plots for performance metrics
     for(i in 1:NPerformMetrics){
       par(mar=c(3.5,6,0.5,0.1), xpd=TRUE)
       #par(oma=c(0,0,3,0))
-      Plots <- boxplot(formula=(Data[,i]~as.factor(CatchCeiling)), data=Data, ylab="", cex.lab=1.5, cex.axis=1.5, boxwex=0.75)
+      # Plots <- boxplot(formula=(Data[,i]~as.factor(CatchCeiling)), data=Data, ylab="", cex.lab=1.5, cex.axis=1.5, boxwex=0.75, xaxt='n')
+      # # axis(1,at=1:length(XAxisTickLabel), labels = XAxisTickLabel)
+      # mtext(paste(PerformMet[i],sep=""), side=2, line=3, adj=0.5, cex=1.1) # May use this to plot ylabel instead
+      # #axis(side = 1, at=c(0,50,75,100,125,150,175,200), labels = c("None", 50, "75", "100", "125", "150", "175", "200"))
+      # axis(side = 1, labels=c("None", 50, 70, 100, 125, 150, 175, 200))
+      Plots <- boxplot(formula=(Data[,i]~as.factor(CatchCeiling)), data=Data, ylab="", cex.lab=1.5, cex.axis=1.5, boxwex=0.75, xaxt="n")
       mtext(paste(PerformMet[i],sep=""), side=2, line=3, adj=0.5, cex=1.1) # May use this to plot ylabel instead
+      axis(1, labels = c("None", 50,75,100,125,150,175,200), at=c(1:8), cex.axis=1.5)
     }
     # Fill empty plots appropriately
-    if(NPerformMetrics < length(PlotMatrix)){
+    if(NPerformMetrics < length(PlotMatrix)-(ncol(PlotMatrix)*2)){ # -ncol(PlotMatrix) gets rid of the placeholders added at the start of this to indicate the overall x-axis labels included
       for(i in 1:(length(PlotMatrix)-NPerformMetrics-ncol(PlotMatrix))){ # Plot empty space in each column except the last row which is for the x-axis label
         plot(1,1,type="n", axes=FALSE, ann=FALSE)
       }
     }
     # Label X-Axis
+    par(mar=c(1,1,1,1))
     plot(1,1,type = "n", axes = FALSE, ann = FALSE)
     text(1,1, labels = XAxis, cex=2)
-    
+
+    dev.off()
   } else{ # Plot non-multipanel option
     # Determine layout for plots, this is passed to the function as PlotMatrix
     GraphicLayout <- layout(PlotMatrix)
     layout.show(GraphicLayout)
-    
+
     for(i in 1:NPerformMetrics){
-      Plots <- boxplot(formula=(Data[,i]~as.factor(CatchCeiling)), data=Data, ylab=paste(PerformMet[i],sep=""), xlab="Catch ceiling (mt)", cex.lab=1.5, cex.axis=1.5, boxwex=0.75)
+      Plots <- boxplot(formula=(Data[,i]~as.factor(CatchCeiling)), data=Data, ylab=paste(PerformMet[i],sep=""), xlab="Catch ceiling (kt)", cex.lab=1.5, cex.axis=1.5, boxwex=0.75)
     }
   }
 }
 
+
+
+
+
+# E.g. PlotPerfMet(DataFile = "/Users/ahart2/Research/ebfm_mp/arhart/CatchCeilingPaper/CatchCeilingPaperResults_Formatted_Final", NPerformMetrics = 14, PlotMatrix = matrix(data = c(seq(1,15)), ncol = 3, nrow = 5, byrow = TRUE), MultiPanelPlot = TRUE, XAxis = "Catch Ceiling Level")
 
 
