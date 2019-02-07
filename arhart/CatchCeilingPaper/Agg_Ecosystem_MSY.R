@@ -1,3 +1,6 @@
+# This script estimates 0.5Bmsy reference points used for assessing management performance
+  # see also Agg_Ecosystem_MSY.cpp which contains the optimized function used to calculate reference points for each aggregate group and the whole ecosystem
+
 setwd("/Users/ahart2/Research/ebfm_mp/arhart/CatchCeilingPaper")
 
 require(TMB)
@@ -8,22 +11,23 @@ DataFile <- read.table("/Users/ahart2/Research/ebfm_mp/arhart/CatchCeilingPaper/
 # DataFile <- matrix(NA, ncol = 10, nrow=2)
 # DataFile[1,] <- c(100,200,300,400,500,600,700,800,900,1000)
 # DataFile[2,] <- c(100,200,300,400,500,600,700,800,900,1000)
+Groups <- c("PiscivoresBio", "BenthivoresBio", "PlanktivoresBio", "ElasmobranchsBio", "SystemBio")
 
 # Storage for fitted parameter estimates
-RefPtStorage <- matrix(NA, ncol = 12, nrow = nrow(DataFile)) # !!! This should be updated based on number of species/groups included as columns
+RefPtStorage <- c(rep(NA, length(Groups)))
+ReportStorage <- matrix(ncol=3, nrow = length(Groups))
+rownames(ReportStorage) <- Groups
 
-for(isim in 13732:nrow(DataFile)){# 1:nrow(DataFile)){
-  print(isim)
+for(icol in 1:length(Groups)){
+  print(Groups[icol])
   # Read in data here
-  Biomass <- as.matrix(DataFile[isim,c("PiscivoresBio", "BenthivoresBio", "PlanktivoresBio", "ElasmobranchsBio")]) # For aggregate groups
-  ncol_Biomass <- ncol(Biomass)
-  nrow_Biomass <- nrow(Biomass)
+  Biomass <- DataFile[,which(Groups[icol] ==colnames(DataFile))]
   
   # Create list of data objects, names of list items must match DATA objects in Cpp code
-  ModelData <- list(Biomass = Biomass, ncol_Biomass = ncol_Biomass, nrow_Biomass = nrow_Biomass)
+  ModelData <- list(Biomass = Biomass)
   
   # Create list of parameters and provide initial values (may include parameter vector, e.g. param_vec = rep(0,5))
-  ModelParameters <- list(dummy=0, logit_r_par = c(rep(logit(0.5),ncol_Biomass)), log_K_par = c(rep(log(100000),ncol_Biomass)), logit_Frate = c(rep(logit(0.5),ncol_Biomass))) # must be a list even if only 1 item in list
+  ModelParameters <- list(dummy=0, log_K_par = log(100000)) # must be a list even if only 1 item in list
   
   # Compile Cpp code
   compile("Agg_Ecosystem_MSY.cpp") # file must be in working directory or provide full file path name
@@ -50,31 +54,23 @@ for(isim in 13732:nrow(DataFile)){# 1:nrow(DataFile)){
   # Best parameter estimates
   best <- Model$env$last.par.best
   print(best)
-  colnames(RefPtStorage) <- names(best)
-  RefPtStorage[isim,] <- best
+  #colnames(RefPtStorage) <- names(best)
+  RefPtStorage[icol] <- best
   
   # Report parameter estimates & std error
-  rep <- sdreport(Model)
+  report <- sdreport(Model)
+  ReportStorage[icol,] <- c(report$value, report$sd, report$gradient.fixed) # !!!! issue with storing std error, currently store std dev instead
+  colnames(ReportStorage) <- c("log_K_par", "SD", "Gradient")
+  
 }
 
   
+FinalRefPt <- cbind(ReportStorage, ReportStorage[,"log_K_par"]/2, ReportStorage[,"log_K_par"]/4)
+colnames(FinalRefPt) <- c("log_K_par", "SD", "Gradient", "Bmsy", "HalfBmsy")
 
 
 
 
-
-# Print objective function
-print(model$report()$obj_fun)
-
-# print objective (likelihood)
-fit$objective
-
-# Check for Hessian
-VarCo <- solve(Model$he())
-print(sqrt(diag(VarCo)))
-
-# Get reported info & predicted data
-Predicted <- Model$report()$PredictedVariableNameHere
 
 
 

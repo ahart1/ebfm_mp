@@ -11,25 +11,21 @@
   Type objective_function<Type>::operator() ()
   {
     ///// Data section /////
-    DATA_MATRIX(Biomass); // Matrix of biomasses where each column is a species group (or 1 for whole ecosystem) and rows are different simulations 
-    DATA_INTEGER(ncol_Biomass); // Number of columns in Biomass matrix
-    DATA_INTEGER(nrow_Biomass); // Number of rows in Biomass matrix
+    DATA_IVECTOR(Biomass); //  Vector of biomass for aggregate group of interest across all simulations
     // DATA_IVECTOR(data2);
     
     ///// Parameter section /////
     PARAMETER(dummy); // Include dummy variable to debug code without full estimation of likelihood
-    PARAMETER_VECTOR(logit_r_par); // Growth parameter(s), may be single value if ecosystem ref point estimated instead of aggregate ref points
-    PARAMETER_VECTOR(log_K_par); // Carrying cpacity parameter(s)
-    PARAMETER_VECTOR(logit_Frate); // Fishing mortality rate(s)
-
+    // PARAMETER(logit_r_par); // Growth parameter, may be single value if ecosystem ref point estimated instead of aggregate ref points
+    PARAMETER(log_K_par); // Carrying cpacity parameter
+    
     // Retransform variables so not in log space 
-    vector<Type> r_par = exp(logit_r_par)/(1+exp(logit_r_par));
-    vector<Type> K_par = exp(log_K_par);
-    vector<Type> Frate = exp(logit_Frate)/(1+exp(logit_Frate));
+    // Type r_par = exp(logit_r_par)/(1+exp(logit_r_par));
+    Type K_par = exp(log_K_par);
 
 
     // Local variables
-    vector<Type> Bmsy(nrow_Biomass); 
+    Type Bmsy; 
     
      
     
@@ -40,31 +36,28 @@
     ///// Initialize objective function at zero /////
     Type obj_fun; // Always need objective function object
     obj_fun = 0;
-    Type temp = 0;
+
 
     ///// Code which contributes to objective function /////
     // Generally make a prediction and compare that prediction to data (likelihood)
     // minimize comparison so you pick parameter values to best predict data
     // obj_fun += likelihood_component1 + likelihood_component2...
     obj_fun += dummy*dummy; // dummy objective function used to debug (make sure code compiles) without estimating all parameters
-       
-    for(int igroup=0; igroup<ncol_Biomass; igroup++){ // Loop over columns (may be aggregate groups or 1 column for whole ecosystem) = estimate for all agg groups at once
-      for (int irow=0; irow<nrow_Biomass; irow++){ // Loop over all rows (in this case model simulations) = estimate parameters given info from all simulations at once
-        
-        obj_fun += r_par(igroup)*Biomass(irow,igroup)*(1 - (Biomass(irow,igroup)/K_par(igroup))) - Frate(igroup)*Biomass(irow,igroup); // want to minimize the change in biomass with respect to time (dBt/dt)
-        //obj_fun += temp;
+            
+    // obj_fun += r_par*Biomass*(1 - (Biomass/K_par)) - Frate*Biomass; // want to minimize the change in biomass with respect to time (dBt/dt)
 
-      }
+
+    // Bt+1 = Bt + rBt - rBt^2/K - Ct   OR   Bt+1 = Bt + rBt(1-Bt/K) - Ct // Schaefer production model
+    // dBt/dt = rBt(1-Bt/K)             OR   dBt/dt = rBt - rBt^2/K       // derivative with respect to time
+    // d(dB/dt)/dB = r(1- 2Bt/K)        OR   d(dB/dt)/dB = r - 2rBt/K     // solve fro Bmsy by setting to zero, since r is a multiplier, don't estimate here
+    for (int isim=0; isim<Biomass.size(); isim++){
+         obj_fun += (1 - Biomass(isim)/K_par)*(1 - Biomass(isim)/K_par); // r is a a multiplier constant which isn't used to estimate Bmsy so not estimated here, squared to ensure never negative, want obj_fun to be as close to zero as possible
     }
-    // !!!!!!! estimate MSY for set biomass (avg over last 6 years for each simulation)
-    // Then calculate Bmsy as K/2
-    // Do this for all the 
     
     
     ///// ADReport reports deviation /////
-    ADREPORT(r_par); // Report variables or parameters with deviation
+    // ADREPORT(r_par); // Report variables or parameters with deviation
     ADREPORT(K_par);
-    ADREPORT(Frate);
 
     
     ///// Report /////
@@ -83,4 +76,5 @@
     // Check spelling of objects in equations
     // Try commenting out parts of the line causing the error and gradually add them back in until it causes an error again to ID the source
   }
+
   
