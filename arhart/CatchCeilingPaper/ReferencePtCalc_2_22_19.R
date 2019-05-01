@@ -1,41 +1,12 @@
 # Calculate multi-species and ecosystem reference points by fitting Schaefer production model to multi-speces and ecosystem data
 
-# To do:
-  # inits[inits[,"Species.Group"]=isp,"R"] need to find this (rinit value)
-  # inits[inits[,"Species.Group"]==isp,"THETA"] need this theta value
-  # need FirstYear and LastYear value
-  # round(ObsCatch[,colnames(ObsCatch)==isp] observed catches (I should use operating model catches)
-  # ObsBiomass[,colnames(ObsBiomass)==isp] (I should use operating model biomass)
-
-# Calculate initial parameter values as avg of those species included in each aggregate/ecosystem group
-inits <- read.csv("/Users/ahart2/Research/ebfm_mp/arhart/CatchCeilingPaper/DataFiles/FormattedInitialSpeciesParameters.csv", header=TRUE)
-
-PiscivoresR <- (inits[which(inits[,"Species.Group"]=="GB_Cod"),"R"] +  inits[which(inits[,"Species.Group"]=="Redfish"),"R"])/2
-BenthivoresR <- (inits[which(inits[,"Species.Group"]=="GB_Haddock"),"R"] + inits[which(inits[,"Species.Group"]=="GB_WinterFlounder"),"R"] + inits[which(inits[,"Species.Group"]=="GB_YellowtailFlounder"),"R"] + inits[which(inits[,"Species.Group"]=="GOM_GB_WindowpaneFlounder"),"R"])/4 
-PlanktivoresR <- (inits[which(inits[,"Species.Group"]=="Herring"),"R"] +  inits[which(inits[,"Species.Group"]=="Mackerel"),"R"])/2
-ElasmobranchsR <- (inits[which(inits[,"Species.Group"]=="Skates"),"R"] +  inits[which(inits[,"Species.Group"]=="Spiny_dogfish"),"R"])/2
-EcosystemR <- (inits[which(inits[,"Species.Group"]=="GB_Cod"),"R"] +  inits[which(inits[,"Species.Group"]=="Redfish"),"R"] + 
-  inits[which(inits[,"Species.Group"]=="GB_Haddock"),"R"] + inits[which(inits[,"Species.Group"]=="GB_WinterFlounder"),"R"] + inits[which(inits[,"Species.Group"]=="GB_YellowtailFlounder"),"R"] + inits[which(inits[,"Species.Group"]=="GOM_GB_WindowpaneFlounder"),"R"] +
-  inits[which(inits[,"Species.Group"]=="Herring"),"R"] +  inits[which(inits[,"Species.Group"]=="Mackerel"),"R"] + 
-  inits[which(inits[,"Species.Group"]=="Skates"),"R"] +  inits[which(inits[,"Species.Group"]=="Spiny_dogfish"),"R"])/10
-initR <- c(PiscivoresR, BenthivoresR, PlanktivoresR, ElasmobranchsR, EcosystemR)
-
-
-PiscivoresTHETA <- (inits[which(inits[,"Species.Group"]=="GB_Cod"),"THETA"] +  inits[which(inits[,"Species.Group"]=="Redfish"),"THETA"])/2
-BenthivoresTHETA <- (inits[which(inits[,"Species.Group"]=="GB_Haddock"),"THETA"] + inits[which(inits[,"Species.Group"]=="GB_WinterFlounder"),"THETA"] + inits[which(inits[,"Species.Group"]=="GB_YellowtailFlounder"),"THETA"] + inits[which(inits[,"Species.Group"]=="GOM_GB_WindowpaneFlounder"),"THETA"])/4 
-PlanktivoresTHETA <- (inits[which(inits[,"Species.Group"]=="Herring"),"THETA"] +  inits[which(inits[,"Species.Group"]=="Mackerel"),"THETA"])/2
-ElasmobranchsTHETA <- (inits[which(inits[,"Species.Group"]=="Skates"),"THETA"] +  inits[which(inits[,"Species.Group"]=="Spiny_dogfish"),"THETA"])/2
-EcosystemTHETA <- (inits[which(inits[,"Species.Group"]=="GB_Cod"),"THETA"] +  inits[which(inits[,"Species.Group"]=="Redfish"),"THETA"] + 
-                 inits[which(inits[,"Species.Group"]=="GB_Haddock"),"THETA"] + inits[which(inits[,"Species.Group"]=="GB_WinterFlounder"),"THETA"] + inits[which(inits[,"Species.Group"]=="GB_YellowtailFlounder"),"THETA"] + inits[which(inits[,"Species.Group"]=="GOM_GB_WindowpaneFlounder"),"THETA"] +
-                 inits[which(inits[,"Species.Group"]=="Herring"),"THETA"] +  inits[which(inits[,"Species.Group"]=="Mackerel"),"THETA"] + 
-                 inits[which(inits[,"Species.Group"]=="Skates"),"THETA"] +  inits[which(inits[,"Species.Group"]=="Spiny_dogfish"),"THETA"])/10
-initTHETA <- c(PiscivoresTHETA, BenthivoresTHETA, PlanktivoresTHETA, ElasmobranchsTHETA, EcosystemTHETA)
-
-# Function which estimates reference points
-EstimateRefPts <- function(WorkDir = NULL, datafile = NULL, Nsim = NULL){
+############################### Function which estimates reference points ##################################################################
+EstimateRefPts <- function(datafile = NULL, Nsim = NULL, initR = NULL, initTHETA = NULL){
   # Args:
     # datafile = name of results file, must be contained within current working directory
     # Nsim = number of simulations
+    # initR = vector of initial recruitment for aggregate groups and full ecosystem
+    # initTHETA = vector of initial theta values for aggregate groups and full ecosystem
   
   # Returns: matrix of half Bmsy values (carrying capacity K/2)/2
   
@@ -50,9 +21,9 @@ EstimateRefPts <- function(WorkDir = NULL, datafile = NULL, Nsim = NULL){
     print(i)
     
     # Biomass and Catch series for simulation i
-    Biomass <- dat["TrueBiomassResult"][[1]][[i]]  # This should give the first item (matrix of biomass),  for the ith simulation
+    Biomass <- dat["TrueBiomassResult"][[1]][[i]]  # This gives the first item (matrix of operating biomass),  for the ith simulation
     colnames(Biomass) <- c("GB_Cod", "GB_Haddock", "Herring", "Mackerel", "Redfish", "Skates", "Spiny_dogfish","GB_WinterFlounder", "GB_YellowtailFlounder","GOM_GB_WindowpaneFlounder")
-    Catch <- dat["TrueCatchResult"][[1]][[i]]  # This should give the first item (matrix of catch) for the ith simulation
+    Catch <- dat["TrueCatchResult"][[1]][[i]]  # This gives the first item (matrix of operating model catch) for the ith simulation
     colnames(Catch) <- c("GB_Cod", "GB_Haddock", "Herring", "Mackerel", "Redfish", "Skates", "Spiny_dogfish","GB_WinterFlounder", "GB_YellowtailFlounder","GOM_GB_WindowpaneFlounder")
 
     # Pick last 30 years of data
@@ -106,8 +77,11 @@ EstimateRefPts <- function(WorkDir = NULL, datafile = NULL, Nsim = NULL){
       write("# k phase",outfile,append=TRUE) # writes # k phase
       write(1,outfile,append=TRUE) # places 1 beneath # k phase
       write("# Kinit",outfile,append=TRUE) # writes # Kinit
-      #write(inits[inits[,"Species.Group"]==isp,"K"],outfile,append=TRUE) 
-      write(1500000,outfile,append=TRUE) # writes 1,500,000 below # Kinint   #??????? why this number and not K from InitsData file??????
+      if(datafile=="results0.json"){
+        write(1000000, outfile,append=TRUE)
+      } else {
+        write(1500000,outfile,append=TRUE) # writes 1,500,000 below # Kinint
+      }
       write("# z phase",outfile,append=TRUE) # writes # z phase
       write(-3,outfile,append=TRUE) # places -3 below # z phase
       write("# Z init",outfile,append=TRUE) # writes # Z init
@@ -137,8 +111,9 @@ EstimateRefPts <- function(WorkDir = NULL, datafile = NULL, Nsim = NULL){
       # setup_admb("/Applications/ADMBTerminal.app/admb") # This is the directory where the ADMB software files are stored
       # compile_admb(TPLFileName)
       run_admb(TPLFileName)
-      
+
       tempKpar <- read.table(paste(TPLFileName,".par", sep=""),header=FALSE) # Need to label
+      print(tempKpar)
       tempRefPts <- exp(tempKpar$V1[3]) # need to retransform so not in log space
       RefPts[i, igroup] <- tempRefPts/4 # calculate reference point as half of Bmsy (K/2/2)
     }
@@ -146,6 +121,37 @@ EstimateRefPts <- function(WorkDir = NULL, datafile = NULL, Nsim = NULL){
   return(RefPts)
 }
 
+
+
+########################## Initial parameters for reference point estimate ###########################################################
+# Calculate initial parameter values as avg of those species included in each aggregate/ecosystem group
+inits <- read.csv("/Users/ahart2/Research/ebfm_mp/arhart/CatchCeilingPaper/DataFiles/FormattedInitialSpeciesParameters.csv", header=TRUE)
+
+PiscivoresR <- (inits[which(inits[,"Species.Group"]=="GB_Cod"),"R"] +  inits[which(inits[,"Species.Group"]=="Redfish"),"R"])/2
+BenthivoresR <- (inits[which(inits[,"Species.Group"]=="GB_Haddock"),"R"] + inits[which(inits[,"Species.Group"]=="GB_WinterFlounder"),"R"] + inits[which(inits[,"Species.Group"]=="GB_YellowtailFlounder"),"R"] + inits[which(inits[,"Species.Group"]=="GOM_GB_WindowpaneFlounder"),"R"])/4 
+PlanktivoresR <- (inits[which(inits[,"Species.Group"]=="Herring"),"R"] +  inits[which(inits[,"Species.Group"]=="Mackerel"),"R"])/2
+ElasmobranchsR <- (inits[which(inits[,"Species.Group"]=="Skates"),"R"] +  inits[which(inits[,"Species.Group"]=="Spiny_dogfish"),"R"])/2
+EcosystemR <- (inits[which(inits[,"Species.Group"]=="GB_Cod"),"R"] +  inits[which(inits[,"Species.Group"]=="Redfish"),"R"] +
+  inits[which(inits[,"Species.Group"]=="GB_Haddock"),"R"] + inits[which(inits[,"Species.Group"]=="GB_WinterFlounder"),"R"] + inits[which(inits[,"Species.Group"]=="GB_YellowtailFlounder"),"R"] + inits[which(inits[,"Species.Group"]=="GOM_GB_WindowpaneFlounder"),"R"] +
+  inits[which(inits[,"Species.Group"]=="Herring"),"R"] +  inits[which(inits[,"Species.Group"]=="Mackerel"),"R"] +
+  inits[which(inits[,"Species.Group"]=="Skates"),"R"] +  inits[which(inits[,"Species.Group"]=="Spiny_dogfish"),"R"])/10 # used for everything except no ceiling simulations
+initR <- c(PiscivoresR, BenthivoresR, PlanktivoresR, ElasmobranchsR, EcosystemR)
+
+
+PiscivoresTHETA <- (inits[which(inits[,"Species.Group"]=="GB_Cod"),"THETA"] +  inits[which(inits[,"Species.Group"]=="Redfish"),"THETA"])/2
+BenthivoresTHETA <- (inits[which(inits[,"Species.Group"]=="GB_Haddock"),"THETA"] + inits[which(inits[,"Species.Group"]=="GB_WinterFlounder"),"THETA"] + inits[which(inits[,"Species.Group"]=="GB_YellowtailFlounder"),"THETA"] + inits[which(inits[,"Species.Group"]=="GOM_GB_WindowpaneFlounder"),"THETA"])/4 
+PlanktivoresTHETA <- (inits[which(inits[,"Species.Group"]=="Herring"),"THETA"] +  inits[which(inits[,"Species.Group"]=="Mackerel"),"THETA"])/2
+ElasmobranchsTHETA <- (inits[which(inits[,"Species.Group"]=="Skates"),"THETA"] +  inits[which(inits[,"Species.Group"]=="Spiny_dogfish"),"THETA"])/2
+EcosystemTHETA <- (inits[which(inits[,"Species.Group"]=="GB_Cod"),"THETA"] +  inits[which(inits[,"Species.Group"]=="Redfish"),"THETA"] + 
+                     inits[which(inits[,"Species.Group"]=="GB_Haddock"),"THETA"] + inits[which(inits[,"Species.Group"]=="GB_WinterFlounder"),"THETA"] + inits[which(inits[,"Species.Group"]=="GB_YellowtailFlounder"),"THETA"] + inits[which(inits[,"Species.Group"]=="GOM_GB_WindowpaneFlounder"),"THETA"] +
+                     inits[which(inits[,"Species.Group"]=="Herring"),"THETA"] +  inits[which(inits[,"Species.Group"]=="Mackerel"),"THETA"] + 
+                     inits[which(inits[,"Species.Group"]=="Skates"),"THETA"] +  inits[which(inits[,"Species.Group"]=="Spiny_dogfish"),"THETA"])/10
+initTHETA <- c(PiscivoresTHETA, BenthivoresTHETA, PlanktivoresTHETA, ElasmobranchsTHETA, EcosystemTHETA)
+
+
+
+
+########################## Estimate reference points ######################################################################################
 setwd("/Users/ahart2/Research/ebfm_mp/arhart/CatchCeilingPaper/UpdatedModel_Sim1000_Ceiling_AllInds_100PercentFmsy")
 
 library(R2admb)
@@ -153,88 +159,122 @@ library(jsonlite)
 setup_admb("/Applications/ADMBTerminal.app/admb") # This is the directory where the ADMB software files are stored
 compile_admb("single_schaef_copy")
 
-##### Fit model to data and store ref pts #####
+##### Ceiling_AllInds_100PercentFmsy
 AllRefPts <- NULL
-
 setwd("/Users/ahart2/Research/ebfm_mp/arhart/CatchCeilingPaper/UpdatedModel_Sim1000_Ceiling_AllInds_100PercentFmsy")
-Results <- EstimateRefPts(datafile = "results200000.json", Nsim = 3)
-Results <- EstimateRefPts(datafile = "results50000.json", Nsim = 1000)
+# Results <- EstimateRefPts(datafile = "results200000.json", Nsim = 3)
+Results <- EstimateRefPts(datafile = "results50000.json", Nsim = 1000, initR = initR, initTHETA = initTHETA)
   AllRefPts <- rbind(AllRefPts, Results)
-Results <- EstimateRefPts(datafile = "results75000.json", Nsim = 1000)
+Results <- EstimateRefPts(datafile = "results75000.json", Nsim = 1000, initR = initR, initTHETA = initTHETA)
   AllRefPts <- rbind(AllRefPts, Results)
-Results <- EstimateRefPts(datafile = "results100000.json", Nsim = 1000)
+Results <- EstimateRefPts(datafile = "results100000.json", Nsim = 1000, initR = initR, initTHETA = initTHETA)
   AllRefPts <- rbind(AllRefPts, Results)
-Results <- EstimateRefPts(datafile = "results125000.json", Nsim = 1000)
+Results <- EstimateRefPts(datafile = "results125000.json", Nsim = 1000, initR = initR, initTHETA = initTHETA)
   AllRefPts <- rbind(AllRefPts, Results)
-Results <- EstimateRefPts(datafile = "results150000.json", Nsim = 1000)
+Results <- EstimateRefPts(datafile = "results150000.json", Nsim = 1000, initR = initR, initTHETA = initTHETA)
   AllRefPts <- rbind(AllRefPts, Results)
-Results <- EstimateRefPts(datafile = "results175000.json", Nsim = 1000)
+Results <- EstimateRefPts(datafile = "results175000.json", Nsim = 1000, initR = initR, initTHETA = initTHETA)
   AllRefPts <- rbind(AllRefPts, Results)
-Results <- EstimateRefPts(datafile = "results200000.json", Nsim = 1000)
+Results <- EstimateRefPts(datafile = "results200000.json", Nsim = 1000, initR = initR, initTHETA = initTHETA)
   AllRefPts <- rbind(AllRefPts, Results)
-
+write.table(AllRefPts, "AllRefPts_Ceiling_AllInds_100PercentFmsy")
+  
+##### Ceiling_AllInds_75PercentFmsy
+AllRefPts <- NULL
 setwd("/Users/ahart2/Research/ebfm_mp/arhart/CatchCeilingPaper/UpdatedModel_Sim1000_Ceiling_AllInds_75PercentFmsy")
-Results <- EstimateRefPts(datafile = "results50000.json", Nsim = 1000)
+compile_admb("single_schaef_copy")
+Results <- EstimateRefPts(datafile = "results50000.json", Nsim = 1000, initR = initR, initTHETA = initTHETA)
   AllRefPts <- rbind(AllRefPts, Results)
-Results <- EstimateRefPts(datafile = "results75000.json", Nsim = 1000)
+Results <- EstimateRefPts(datafile = "results75000.json", Nsim = 1000, initR = initR, initTHETA = initTHETA)
   AllRefPts <- rbind(AllRefPts, Results)
-Results <- EstimateRefPts(datafile = "results100000.json", Nsim = 1000)
+Results <- EstimateRefPts(datafile = "results100000.json", Nsim = 1000, initR = initR, initTHETA = initTHETA)
   AllRefPts <- rbind(AllRefPts, Results)
-Results <- EstimateRefPts(datafile = "results125000.json", Nsim = 1000)
+Results <- EstimateRefPts(datafile = "results125000.json", Nsim = 1000, initR = initR, initTHETA = initTHETA)
   AllRefPts <- rbind(AllRefPts, Results)
-Results <- EstimateRefPts(datafile = "results150000.json", Nsim = 1000)
+Results <- EstimateRefPts(datafile = "results150000.json", Nsim = 1000, initR = initR, initTHETA = initTHETA)
   AllRefPts <- rbind(AllRefPts, Results)
-Results <- EstimateRefPts(datafile = "results175000.json", Nsim = 1000)
+Results <- EstimateRefPts(datafile = "results175000.json", Nsim = 1000, initR = initR, initTHETA = initTHETA)
   AllRefPts <- rbind(AllRefPts, Results)
-Results <- EstimateRefPts(datafile = "results200000.json", Nsim = 1000)
+Results <- EstimateRefPts(datafile = "results200000.json", Nsim = 1000, initR = initR, initTHETA = initTHETA)
   AllRefPts <- rbind(AllRefPts, Results)
-
+write.table(AllRefPts, "AllRefPts_Ceiling_AllInds_75PercentFmsy")
+ 
+##### Ceiling_NoInds_100PercentFmsy 
+AllRefPts <- NULL
 setwd("/Users/ahart2/Research/ebfm_mp/arhart/CatchCeilingPaper/UpdatedModel_Sim1000_Ceiling_NoInds_100PercentFmsy")
-Results <- EstimateRefPts(datafile = "results50000.json", Nsim = 1000)
+compile_admb("single_schaef_copy")
+Results <- EstimateRefPts(datafile = "results50000.json", Nsim = 1000, initR = initR, initTHETA = initTHETA)
   AllRefPts <- rbind(AllRefPts, Results)
-Results <- EstimateRefPts(datafile = "results75000.json", Nsim = 1000)
+Results <- EstimateRefPts(datafile = "results75000.json", Nsim = 1000, initR = initR, initTHETA = initTHETA)
   AllRefPts <- rbind(AllRefPts, Results)
-Results <- EstimateRefPts(datafile = "results100000.json", Nsim = 1000)
+Results <- EstimateRefPts(datafile = "results100000.json", Nsim = 1000, initR = initR, initTHETA = initTHETA)
   AllRefPts <- rbind(AllRefPts, Results)
-Results <- EstimateRefPts(datafile = "results125000.json", Nsim = 1000)
+Results <- EstimateRefPts(datafile = "results125000.json", Nsim = 1000, initR = initR, initTHETA = initTHETA)
   AllRefPts <- rbind(AllRefPts, Results)
-Results <- EstimateRefPts(datafile = "results150000.json", Nsim = 1000)
+Results <- EstimateRefPts(datafile = "results150000.json", Nsim = 1000, initR = initR, initTHETA = initTHETA)
   AllRefPts <- rbind(AllRefPts, Results)
-Results <- EstimateRefPts(datafile = "results175000.json", Nsim = 1000)
+Results <- EstimateRefPts(datafile = "results175000.json", Nsim = 1000, initR = initR, initTHETA = initTHETA)
   AllRefPts <- rbind(AllRefPts, Results)
-Results <- EstimateRefPts(datafile = "results200000.json", Nsim = 1000)
+Results <- EstimateRefPts(datafile = "results200000.json", Nsim = 1000, initR = initR, initTHETA = initTHETA)
   AllRefPts <- rbind(AllRefPts, Results)
-
+write.table(AllRefPts, "AllRefPts_Ceiling_NoInds_100PercentFmsy")
+ 
+##### Ceiling_NoInds_75PercentFmsy
+AllRefPts <- NULL 
 setwd("/Users/ahart2/Research/ebfm_mp/arhart/CatchCeilingPaper/UpdatedModel_Sim1000_Ceiling_NoInds_75PercentFmsy")
-Results <- EstimateRefPts(datafile = "results50000.json", Nsim = 1000)
+compile_admb("single_schaef_copy")
+Results <- EstimateRefPts(datafile = "results50000.json", Nsim = 1000, initR = initR, initTHETA = initTHETA)
   AllRefPts <- rbind(AllRefPts, Results)
-Results <- EstimateRefPts(datafile = "results75000.json", Nsim = 1000)
+Results <- EstimateRefPts(datafile = "results75000.json", Nsim = 1000, initR = initR, initTHETA = initTHETA)
   AllRefPts <- rbind(AllRefPts, Results)
-Results <- EstimateRefPts(datafile = "results100000.json", Nsim = 1000)
+Results <- EstimateRefPts(datafile = "results100000.json", Nsim = 1000, initR = initR, initTHETA = initTHETA)
   AllRefPts <- rbind(AllRefPts, Results)
-Results <- EstimateRefPts(datafile = "results125000.json", Nsim = 1000)
+Results <- EstimateRefPts(datafile = "results125000.json", Nsim = 1000, initR = initR, initTHETA = initTHETA)
   AllRefPts <- rbind(AllRefPts, Results)
-Results <- EstimateRefPts(datafile = "results150000.json", Nsim = 1000)
+Results <- EstimateRefPts(datafile = "results150000.json", Nsim = 1000, initR = initR, initTHETA = initTHETA)
   AllRefPts <- rbind(AllRefPts, Results)
-Results <- EstimateRefPts(datafile = "results175000.json", Nsim = 1000)
+Results <- EstimateRefPts(datafile = "results175000.json", Nsim = 1000, initR = initR, initTHETA = initTHETA)
   AllRefPts <- rbind(AllRefPts, Results)
 Results <- EstimateRefPts(datafile = "results200000.json", Nsim = 1000)
   AllRefPts <- rbind(AllRefPts, Results)
+write.table(AllRefPts, "AllRefPts_Ceiling_NoInds_75PercentFmsy")
+  
+##### NoCeiling_NoInds_100PercentFmsy
+# Change initial ecosystem R since not converging when calculated as for above simulations with ceiling, other initial conditions are unchanged
+PiscivoresR <- (inits[which(inits[,"Species.Group"]=="GB_Cod"),"R"] +  inits[which(inits[,"Species.Group"]=="Redfish"),"R"])/2
+BenthivoresR <- (inits[which(inits[,"Species.Group"]=="GB_Haddock"),"R"] + inits[which(inits[,"Species.Group"]=="GB_WinterFlounder"),"R"] + inits[which(inits[,"Species.Group"]=="GB_YellowtailFlounder"),"R"] + inits[which(inits[,"Species.Group"]=="GOM_GB_WindowpaneFlounder"),"R"])/4 
+PlanktivoresR <- (inits[which(inits[,"Species.Group"]=="Herring"),"R"] +  inits[which(inits[,"Species.Group"]=="Mackerel"),"R"])/2
+ElasmobranchsR <- (inits[which(inits[,"Species.Group"]=="Skates"),"R"] +  inits[which(inits[,"Species.Group"]=="Spiny_dogfish"),"R"])/2
+EcosystemR <- 0.2 # used for No Ceiling simulations
+initR <- c(PiscivoresR, BenthivoresR, PlanktivoresR, ElasmobranchsR, EcosystemR)
 
+AllRefPts <- NULL
 setwd("/Users/ahart2/Research/ebfm_mp/arhart/CatchCeilingPaper/UpdatedModel_Sim1000_NoCeiling_NoInds_100PercentFmsy")
-Results <- EstimateRefPts(datafile = "results50000.json", Nsim = 1000)
+compile_admb("single_schaef_copy")
+Results <- EstimateRefPts(datafile = "results0.json", Nsim = 1000, initR = initR, initTHETA = initTHETA) 
   AllRefPts <- rbind(AllRefPts, Results)
-Results <- EstimateRefPts(datafile = "results75000.json", Nsim = 1000)
-  AllRefPts <- rbind(AllRefPts, Results)
-Results <- EstimateRefPts(datafile = "results100000.json", Nsim = 1000)
-  AllRefPts <- rbind(AllRefPts, Results)
-Results <- EstimateRefPts(datafile = "results125000.json", Nsim = 1000)
-  AllRefPts <- rbind(AllRefPts, Results)
-Results <- EstimateRefPts(datafile = "results150000.json", Nsim = 1000)
-  AllRefPts <- rbind(AllRefPts, Results)
-Results <- EstimateRefPts(datafile = "results175000.json", Nsim = 1000)
-  AllRefPts <- rbind(AllRefPts, Results)
-Results <- EstimateRefPts(datafile = "results200000.json", Nsim = 1000)
-  AllRefPts <- rbind(AllRefPts, Results)
+write.table(AllRefPts, "AllRefPts_NoCeiling_NoInds_100PercentFmsy")
 
 
+
+
+
+##### Read in resulting reference point files and calculate median values
+
+Ceiling_Inds_100 <- read.table("/Users/ahart2/Research/ebfm_mp/arhart/CatchCeilingPaper/UpdatedModel_Sim1000_Ceiling_AllInds_100PercentFmsy/AllRefPts_Ceiling_AllInds_100PercentFmsy")
+Ceiling_Inds_75 <- read.table("/Users/ahart2/Research/ebfm_mp/arhart/CatchCeilingPaper/UpdatedModel_Sim1000_Ceiling_AllInds_75PercentFmsy/AllRefPts_Ceiling_AllInds_75PercentFmsy")
+Ceiling_NoInds_100 <- read.table("/Users/ahart2/Research/ebfm_mp/arhart/CatchCeilingPaper/UpdatedModel_Sim1000_Ceiling_NoInds_100PercentFmsy/AllRefPts_Ceiling_NoInds_100PercentFmsy")
+Ceiling_NoInds_75 <- read.table("/Users/ahart2/Research/ebfm_mp/arhart/CatchCeilingPaper/UpdatedModel_Sim1000_Ceiling_NoInds_75PercentFmsy/AllRefPts_Ceiling_NoInds_75PercentFmsy")
+NoCeiling_NoInds_100 <- read.table("/Users/ahart2/Research/ebfm_mp/arhart/CatchCeilingPaper/UpdatedModel_Sim1000_NoCeiling_NoInds_100PercentFmsy/AllRefPts_NoCeiling_NoInds_100PercentFmsy")
+
+CompleteResults <- rbind(Ceiling_Inds_100, Ceiling_Inds_75, Ceiling_NoInds_100, Ceiling_NoInds_75, NoCeiling_NoInds_100)
+summary(CompleteResults) # use median values as reference points in performance metric calculations (see TreeAnalysisFunctions.R)
+
+# Calculate without no ceiling simulations to compare differences 
+Ceiling_Inds_100 <- read.table("/Users/ahart2/Research/ebfm_mp/arhart/CatchCeilingPaper/UpdatedModel_Sim1000_Ceiling_AllInds_100PercentFmsy/AllRefPts_Ceiling_AllInds_100PercentFmsy")
+Ceiling_Inds_75 <- read.table("/Users/ahart2/Research/ebfm_mp/arhart/CatchCeilingPaper/UpdatedModel_Sim1000_Ceiling_AllInds_75PercentFmsy/AllRefPts_Ceiling_AllInds_75PercentFmsy")
+Ceiling_NoInds_100 <- read.table("/Users/ahart2/Research/ebfm_mp/arhart/CatchCeilingPaper/UpdatedModel_Sim1000_Ceiling_NoInds_100PercentFmsy/AllRefPts_Ceiling_NoInds_100PercentFmsy")
+Ceiling_NoInds_75 <- read.table("/Users/ahart2/Research/ebfm_mp/arhart/CatchCeilingPaper/UpdatedModel_Sim1000_Ceiling_NoInds_75PercentFmsy/AllRefPts_Ceiling_NoInds_75PercentFmsy")
+
+CompleteResults_WithoutNoCeilingSims <- rbind(Ceiling_Inds_100, Ceiling_Inds_75, Ceiling_NoInds_100, Ceiling_NoInds_75)
+summary(CompleteResults_WithoutNoCeilingSims)
