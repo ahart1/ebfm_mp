@@ -89,7 +89,7 @@ names(CAI100_MeanTrophicLevel) <- CAI100_SpeciesNames
 # DefaultRefLimVals: If TRUE then default refvals and limvals are used, if FALSE these values are calculated by this function, default=TRUE
 CAI100_DefaultRefLimVals <- FALSE
 # IndicatorData: Data.frame containing columns containing the following information: Indicator, Threshold, Limit, and a column for each species in the model, may also contain IndC and T.L columns
-CAI100_IndicatorData <- MSE_IndicatorRefVals
+CAI100_IndicatorData <- CAI100_IndicatorRefVals
 # InitialSpeciesData: Data.frame containing columns with the following: Species (names, should match format of SpeciesNames), R, K, THETA
 CAI100_InitialSpeciesData <- CAI100_InitsData
 # ChooseFMult: Indicates how final F-multiplier should be chosen from the list of possible F-multipliers (one for each indicator)
@@ -191,7 +191,7 @@ names(CAI75_MeanTrophicLevel) <- CAI75_SpeciesNames
 # DefaultRefLimVals: If TRUE then default refvals and limvals are used, if FALSE these values are calculated by this function, default=TRUE
 CAI75_DefaultRefLimVals <- FALSE
 # IndicatorData: Data.frame containing columns containing the following information: Indicator, Threshold, Limit, and a column for each species in the model, may also contain IndC and T.L columns
-CAI75_IndicatorData <- MSE_IndicatorRefVals
+CAI75_IndicatorData <- CAI75_IndicatorRefVals
 # InitialSpeciesData: Data.frame containing columns with the following: Species (names, should match format of SpeciesNames), R, K, THETA
 CAI75_InitialSpeciesData <- CAI75_InitsData
 # ChooseFMult: Indicates how final F-multiplier should be chosen from the list of possible F-multipliers (one for each indicator)
