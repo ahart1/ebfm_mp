@@ -87,7 +87,7 @@ FormatTreeAnalysisData <- function(FileName=NULL, Nsim=NULL, CeilingValue=NULL, 
     PlanktivoresBioTemp <- NULL
     ElasmobranchsBioTemp <- NULL
     NumAggCollapseTemp <- NULL
-    AggRefPt <- c(61608.21, 82107.91, 54158.58, 69006.88) # as calculated in Agg_Ecosystem_MSY.R, in order: 0.5PiscivoresBmsy, 0.5BenthivoresBmsy, 0.5PlanktivoresBmsy, 0.5ElasmobranchBmsy
+    AggRefPt <- c(71029, 102036, 60125, 226747) # as calculated in ReferencePtCalc_2_22_19.R, in order: 0.5PiscivoresBmsy, 0.5BenthivoresBmsy, 0.5PlanktivoresBmsy, 0.5ElasmobranchBmsy
     for(irow in 1:nrow(Biomass)){
       # Calculate biomass of aggregate groups in each of the last 6 model years
       PiscivoresBioTemp <- c(PiscivoresBioTemp, sum(Biomass[irow,c("GB_Cod","Redfish")])) # c(PiscivoresBioTemp, sum(Biomass[irow,c(1,5)]))
@@ -129,12 +129,12 @@ FormatTreeAnalysisData <- function(FileName=NULL, Nsim=NULL, CeilingValue=NULL, 
     Results[i,"ElasmobranchCatch"] <- mean(ElasmobranchsCatTemp)
     #############
     
-    ## Calculate frequency of total system biomass collapse (261536.04 mt) in the last 6 model years, 0.5Bmsy reference point as calculated in Agg_Ecosystem_MSY.R and .cpp
+    ## Calculate frequency of total system biomass collapse (261536.04 mt) in the last 6 model years, 0.5Bmsy reference point as calculated in ReferencePtCalc_2_22_19.R 
     SystemBioTemp <- NULL
     for(irow in (nrow(Biomass)-5):nrow(Biomass)){
       SystemBioTemp <- c(SystemBioTemp, sum(Biomass[irow,]))
     }
-    Results[i, "SystemCollapse"] <- length(which(SystemBioTemp < 261536.04))/length(SystemBioTemp) 
+    Results[i, "SystemCollapse"] <- length(which(SystemBioTemp < 303844))/length(SystemBioTemp) 
     ############
     RefPtData[i, "SystemBio"] <- mean(SystemBioTemp)
     
@@ -500,12 +500,13 @@ RandomForestAnalysis <- function(DataFile=NULL,NPerformMetrics=NULL, AsFactor=NU
 # DataFile should be the same as that used by TreeAnalysis (Produced by FormatTreeAnalysisData)
 # PlotMatrix provides the details of how plots should be ordered graphically
 
-PlotPerfMet <- function(DataFile=NULL, NPerformMetrics=NULL, PlotMatrix=matrix(data=1,nrow=1,ncol=1,byrow=TRUE), MultiPanelPlot = FALSE, XAxis=NULL, FileName = "boxplot"){
+PlotPerfMet <- function(DataFile=NULL, NPerformMetrics=NULL, PlotMatrix=matrix(data=1,nrow=1,ncol=1,byrow=TRUE), MultiPanelPlot = FALSE, XAxis=NULL, FileName = "boxplot", resolution=1){
   # Args
      # MultiPanelPlot: defaults to FALSE, if TRUE plots multiple box plots with same x-axis label/scale
      # XAxis: string containing label for X-Axis, only required if MultiPanelPlot = TRUE,
      # FileName: string containing name of file, will automatically be saved in current working directory, default = "boxplot"
-
+     # resolution: number between 1 and 3 to adjust resolution, default = 1
+  
   # Read in data
   Data <- read.table(DataFile)
 
@@ -514,13 +515,13 @@ PlotPerfMet <- function(DataFile=NULL, NPerformMetrics=NULL, PlotMatrix=matrix(d
 
   # Next three lines are specific labels that needed to be changed for the CatchCeilingPaper but are not generally applicable/necessary for other projects
   PerformMet <- c("Frequency species \n overfished", "Frequency aggregate \n collapse", "Piscivore \n catch (kt)",
-                  "Benthivore  \n catch (kt)", "Planktivore   \n catch (kt)", "Elasmobranch \n catch (kt)", "System collapse",
-                  "System \n biomass (kt)", "System \n catch (kt)", "Biomass \n diversity", "Catch \n diversity", "Catch revenue \n (dollars)")
+                  "Benthivore  \n catch (kt)", "Planktivore   \n catch (kt)", "Elasmobranch \n catch (kt)", 
+                  "System \n biomass (kt)", "System \n catch (kt)", "Biomass \n diversity", "Catch \n diversity", "Catch revenue \n (millions of dollars)")
   print(PerformMet)
 
   if(MultiPanelPlot ==TRUE){
     
-    png(filename = FileName, width = 500, height = 650)
+    png(filename = FileName, width = 500*resolution, height = 650*resolution)
     PlotMatrix <- PlotMatrix+1 # Add 1 so empty space at top of plot may be added
     XAxisLabel <- rep(length(PlotMatrix)+2, ncol(PlotMatrix)) # Add row to PlotMatrix for whole figure x-axis label
     PlotMatrix <- rbind(rep(1,ncol(PlotMatrix)),PlotMatrix, XAxisLabel)
@@ -540,27 +541,29 @@ PlotPerfMet <- function(DataFile=NULL, NPerformMetrics=NULL, PlotMatrix=matrix(d
 
     # Plot bar plots for performance metrics
     for(i in 1:NPerformMetrics){
-      par(mar=c(3.5,6,0.5,0.1), xpd=TRUE)
+      par(mar=c(3.5*resolution,5.5*resolution,0.5*resolution,0.5*resolution), xpd=TRUE)
       #par(oma=c(0,0,3,0))
       # Plots <- boxplot(formula=(Data[,i]~as.factor(CatchCeiling)), data=Data, ylab="", cex.lab=1.5, cex.axis=1.5, boxwex=0.75, xaxt='n')
       # # axis(1,at=1:length(XAxisTickLabel), labels = XAxisTickLabel)
       # mtext(paste(PerformMet[i],sep=""), side=2, line=3, adj=0.5, cex=1.1) # May use this to plot ylabel instead
       # #axis(side = 1, at=c(0,50,75,100,125,150,175,200), labels = c("None", 50, "75", "100", "125", "150", "175", "200"))
       # axis(side = 1, labels=c("None", 50, 70, 100, 125, 150, 175, 200))
-      Plots <- boxplot(formula=(Data[,i]~as.factor(CatchCeiling)), data=Data, ylab="", cex.lab=1.5, cex.axis=1.5, boxwex=0.75, xaxt="n")
-      mtext(paste(PerformMet[i],sep=""), side=2, line=3, adj=0.5, cex=1.1) # May use this to plot ylabel instead
-      axis(1, labels = c("None", 50,75,100,125,150,175,200), at=c(1:8), cex.axis=1.5)
+      Plots <- boxplot(formula=(Data[,i]~as.factor(CatchCeiling)), data=Data, ylab="", cex.lab=1.5*resolution, cex.axis=1.5*resolution, boxwex=0.75, xaxt="n", boxlwd = 1*resolution, lwd=1*resolution)
+      mtext(paste(PerformMet[i],sep=""), side=2, line=2.5+resolution, adj=0.5, cex=1.1*resolution) # May use this to plot ylabel instead
+      axis(1, cex.axis=1.5*resolution, lwd = 1*resolution, labels=c(rep(" ", 8)), at=1:8)
+      mtext(c(50, 125, "None"), side = 1, at = c(1,4, 8), line=1*resolution, cex=1*resolution)
+      box(lwd=1*resolution)
     }
     # Fill empty plots appropriately
     if(NPerformMetrics < length(PlotMatrix)-(ncol(PlotMatrix)*2)){ # -ncol(PlotMatrix) gets rid of the placeholders added at the start of this to indicate the overall x-axis labels included
-      for(i in 1:(length(PlotMatrix)-NPerformMetrics-ncol(PlotMatrix))){ # Plot empty space in each column except the last row which is for the x-axis label
+      for(i in 1:(length(PlotMatrix)-(ncol(PlotMatrix)*2)-NPerformMetrics)){ # Plot empty space in each column except the last row which is for the x-axis label
         plot(1,1,type="n", axes=FALSE, ann=FALSE)
       }
     }
     # Label X-Axis
     par(mar=c(1,1,1,1))
     plot(1,1,type = "n", axes = FALSE, ann = FALSE)
-    text(1,1, labels = XAxis, cex=2)
+    text(1,1, labels = XAxis, cex=2*resolution)
 
     dev.off()
   } else{ # Plot non-multipanel option
@@ -569,7 +572,7 @@ PlotPerfMet <- function(DataFile=NULL, NPerformMetrics=NULL, PlotMatrix=matrix(d
     layout.show(GraphicLayout)
 
     for(i in 1:NPerformMetrics){
-      Plots <- boxplot(formula=(Data[,i]~as.factor(CatchCeiling)), data=Data, ylab=paste(PerformMet[i],sep=""), xlab="Catch ceiling (kt)", cex.lab=1.5, cex.axis=1.5, boxwex=0.75)
+      Plots <- boxplot(formula=(Data[,i]~as.factor(CatchCeiling)), data=Data, ylab=paste(PerformMet[i],sep=""), xlab="Catch ceiling (kt)", cex.lab=1.5*resolution, cex.axis=1.5*resolution, boxwex=0.75)
     }
   }
 }
