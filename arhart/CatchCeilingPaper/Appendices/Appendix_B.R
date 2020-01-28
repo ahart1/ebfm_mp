@@ -486,3 +486,4 @@ boxplot(FormattedData$TotalRevenue[1:100], FormattedData$TotalRevenue[1:200], Fo
         xlab = "Number of Simulations", 
         ylab = "Total Revenue")
 
+
