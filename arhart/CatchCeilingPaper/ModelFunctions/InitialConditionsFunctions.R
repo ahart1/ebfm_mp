@@ -1,45 +1,63 @@
-# Initial conditions/data for the model
+# pickStatusMeasures() function that sets up initial conditions for MSE simulations
 
-# ultimately this information should be output as a single file that can be passed to the ms-prod model
+#' @title Select status measures for the MSE simulation
+#' @description This function selects status measures to inform indicator-based harvest control rules and/or assess management performance from the provided list. Options exist to select all available status measures or a random subset.
+#' 
+#' @param PotentialStatusMeasures: Vector of strings specifying the names of status measures to be considered, default = "defaultStatusMeasures"
+#'     "defaultStatusMeasures" = Selects a list of all available status measures 
+#'     OR 
+#'     Provide a vector containing one or more of the following status measures as strings:
+#'          Performance Metrics:
+#'            "tot.bio" - Total system biomass summed over all species
+#'            "tot.cat" - Total system catch summed over all species
+#'            "exprate" - Exploitation rate
+#'            "pd.ratio" - Pelagic demersal ratio of biomass
+#'            "mean.length" - Mean length of fish across all species based on biomass
+#'            "mean.lifespan" - Mean lifespan of fish across all species based on biomass
+#'         Indicators for control rules:
+#'            "Low.prop.predators" - Proportion of total biomass that is comprised by predatory species, used in low predator control rule, do not include if no predators included in model
+#'            "High.prop.predators" - Proportion of total biomass that is comprised by predatory species, used in high predator control rule, do not include if no predators included in model
+#'            "Low.prop.pelagic" - Proportion of total biomass that is made of pelagic species, used in low pelagic control rule 
+#'            "High.prop.pelagic" - Proportion of total biomass that is made of pelagic species, used in high pelagic control rule
+#'            "TL.landings" - Trophic level of landings, based on catch
+#'            "TL.survey" - Trophic level of survey, based on biomass
+#'            "div.cv.bio" - 1/(CV biomass) for last ten years (current simulated model year and previous 9 years), no values for the first 9 years of the timeseries
+#' @param PickOption A string specifying how status measures are chosen, default="ALL"
+#'     "ALL" = All status measures provided by the StatusMeasures argument used
+#'     "RandomSubset" = Picks a random subset of the provided status measures
+#' 
+#' @return A vector of strings indicating the names of selected status measures, order of these names does not matter.
+#' @examples 
+#' pickStatusMeasures(PotentialStatusMeasures = "defaultStatusMeasures", PickOption = "ALL")
+#' pickStatusMeasures(PotentialStatusMeasures = c("tot.bio", "tot.cat", Low.prop.predators", "TL.landings"))
 
-# The following must be included:
-  # Ceilings = Ceilings to use ???? not yet formatted
-  # InitialIndicators = Initial values for reference and limit values used as part of indicator control rules # data.frame with "Indicator", "Threshold", "Limit", "SpeciesName1-SpeciesNameNsp" columns, Bound1, Bound2
-      # Indicator must include the name of all possible indicator being considered
-      # 
-
-  # StatusMeasures = Vector of performance metrics and indicators used in control rules to pick from
-  # ChosenStatusMeasures = List of performance metrics to be used in each simulation, chosen from possible StatusMeasures using PickStatusMeasures, indicator control rules may be turned off by only using performance metrics
-  # IndicatorRefPtsValues = A data.frame that must contain the following columns: Indicator, IndC, Threshold, Limit, T.L, column for each species
-      # Indicator must include all possible indicators
-  # Also want start year for historic time series/length so we can label rows in final data output with years&check that all years have data
-
-
-#################### Actual Functions #############################
-
-########## Status Measures ##########
-
-
-PickStatusMeasures <- function(PickOption="ALL", PotentialStatusMeasures=ModelStatusMeasures){
-  # This function makes a list of indicators to be used in the simulation
+pickStatusMeasures <- function(PotentialStatusMeasures = "defaultStatusMeasures",
+                               PickOption = "ALL"){
+  # Determine what status measures provided for consideration 
+  if(PotentialStatusMeasures == "defaultStatusMeasures"){
+    # These are the possible indicators (to inform indicator-based harvest control rules) which may be chosen as StatusMeasures in the model simulations
+    ModelIndicators <- c("TL.survey", "TL.landings", "High.prop.pelagic", "Low.prop.pelagic", "High.prop.predators", "Low.prop.predators", "prop.overfished", "div.cv.bio")
+    # These are the possible performance metrics (do not inform indicator-based harvest control rules) which may be chosen as StatusMeasures in the model simulations
+    ModelPerformanceMetrics <- c("tot.bio", "tot.cat", "exprate", "pd.ratio")
+    # This is the list of all StatusMeasures available to evaluate ecosystem status for this model
+    StatusMeasures <- c(ModelIndicators, ModelPerformanceMetrics)
+  } else{ # Provide a custom vector of status measures
+    StatusMeasures <- PotentialStatusMeasures
+  }
   
-  # Args:
-       # PickOption: Indicates which option should be used (this will allow custom indicator combinations to be specified by creating a new option)
-            # PickOption = ALL: uses all available status measures given in Potential Status Measures
-            # PickOption = RandomSubset: picks a random subset of the available status measures
-       # PotentialStatusMeasures: Vector of Status Measues to be considered/picked from, this information comes from the initial information passed to the model
-  # Returns:
-       # A vector of choosen status measures by name, order of indicator names does not matter
-  
+  # Set up storage
   StatusMeasurePicks <- NULL
   
+  # Pick status measures
   if(PickOption=="ALL"){
-    StatusMeasurePicks <- sample(PotentialStatusMeasures, length(PotentialStatusMeasures), replace=FALSE) #This creates a list of all indicators being considered (samples each possible indicator)
+    StatusMeasurePicks <- PotentialStatusMeasures # Pick the entire list of potential status measures 
   }
   if(PickOption=="RandomSubset"){
-    Nchoose <- sample(1:length(PotentialStatusMeasures), 1, replace=FALSE) # Pick a random number between 1 and length of PotentialStatusMeasures to determine the number of indicators that will be used in the simulation
-    StatusMeasurePicks <- sample(PotentialStatusMeasures, Nchoose, replace=FALSE) # This creates a list containing Nchoose indicators randomly picked from NInds number of possible indicators
+    Nchoose <- sample(1:length(PotentialStatusMeasures), 1, replace=FALSE) # Pick a random number between 1 and length of PotentialStatusMeasures to determine the number of status measures that will be used in the simulation
+    StatusMeasurePicks <- sample(PotentialStatusMeasures, Nchoose, replace=FALSE) # This creates a list containing Nchoose number of status measures randomly picked from the possible status measures
   }
   return(StatusMeasurePicks)
 }
-print("Carrot")
+
+
+
